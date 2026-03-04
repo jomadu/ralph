@@ -23,6 +23,12 @@ ralph run build --unlimited
 
 # Preview assembled prompt without executing
 ralph run build --dry-run
+
+# Run a one-off prompt from a file (no alias needed)
+ralph run -f ./prompts/fix-tests.md
+
+# Pipe a prompt via stdin
+cat prompts/build.md | ralph run
 ```
 
 ## How It Works
@@ -30,7 +36,7 @@ ralph run build --dry-run
 Each iteration:
 
 1. Read the prompt file mapped to the alias
-2. Wrap it with a preamble (iteration count, signal instructions, optional context)
+2. Wrap it with a preamble (iteration count, optional context)
 3. Pipe the assembled prompt to the AI CLI's stdin
 4. Capture output, scan for success/failure signals
 5. On success signal → exit 0
@@ -101,36 +107,41 @@ Ralph scans AI CLI output for configurable signal strings to determine iteration
 | Success | `<promise>SUCCESS</promise>` | Task complete, stop looping |
 | Failure | `<promise>FAILURE</promise>` | Blocked, increment failure counter |
 
-The preamble tells the AI what to emit. Signals are configurable per-prompt — use whatever strings your prompt expects.
+Your prompt tells the AI what to emit. Ralph's signal config tells the scanner what to look for — use whatever strings your prompt expects.
 
 If both signals appear in the same output, failure wins.
 
 ## CLI
 
 ```
-ralph run <alias> [flags]    Run a prompt in the loop
-ralph list                   List available prompt aliases
-ralph version                Show version info
+ralph run <alias> [flags]          Run a prompt by config alias
+ralph run -f <path> [flags]        Run a prompt from a file path
+cat prompt.md | ralph run [flags]  Run a prompt piped via stdin
+ralph list prompts                 List available prompt aliases
+ralph list aliases                 List available AI command aliases
+ralph version                      Show version info
 
 Flags:
-  -n, --max-iterations int      Override max iterations
-  -u, --unlimited               Run until signal or failure threshold
-      --failure-threshold int   Consecutive failures before abort
-      --iteration-timeout int   Per-iteration timeout in seconds (0 = no timeout)
-      --max-output-buffer int   Max output buffer in bytes
-      --preamble                Inject preamble into prompt (default: true)
-      --no-preamble             Disable preamble injection
-  -d, --dry-run                 Validate and show assembled prompt
-      --ai-cmd string           Direct AI command string
-      --ai-cmd-alias string     AI command alias
-      --signal-success string   Success signal string
-      --signal-failure string   Failure signal string
-  -c, --context string          Inject context into preamble (repeatable)
-  -v, --verbose                 Stream AI output to terminal
-  -q, --quiet                   Suppress non-error output
-      --log-level string        debug, info, warn, error
-      --config path             Alternate config file path
+  -f, --file path                 Read prompt from file (no alias required)
+  -n, --max-iterations int        Override max iterations
+  -u, --unlimited                 Run until signal or failure threshold
+      --failure-threshold int     Consecutive failures before abort
+      --iteration-timeout int     Per-iteration timeout in seconds (0 = no timeout)
+      --max-output-buffer int     Max output buffer in bytes
+      --no-preamble               Disable preamble injection
+  -d, --dry-run                   Validate and show assembled prompt
+      --ai-cmd string             Direct AI command string
+      --ai-cmd-alias string       AI command alias
+      --signal-success string     Success signal string
+      --signal-failure string     Failure signal string
+  -c, --context string            Inject context into preamble (repeatable)
+  -v, --verbose                   Stream AI output to terminal
+  -q, --quiet                     Suppress non-error output
+      --log-level string          debug, info, warn, error
+      --config path               Alternate config file path
 ```
+
+The prompt is read once at loop start and reused for every iteration. When no alias or `-f` flag is provided, Ralph reads from stdin.
 
 ## Exit Codes
 

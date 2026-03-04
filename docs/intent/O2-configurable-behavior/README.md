@@ -13,7 +13,8 @@ Different tasks need different loop parameters. A one-shot bootstrap needs 1 ite
 - User sets `default_max_iterations: 10` in `ralph-config.yml`, then overrides with `ralph run build -n 20` on the command line. The loop runs up to 20 iterations.
 - User defines a prompt alias with `failure_threshold: 5` and custom signal strings. Those values take effect for that alias without affecting other aliases.
 - User sets `RALPH_LOOP_ITERATION_TIMEOUT=60` in the environment. Ralph applies a 60-second timeout without any config file change.
-- User runs `ralph list` and sees all available prompt aliases with names and descriptions.
+- User runs `ralph list prompts` and sees all available prompt aliases with names and descriptions.
+- User runs `ralph list aliases` and sees all available AI command aliases — both built-in and user-defined — with their resolved commands.
 
 ## Non-outcomes
 
@@ -29,10 +30,10 @@ Different tasks need different loop parameters. A one-shot bootstrap needs 1 ite
 | Multiple config layers set the same key and user doesn't know which value is active | R1 — Configuration provenance tracking |
 | Config file has a typo in a key name and silently does nothing | R2 — Unknown key warnings |
 | Config file has invalid values (negative iterations, empty signal) | R3 — Configuration validation at load time |
-| Prompt alias references a file that doesn't exist | R4 — Fail-fast on missing prompt file |
+| Prompt source is missing, unreadable, or empty | R4 — Fail-fast on invalid prompt source |
 | Missing config files cause startup errors | R5 — Silent skip for absent config files |
 | User needs different signal strings, timeouts, or thresholds per prompt | R6 — Per-prompt loop setting overrides |
-| User can't discover which prompts are available | R7 — Prompt listing command |
+| User can't discover which prompts or AI command aliases are available | R7 — Resource listing command |
 
 ## Requirements
 
@@ -41,7 +42,7 @@ Different tasks need different loop parameters. A one-shot bootstrap needs 1 ite
 | R1 | Configuration provenance tracking | draft |
 | R2 | Unknown key warnings | draft |
 | R3 | Configuration validation at load time | draft |
-| R4 | Fail-fast on missing prompt file | draft |
+| R4 | Fail-fast on invalid prompt source | draft |
 | R5 | Silent skip for absent config files | draft |
 | R6 | Per-prompt loop setting overrides | draft |
-| R7 | Prompt listing command | draft |
+| R7 | Resource listing command | draft |
