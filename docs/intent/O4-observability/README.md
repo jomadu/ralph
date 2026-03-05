@@ -36,6 +36,7 @@ A loop runner that silently exits is a black box. The user re-runs the command, 
 | Normal operation produces too much output and obscures the summary | [R5 — Log level control](R5-log-level-control.md) |
 | User wants to suppress all non-error output for scripting | [R5 — Log level control](R5-log-level-control.md) |
 | User doesn't know what iteration the loop is on during execution | [R6 — Iteration progress reporting](R6-iteration-progress.md) |
+| User or scripts need to identify which Ralph version is running | [R7 — Version subcommand](R7-version-subcommand.md) |
 
 ## Requirements
 
@@ -47,3 +48,4 @@ A loop runner that silently exits is a black box. The user re-runs the command, 
 | [R4](R4-dry-run.md) | Dry-run mode | ready |
 | [R5](R5-log-level-control.md) | Log level control | ready |
 | [R6](R6-iteration-progress.md) | Iteration progress reporting | ready |
+| [R7](R7-version-subcommand.md) | Version subcommand | ready |

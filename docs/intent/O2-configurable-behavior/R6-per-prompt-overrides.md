@@ -32,6 +32,8 @@ The prompt `loop` section accepts exactly the same keys as the root `loop` secti
 | `failure_threshold` | int | Override failure threshold for this alias |
 | `iteration_timeout` | int | Override per-iteration timeout for this alias |
 | `max_output_buffer` | int | Override output buffer size for this alias |
+| `log_level` | string | Override log level for this alias |
+| `show_ai_output` | bool | Override whether to stream AI output to terminal for this alias |
 | `ai_cmd` | string | Override direct AI command for this alias |
 | `ai_cmd_alias` | string | Override AI command alias for this alias |
 | `preamble` | bool | Override preamble injection for this alias |

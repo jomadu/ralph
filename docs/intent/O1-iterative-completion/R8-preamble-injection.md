@@ -4,7 +4,7 @@
 
 ## Requirement
 
-The system wraps the user's prompt with loop state — iteration number, iteration limit, and optional user-provided context — before piping the assembled content to the AI CLI. The preamble provides dynamic metadata that the static prompt file cannot know on its own. It is generated per iteration (iteration number changes), but the underlying prompt content is immutable across iterations.
+The system wraps the user's prompt with loop state — iteration number, iteration limit, and optional user-provided context — before piping the assembled content to the AI CLI. The preamble provides dynamic metadata that the static prompt file cannot know on its own. It is generated per iteration (iteration number changes), but the underlying prompt content is immutable across iterations. The preamble does not include the prompt name or any signal instructions; responsibility for how the AI signals success or failure lies entirely with the prompt content.
 
 ## Specification
 
@@ -53,7 +53,7 @@ Multiple `--context` flag values are concatenated with double newlines between t
 
 **Context flag:**
 
-- CLI: `--context <string>` (repeatable)
+- CLI: `--context <string>` (repeatable). Each value is an inline string. Ralph does not interpret any value as a file path or read files for context; if the user wants to inject file contents, they must do so via the shell (e.g. `--context "$(cat file.txt)"`).
 - No config file equivalent — context is inherently per-invocation
 - When preamble is disabled and `--context` is provided, Ralph emits a warning that context will not be included
 
@@ -72,6 +72,7 @@ The prompt content portion is immutable across iterations (R9). The preamble is 
 | Preamble disabled, `--context` provided | Warning emitted; context is not included; prompt piped directly |
 | Unlimited mode | Preamble reads `Iteration N of unlimited` |
 | Iteration 1 of 1 | Preamble reads `Iteration 1 of 1` |
+| `--context ./path/to/file` | The literal string `./path/to/file` is included as context; Ralph does not read the file |
 
 ### Examples
 
@@ -86,13 +87,13 @@ Assembled input piped to AI CLI:
 ```
 [RALPH] Iteration 3 of 10
 
-CONTEXT:
 Fix the failing tests.
 ```
 
 **Verification:**
 - AI CLI's stdin begins with `[RALPH] Iteration 3 of 10`
-- Prompt content follows after two newlines
+- Two newlines separate the preamble from the prompt content
+- No CONTEXT section when no --context flag is provided
 
 #### Preamble with context
 
@@ -135,7 +136,8 @@ Generate a README.
 ## Acceptance criteria
 
 - [ ] The preamble includes the current iteration number and the max iteration limit (or "unlimited" when in unlimited mode)
-- [ ] When context is provided via --context flag(s), the preamble includes a CONTEXT section with the provided content
+- [ ] The preamble does not include the prompt name or any signal instructions; the prompt content is responsible for instructing the AI on signaling
+- [ ] When context is provided via --context flag(s), the preamble includes a CONTEXT section with the provided inline strings (no file path interpretation)
 - [ ] When no context is provided, the CONTEXT section is omitted entirely
 - [ ] Preamble injection is enabled by default
 - [ ] Preamble can be disabled globally (loop.preamble: false) or per-prompt (prompts.<name>.loop.preamble: false)

@@ -12,13 +12,21 @@ Ralph invokes the AI CLI as a child process (O3); the child's stdout and stderr 
 
 **Control of streaming:**
 
-- **Enabled by:** Only the `--verbose` or `-v` flag. No config file key or environment variable enables AI output streaming. When the flag is absent, AI output is never streamed to the terminal.
-- **Not controlled by:** `--log-level` (R5). Setting `--log-level debug` without `--verbose` does not stream AI output. Setting `--log-level warn` with `--verbose` still streams AI output. Log level affects only Ralph's own operational messages (R5).
+Verbose mode (stream AI output to the terminal) is determined by the resolved value of `show_ai_output`, with the following precedence (highest wins):
+
+1. **CLI:** `--verbose` or `-v` forces streaming on for the run, regardless of config or env.
+2. **Environment:** `RALPH_LOOP_SHOW_AI_OUTPUT` — when set, parsed as a boolean (e.g. `true`, `1`, `yes` → true; `false`, `0`, `no`, empty → false). See O2/R8 for env var semantics.
+3. **Config:** `loop.show_ai_output` — boolean. Can be set globally or per-prompt (O2/R6).
+4. **Default:** `false` — when no CLI flag, env var, or config sets it, AI output is not streamed.
+
+When the resolved value is `true`, Ralph mirrors the child's stdout and stderr to the terminal. When `false`, output is captured only (no mirroring). The `--verbose` / `-v` flag overrides config and env for that run.
+
+- **Not controlled by:** `--log-level` (R5). Log level affects only Ralph's own operational messages, not whether AI output is streamed.
 
 **Behavior:**
 
-1. **With `--verbose` or `-v`:** For each iteration, while the AI CLI process is running, every byte (or line, if buffered for display) read from the child's stdout and stderr is written to the terminal in real time, in addition to being appended to the iteration's output buffer. After the process exits, the buffer is scanned for signals (O1/R2). Order of stdout vs stderr when interleaved is implementation-defined (e.g., merge in read order or separate streams).
-2. **Without `--verbose`:** No bytes from the child are written to the terminal. All output is still captured into the buffer for signal scanning. The user sees only Ralph's operational output (e.g., progress per R6, statistics per R2), subject to log level (R5).
+1. **When streaming is enabled (resolved `show_ai_output` is true or `-v`/`--verbose` used):** For each iteration, while the AI CLI process is running, every byte (or line, if buffered for display) read from the child's stdout and stderr is written to the terminal in real time, in addition to being appended to the iteration's output buffer. After the process exits, the buffer is scanned for signals (O1/R2). Order of stdout vs stderr when interleaved is implementation-defined (e.g., merge in read order or separate streams).
+2. **When streaming is disabled:** No bytes from the child are written to the terminal. All output is still captured into the buffer for signal scanning. The user sees only Ralph's operational output (e.g., progress per R6, statistics per R2), subject to log level (R5).
 
 **Invariants:**
 
@@ -29,10 +37,12 @@ Ralph invokes the AI CLI as a child process (O3); the child's stdout and stderr 
 
 | Condition | Expected Behavior |
 |-----------|-------------------|
-| `ralph run build` (no -v) | AI output not shown; captured for signal scan |
-| `ralph run build -v` | AI stdout/stderr mirrored to terminal; also captured; signal scan uses buffer |
+| `ralph run build` (no -v, default show_ai_output) | AI output not shown; captured for signal scan |
+| `ralph run build -v` | AI stdout/stderr mirrored to terminal; also captured; CLI overrides config/env |
 | `ralph run build --verbose` | Same as `-v` |
-| `ralph run build --log-level debug` (no -v) | Ralph's debug messages shown; AI output not streamed |
+| `loop.show_ai_output: true` in config, no -v | AI output streamed (config enables it) |
+| `RALPH_LOOP_SHOW_AI_OUTPUT=true` in env, no -v | AI output streamed (env enables it) |
+| `ralph run build --log-level debug` (no -v) | Ralph's debug messages shown; AI output not streamed unless show_ai_output resolved true |
 | `ralph run build --log-level warn -v` | AI output streamed; Ralph's info/debug suppressed; warn/error shown |
 | `ralph run build --quiet -v` | R5: quiet sets log level to error; -v still streams AI output; Ralph's non-error output suppressed |
 | AI CLI produces only stdout | Only stdout mirrored (and captured) |
@@ -82,11 +92,11 @@ Ralph's debug-level messages (if any) are shown. AI CLI output is not streamed t
 
 ## Acceptance criteria
 
-- [ ] With --verbose or -v, AI CLI stdout and stderr are mirrored to the terminal as they are produced
+- [ ] With --verbose or -v, AI CLI stdout and stderr are mirrored to the terminal as they are produced (CLI overrides config/env)
+- [ ] When resolved show_ai_output is true (config, env, or default), AI output is streamed; when false, it is not
 - [ ] Output is simultaneously captured in the buffer for signal scanning after the process exits
-- [ ] Without --verbose, AI CLI output is captured silently and not displayed to the terminal
-- [ ] AI output streaming is controlled solely by the --verbose flag — --log-level does not affect it (e.g., --verbose --log-level warn streams AI output but suppresses Ralph's debug messages)
-- [ ] --log-level debug without --verbose does not enable AI output streaming
+- [ ] loop.show_ai_output (config) and RALPH_LOOP_SHOW_AI_OUTPUT (env) can enable streaming; default is false
+- [ ] --log-level does not affect streaming (e.g., --verbose --log-level warn streams AI output but suppresses Ralph's debug messages)
 
 ## Dependencies
 

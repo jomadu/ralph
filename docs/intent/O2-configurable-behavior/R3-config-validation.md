@@ -32,6 +32,7 @@ The configuration schema is defined as a JSON Schema. Schema validation covers s
 | `loop.iteration_timeout` | int | Minimum: 0 (0 means no timeout), or absent |
 | `loop.max_output_buffer` | int | Minimum: 1 |
 | `loop.log_level` | string | Enum: `"debug"`, `"info"`, `"warn"`, `"error"` |
+| `loop.show_ai_output` | bool | — |
 | `loop.signals.success` | string | MinLength: 1 |
 | `loop.signals.failure` | string | MinLength: 1 |
 | `loop.ai_cmd` | string | MinLength: 1 (when present) |

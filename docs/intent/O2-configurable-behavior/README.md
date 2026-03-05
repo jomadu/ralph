@@ -34,6 +34,8 @@ Different tasks need different loop parameters. A one-shot bootstrap needs 1 ite
 | Missing config files cause startup errors | [R5 — Silent skip for absent config files](R5-silent-skip-absent-config.md) |
 | User needs different signal strings, timeouts, or thresholds per prompt | [R6 — Per-prompt loop setting overrides](R6-per-prompt-overrides.md) |
 | User can't discover which prompts or AI command aliases are available | [R7 — Resource listing command](R7-prompt-listing.md) |
+| User needs a single authoritative reference for supported environment variables | [R8 — Environment variable reference](R8-environment-variable-reference.md) |
+| User needs a single authoritative reference for CLI commands and flags | [R9 — CLI interface reference](R9-cli-interface-reference.md) |
 
 ## Requirements
 
@@ -46,3 +48,5 @@ Different tasks need different loop parameters. A one-shot bootstrap needs 1 ite
 | [R5](R5-silent-skip-absent-config.md) | Silent skip for absent config files | ready |
 | [R6](R6-per-prompt-overrides.md) | Per-prompt loop setting overrides | ready |
 | [R7](R7-prompt-listing.md) | Resource listing command | ready |
+| [R8](R8-environment-variable-reference.md) | Environment variable reference | ready |
+| [R9](R9-cli-interface-reference.md) | CLI interface reference | ready |
