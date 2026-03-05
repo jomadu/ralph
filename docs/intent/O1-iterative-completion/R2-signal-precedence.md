@@ -15,6 +15,6 @@ _To be specified in Phase 3._
 - [ ] When only the success signal appears in output, the iteration is treated as success and the loop stops
 - [ ] When only the failure signal appears in output, the iteration is treated as failure and the consecutive failure counter is incremented
 - [ ] When both success and failure signals appear in the same output, the iteration is treated as failure
-- [ ] When neither signal appears in output, the iteration is treated as no-signal — the loop proceeds to the next iteration without incrementing the failure counter
+- [ ] When neither signal appears in output, the iteration is treated as no-signal — the consecutive failure counter is reset to zero and the loop proceeds to the next iteration
 - [ ] Signal scanning uses substring matching — the signal string can appear anywhere in the output
 - [ ] Signal scanning occurs after the AI CLI process exits, not during streaming

@@ -62,6 +62,19 @@ An outcome is fully decomposed when:
 
 Decomposition is a judgment call, not a formula. The goal is sufficiency for building, not exhaustive enumeration.
 
+## Consistency
+
+Internal consistency is a first-class concern at every phase. Each layer of the intent tree introduces more documents and more surface area for contradiction. A single index page is trivially self-consistent. Multiple outcome files can silently diverge from each other and from the index. Requirements across outcomes can conflict. Specifications can prescribe incompatible behaviors.
+
+At every phase boundary, before locking, perform a consistency review across two dimensions:
+
+- **Vertical consistency** — Does each document agree with the layer above it? Outcome detail files must match the index. Requirements must match their parent outcome. Specifications must match their requirement.
+- **Horizontal consistency** — Do documents at the same level agree with each other? Outcome files must not make contradictory claims or assume incompatible models of the system. Requirements across different outcomes must not prescribe conflicting behaviors. Specifications must not define mechanisms that cannot coexist.
+
+The expansion from one file to many is where inconsistency enters. When the product is a single index page, contradictions are visible on sight. The moment each outcome gets its own file, contradictions hide — one outcome's framing can drift from another's, and no single document reveals the conflict. The same is true when requirements fan out across outcomes. Each phase review must deliberately reunify the separate documents and read them as a set, not just individually.
+
+Inconsistency at any layer invalidates everything below it. Catching it early is cheap; catching it in specifications is expensive; catching it in implementation is worse.
+
 ## Phased Development
 
 Build the intent tree in three phases. Complete and review each phase before starting the next. Ambiguity compounds across layers — a vague outcome produces wrong requirements, which produce wrong specifications. Each phase is an annealing step: apply heat (scrutiny), let it settle (review), then lock it in before building the next layer on top.
@@ -88,6 +101,8 @@ Expand each outcome into its own directory and README. Why it matters, full veri
 - Obstacles are realistic, not hypothetical
 - Non-outcomes are clear enough that someone could push back on scope and point to this list
 
+**Consistency review:** Read all outcome files as a set. Check that no two outcomes make contradictory claims, imply overlapping scope, or assume incompatible models of the user, the system, or the domain. Each outcome was written in isolation — this review is the first time they are read together, and it's where silent divergence surfaces.
+
 Lock outcome detail before proceeding. Changes after this point ripple through everything below.
 
 ### Phase 2: Requirements
@@ -102,6 +117,8 @@ Decompose each outcome into requirements using the why/how/how-else chain. Map e
 - No requirement is redundant with another under the same outcome
 - The set of requirements under each outcome is sufficient — you can't describe a realistic failure that nothing addresses
 
+**Consistency review:** Read all requirements across all outcomes as a single set. Check that no two requirements — even under different outcomes — prescribe contradictory behaviors, make incompatible assumptions, or define the same concept differently. A requirement written under O1 may silently conflict with one under O3; neither file reveals this on its own. This review must also verify that requirements remain vertically consistent with their parent outcome detail — they should not introduce scope, assumptions, or framing that the outcome doesn't support.
+
 Lock requirements before proceeding. Specification changes are cheap; requirement changes are not.
 
 ### Phase 3: Specifications
@@ -111,8 +128,9 @@ Fill in the specification section of each requirement. Schemas, formats, algorit
 **Review criteria:**
 - An engineer or AI agent can build from this specification without asking clarifying questions
 - Edge cases are enumerated, not hand-waved
-- The specification doesn't contradict specifications in other requirements
 - The specification doesn't exceed what the requirement asks for (gold-plating)
+
+**Consistency review:** Read all specifications as a single set. Check that no specification prescribes behavior, formats, schemas, or mechanisms that conflict with any other specification — including those under different outcomes. Specifications are the most detailed layer and the most likely to introduce subtle incompatibilities (e.g., two specs defining the same data structure differently, or assuming contradictory ordering guarantees). Each specification must also remain vertically consistent with its parent requirement — it should implement what the requirement asks for, nothing more and nothing less.
 
 ### Why This Order Matters
 

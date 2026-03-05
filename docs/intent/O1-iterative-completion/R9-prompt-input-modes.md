@@ -17,4 +17,4 @@ _To be specified in Phase 3._
 - [ ] `cat prompt.md | ralph run` reads the prompt from stdin when no alias or file flag is provided
 - [ ] In all modes, the prompt content is read once at loop start and buffered in memory
 - [ ] The same buffered content is used for every iteration — changes to the prompt file on disk after loop start do not affect subsequent iterations
-- [ ] If the prompt source is empty, unreadable, or missing, Ralph exits with an error before starting the loop
+- [ ] Prompt source validation (missing, unreadable, or empty) is handled by O2/R4 — Fail-fast on invalid prompt source
