@@ -41,9 +41,9 @@ A loop runner that silently exits is a black box. The user re-runs the command, 
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| [R1](R1-exit-codes.md) | Distinct exit codes | draft |
-| [R2](R2-iteration-statistics.md) | Iteration statistics | draft |
-| [R3](R3-verbose-streaming.md) | Verbose output streaming | draft |
-| [R4](R4-dry-run.md) | Dry-run mode | draft |
-| [R5](R5-log-level-control.md) | Log level control | draft |
-| [R6](R6-iteration-progress.md) | Iteration progress reporting | draft |
+| [R1](R1-exit-codes.md) | Distinct exit codes | ready |
+| [R2](R2-iteration-statistics.md) | Iteration statistics | ready |
+| [R3](R3-verbose-streaming.md) | Verbose output streaming | ready |
+| [R4](R4-dry-run.md) | Dry-run mode | ready |
+| [R5](R5-log-level-control.md) | Log level control | ready |
+| [R6](R6-iteration-progress.md) | Iteration progress reporting | ready |

@@ -152,6 +152,47 @@ Other outcomes are not needed and dilute focus. One session per outcome, then a 
 
 The same pattern applies at any step where the volume of documents exceeds a single session's capacity. At Step 4 with many requirements, chunk by outcome. At Step 3 with many outcomes, chunk by outcome group. The compressed forms (outcome index, requirement one-liners) always fit in a single session and serve as the anchor for each focused session.
 
+#### Context by Step
+
+Each step requires different context. Earlier steps are lightweight — the tree barely exists. Later steps require tracing a path from the root down to the specific artifact being written. The principle: **load the locked ancestors of whatever you're creating, plus siblings for horizontal consistency.**
+
+**Step 1 — Outcome Index:**
+- This methodology document
+- The repository's main README (product context)
+
+Nothing else exists yet. The session's job is to compress the entire product into one table.
+
+**Step 2 — Outcome Detail:**
+- This methodology document
+- The locked outcome index (`docs/intent/README.md`)
+- All outcome READMEs written so far in this step (for horizontal consistency)
+
+If the number of outcomes is small enough to hold in one session, write them all and review as a set. If not, write one at a time, then run a dedicated consistency session that loads all outcome READMEs together.
+
+**Step 3 — Requirement Index:**
+- This methodology document
+- The outcome index
+- The outcome README being decomposed
+
+Work one outcome at a time. After all outcomes have requirement one-liners and risk tables, run a consistency session loading all outcome READMEs to review requirement one-liners across the full product.
+
+**Step 4 — Requirement Detail:**
+- The outcome index (product-level anchor)
+- The parent outcome README (requirement one-liners and risks — your anchor)
+- All requirement files under that outcome (for horizontal consistency within the outcome)
+
+The methodology document is optional here — the locked artifacts above provide the structural guidance. Work one outcome's requirements per session. After all requirement files exist, run a cross-outcome consistency session loading requirement files that are most likely to interact.
+
+**Step 5 — Specifications:**
+- The outcome index
+- The parent outcome README
+- The requirement file being specified
+- Related requirement files under the same outcome (for format and schema consistency)
+
+By this step, context is narrowest: you're filling in buildable detail for a single requirement, anchored by the locked layers above it. If specifications across different outcomes must agree on shared formats or schemas, run a focused consistency session loading just those specific requirement files.
+
+**Consistency review sessions** at any step follow a different pattern — they load documents *across* outcomes rather than *down* into one. Load the outcome index plus all documents at the layer being reviewed. These sessions read broadly rather than deeply.
+
 ### Why This Order Matters
 
 The five steps alternate between compression and expansion. Compressed forms (outcome one-liners, requirement one-liners) are easy to hold in your head and cheap to review for consistency. Expanded forms (outcome detail, requirement documents, specifications) add depth but also surface area for contradiction. By locking the compressed form before expanding, you ensure that the detail is anchored to a reviewed, consistent summary. If you write all layers at once, errors in the upper layers silently propagate downward and get baked into detail that feels authoritative but is wrong.
