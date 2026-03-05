@@ -31,27 +31,27 @@ Without a loop runner, the user manually invokes the AI CLI, reads its output, d
 
 | Risk | Mitigating Requirement |
 |----------|----------------------|
-| The AI CLI crashes or exits non-zero mid-execution | R1 — Process crash recovery with partial output capture |
-| Both success and failure signals appear in the same output | R2 — Signal precedence rules |
-| The AI process hangs indefinitely | R3 — Per-iteration timeout |
-| The AI never emits a signal and iterations run forever | R4 — Maximum iteration limit |
-| The AI repeatedly fails without making progress | R5 — Consecutive failure tracking |
-| Output grows without bound and exhausts memory | R6 — Output buffer management |
-| User sends SIGINT during AI execution | R7 — Graceful interruption handling |
-| The AI doesn't know it's in a loop or what signals to emit | R8 — Preamble injection |
-| User wants to run a one-off prompt without defining an alias in config | R9 — Prompt input modes |
-| Prompt file changes on disk during loop execution, causing inconsistent behavior across iterations | R9 — Prompt input modes (read once, buffer, reuse) |
+| The AI CLI crashes or exits non-zero mid-execution | [R1 — Process crash recovery with partial output capture](R1-process-crash-recovery.md) |
+| Both success and failure signals appear in the same output | [R2 — Signal precedence rules](R2-signal-precedence.md) |
+| The AI process hangs indefinitely | [R3 — Per-iteration timeout](R3-iteration-timeout.md) |
+| The AI never emits a signal and iterations run forever | [R4 — Maximum iteration limit](R4-max-iteration-limit.md) |
+| The AI repeatedly fails without making progress | [R5 — Consecutive failure tracking](R5-consecutive-failure-tracking.md) |
+| Output grows without bound and exhausts memory | [R6 — Output buffer management](R6-output-buffer-management.md) |
+| User sends SIGINT during AI execution | [R7 — Graceful interruption handling](R7-graceful-interruption.md) |
+| The AI doesn't know it's in a loop or what signals to emit | [R8 — Preamble injection](R8-preamble-injection.md) |
+| User wants to run a one-off prompt without defining an alias in config | [R9 — Prompt input modes](R9-prompt-input-modes.md) |
+| Prompt file changes on disk during loop execution, causing inconsistent behavior across iterations | [R9 — Prompt input modes (read once, buffer, reuse)](R9-prompt-input-modes.md) |
 
 ## Requirements
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| R1 | Process crash recovery with partial output capture | ready |
-| R2 | Signal precedence rules | ready |
-| R3 | Per-iteration timeout | ready |
-| R4 | Maximum iteration limit | ready |
-| R5 | Consecutive failure tracking | ready |
-| R6 | Output buffer management | ready |
-| R7 | Graceful interruption handling | ready |
-| R8 | Preamble injection | ready |
-| R9 | Prompt input modes | ready |
+| [R1](R1-process-crash-recovery.md) | Process crash recovery with partial output capture | ready |
+| [R2](R2-signal-precedence.md) | Signal precedence rules | ready |
+| [R3](R3-iteration-timeout.md) | Per-iteration timeout | ready |
+| [R4](R4-max-iteration-limit.md) | Maximum iteration limit | ready |
+| [R5](R5-consecutive-failure-tracking.md) | Consecutive failure tracking | ready |
+| [R6](R6-output-buffer-management.md) | Output buffer management | ready |
+| [R7](R7-graceful-interruption.md) | Graceful interruption handling | ready |
+| [R8](R8-preamble-injection.md) | Preamble injection | ready |
+| [R9](R9-prompt-input-modes.md) | Prompt input modes | ready |

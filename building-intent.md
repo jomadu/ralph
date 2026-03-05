@@ -158,7 +158,7 @@ The five steps alternate between compression and expansion. Compressed forms (ou
 
 ## Index — `docs/intent/README.md`
 
-The root index is a single page that maps the entire product. One entry per outcome: a one-line statement and its verification criteria.
+Link each outcome ID to that outcome's README. From the index, use `./O<n>-<slug>/README.md`.
 
 ```markdown
 # Intent
@@ -167,13 +167,13 @@ The root index is a single page that maps the entire product. One entry per outc
 
 | ID | Outcome | Verification |
 |----|---------|--------------|
-| O1 | Statement of what is true when this outcome is achieved | How a user proves it |
-| O2 | ... | ... |
+| [O1](./O1-<slug>/README.md) | Statement of what is true when this outcome is achieved | How a user proves it |
+| [O2](./O2-<slug>/README.md) | ... | ... |
 ```
 
 ## Outcome — `O<n>-<slug>/README.md`
 
-Each outcome directory has a README that fully defines the outcome.
+Each outcome directory has a README that fully defines the outcome. Link to requirement docs with `R<n>-<slug>.md`.
 
 ### Fields
 
@@ -217,15 +217,15 @@ Each outcome directory has a README that fully defines the outcome.
 
 | Risk | Mitigating Requirement |
 |------|----------------------|
-| What could prevent this outcome | R<n> — <Title> |
+| What could prevent this outcome | [R<n> — <Title>](R<n>-<slug>.md) |
 | ... | ... |
 
 ## Requirements
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| R1 | One-line summary | draft / ready / built / verified |
-| R2 | ... | ... |
+| [R1](R1-<slug>.md) | One-line summary | draft / ready / built / verified |
+| [R2](R2-<slug>.md) | ... | ... |
 ```
 
 The risks and requirements tables are appended in Step 3. During Steps 1 and 2, the outcome README ends after non-outcomes.

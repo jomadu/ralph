@@ -27,22 +27,22 @@ Different tasks need different loop parameters. A one-shot bootstrap needs 1 ite
 
 | Risk | Mitigating Requirement |
 |----------|----------------------|
-| Multiple config layers set the same key and user doesn't know which value is active | R1 — Configuration provenance tracking |
-| Config file has a typo in a key name and silently does nothing | R2 — Unknown key warnings |
-| Config file has invalid values (negative iterations, empty signal) | R3 — Configuration validation at load time |
-| Prompt source is missing, unreadable, or empty | R4 — Fail-fast on invalid prompt source |
-| Missing config files cause startup errors | R5 — Silent skip for absent config files |
-| User needs different signal strings, timeouts, or thresholds per prompt | R6 — Per-prompt loop setting overrides |
-| User can't discover which prompts or AI command aliases are available | R7 — Resource listing command |
+| Multiple config layers set the same key and user doesn't know which value is active | [R1 — Configuration provenance tracking](R1-configuration-provenance.md) |
+| Config file has a typo in a key name and silently does nothing | [R2 — Unknown key warnings](R2-unknown-key-warnings.md) |
+| Config file has invalid values (negative iterations, empty signal) | [R3 — Configuration validation at load time](R3-config-validation.md) |
+| Prompt source is missing, unreadable, or empty | [R4 — Fail-fast on invalid prompt source](R4-fail-fast-missing-prompt.md) |
+| Missing config files cause startup errors | [R5 — Silent skip for absent config files](R5-silent-skip-absent-config.md) |
+| User needs different signal strings, timeouts, or thresholds per prompt | [R6 — Per-prompt loop setting overrides](R6-per-prompt-overrides.md) |
+| User can't discover which prompts or AI command aliases are available | [R7 — Resource listing command](R7-prompt-listing.md) |
 
 ## Requirements
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| R1 | Configuration provenance tracking | draft |
-| R2 | Unknown key warnings | draft |
-| R3 | Configuration validation at load time | draft |
-| R4 | Fail-fast on invalid prompt source | draft |
-| R5 | Silent skip for absent config files | draft |
-| R6 | Per-prompt loop setting overrides | draft |
-| R7 | Resource listing command | draft |
+| [R1](R1-configuration-provenance.md) | Configuration provenance tracking | ready |
+| [R2](R2-unknown-key-warnings.md) | Unknown key warnings | ready |
+| [R3](R3-config-validation.md) | Configuration validation at load time | ready |
+| [R4](R4-fail-fast-missing-prompt.md) | Fail-fast on invalid prompt source | ready |
+| [R5](R5-silent-skip-absent-config.md) | Silent skip for absent config files | ready |
+| [R6](R6-per-prompt-overrides.md) | Per-prompt loop setting overrides | ready |
+| [R7](R7-prompt-listing.md) | Resource listing command | ready |

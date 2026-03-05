@@ -41,22 +41,22 @@ The cursor-agent case is the hardest. Unlike the other CLIs which emit plain tex
 
 | Risk | Mitigating Requirement |
 |----------|----------------------|
-| Each AI CLI has different flags for non-interactive stdin-based usage | R1 — Built-in command aliases |
-| Command strings require shell-style quoting (e.g., `--model "claude-3-5-sonnet"`) but Ralph doesn't use a shell | R2 — Shell-style command parsing |
-| User wants to use an AI CLI not in the built-in alias list | R3 — User-defined command aliases |
-| AI CLI requires environment variables (API keys, config paths) to function | R4 — Process environment inheritance |
-| An AI CLI emits structured output (JSON) instead of plain text | R1 — Built-in command aliases (wrapper script) |
-| User doesn't know which aliases are available or what commands they expand to | R5 — AI command alias resolution with clear errors |
-| Direct command string and alias are both specified, behavior is ambiguous | R6 — Command source precedence |
-| Wrapper script has its own dependency (jq) that may not be installed | R1 — Built-in command aliases (wrapper reports missing dependency) |
+| Each AI CLI has different flags for non-interactive stdin-based usage | [R1 — Built-in command aliases](R1-builtin-aliases.md) |
+| Command strings require shell-style quoting (e.g., `--model "claude-3-5-sonnet"`) but Ralph doesn't use a shell | [R2 — Shell-style command parsing](R2-command-parsing.md) |
+| User wants to use an AI CLI not in the built-in alias list | [R3 — User-defined command aliases](R3-user-defined-aliases.md) |
+| AI CLI requires environment variables (API keys, config paths) to function | [R4 — Process environment inheritance](R4-environment-inheritance.md) |
+| An AI CLI emits structured output (JSON) instead of plain text | [R1 — Built-in command aliases (wrapper script)](R1-builtin-aliases.md) |
+| User doesn't know which aliases are available or what commands they expand to | [R5 — AI command alias resolution with clear errors](R5-alias-resolution-errors.md) |
+| Direct command string and alias are both specified, behavior is ambiguous | [R6 — Command source precedence](R6-command-source-precedence.md) |
+| Wrapper script has its own dependency (jq) that may not be installed | [R1 — Built-in command aliases (wrapper reports missing dependency)](R1-builtin-aliases.md) |
 
 ## Requirements
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| R1 | Built-in command aliases | draft |
-| R2 | Shell-style command parsing | draft |
-| R3 | User-defined command aliases | draft |
-| R4 | Process environment inheritance | draft |
-| R5 | AI command alias resolution with clear errors | draft |
-| R6 | Command source precedence | draft |
+| [R1](R1-builtin-aliases.md) | Built-in command aliases | draft |
+| [R2](R2-command-parsing.md) | Shell-style command parsing | draft |
+| [R3](R3-user-defined-aliases.md) | User-defined command aliases | draft |
+| [R4](R4-environment-inheritance.md) | Process environment inheritance | draft |
+| [R5](R5-alias-resolution-errors.md) | AI command alias resolution with clear errors | draft |
+| [R6](R6-command-source-precedence.md) | Command source precedence | draft |

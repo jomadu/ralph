@@ -29,21 +29,21 @@ A loop runner that silently exits is a black box. The user re-runs the command, 
 
 | Risk | Mitigating Requirement |
 |----------|----------------------|
-| User scripts around Ralph can't distinguish termination reasons programmatically | R1 — Distinct exit codes |
-| User doesn't know how long iterations took or whether performance is degrading | R2 — Iteration statistics |
-| User wants to see what the AI is doing during execution | R3 — Verbose output streaming |
-| User wants to validate prompt assembly before committing to a long run | R4 — Dry-run mode |
-| Normal operation produces too much output and obscures the summary | R5 — Log level control |
-| User wants to suppress all non-error output for scripting | R5 — Log level control |
-| User doesn't know what iteration the loop is on during execution | R6 — Iteration progress reporting |
+| User scripts around Ralph can't distinguish termination reasons programmatically | [R1 — Distinct exit codes](R1-exit-codes.md) |
+| User doesn't know how long iterations took or whether performance is degrading | [R2 — Iteration statistics](R2-iteration-statistics.md) |
+| User wants to see what the AI is doing during execution | [R3 — Verbose output streaming](R3-verbose-streaming.md) |
+| User wants to validate prompt assembly before committing to a long run | [R4 — Dry-run mode](R4-dry-run.md) |
+| Normal operation produces too much output and obscures the summary | [R5 — Log level control](R5-log-level-control.md) |
+| User wants to suppress all non-error output for scripting | [R5 — Log level control](R5-log-level-control.md) |
+| User doesn't know what iteration the loop is on during execution | [R6 — Iteration progress reporting](R6-iteration-progress.md) |
 
 ## Requirements
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| R1 | Distinct exit codes | draft |
-| R2 | Iteration statistics | draft |
-| R3 | Verbose output streaming | draft |
-| R4 | Dry-run mode | draft |
-| R5 | Log level control | draft |
-| R6 | Iteration progress reporting | draft |
+| [R1](R1-exit-codes.md) | Distinct exit codes | draft |
+| [R2](R2-iteration-statistics.md) | Iteration statistics | draft |
+| [R3](R3-verbose-streaming.md) | Verbose output streaming | draft |
+| [R4](R4-dry-run.md) | Dry-run mode | draft |
+| [R5](R5-log-level-control.md) | Log level control | draft |
+| [R6](R6-iteration-progress.md) | Iteration progress reporting | draft |
