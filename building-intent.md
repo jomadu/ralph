@@ -1,4 +1,4 @@
-# Intent Model
+# Building Intent
 
 This document defines the model for documenting product intent. Intent documentation starts with outcomes and cascades into buildable specification.
 
@@ -137,6 +137,20 @@ Fill in the specification section of each requirement. Schemas, formats, algorit
 - The specification doesn't exceed what the requirement asks for (gold-plating)
 - Read all specifications as a single set: no specification prescribes behavior, formats, schemas, or mechanisms that conflict with any other specification
 - Each specification remains vertically consistent with its parent requirement — it implements what the requirement asks for, nothing more and nothing less
+
+### Working Sessions
+
+This document is a methodology for generating and reviewing the intent tree. It is not a dependency for working within the tree once it exists. The intent documents are self-describing — an agent or engineer reading the outcome index, an outcome README, and its requirement files has everything needed to do the work. The templates, phasing, and review criteria are construction scaffolding, not load-bearing walls.
+
+As the tree grows from outcomes to requirements to specifications, the total context exceeds what a single working session can hold. The intent structure is designed to be chunked by outcome. A session writing or reviewing specifications should load:
+
+1. The outcome index — the full product on one page
+2. The single outcome README being worked on — its risks and requirement one-liners
+3. The requirement files under that outcome only
+
+Other outcomes are not needed and dilute focus. One session per outcome, then a final session for cross-outcome consistency review.
+
+The same pattern applies at any step where the volume of documents exceeds a single session's capacity. At Step 4 with many requirements, chunk by outcome. At Step 3 with many outcomes, chunk by outcome group. The compressed forms (outcome index, requirement one-liners) always fit in a single session and serve as the anchor for each focused session.
 
 ### Why This Order Matters
 
