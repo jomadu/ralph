@@ -46,12 +46,12 @@ Without a loop runner, the user manually invokes the AI CLI, reads its output, d
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| R1 | Process crash recovery with partial output capture | draft |
-| R2 | Signal precedence rules | draft |
-| R3 | Per-iteration timeout | draft |
-| R4 | Maximum iteration limit | draft |
-| R5 | Consecutive failure tracking | draft |
-| R6 | Output buffer management | draft |
-| R7 | Graceful interruption handling | draft |
-| R8 | Preamble injection | draft |
-| R9 | Prompt input modes | draft |
+| R1 | Process crash recovery with partial output capture | ready |
+| R2 | Signal precedence rules | ready |
+| R3 | Per-iteration timeout | ready |
+| R4 | Maximum iteration limit | ready |
+| R5 | Consecutive failure tracking | ready |
+| R6 | Output buffer management | ready |
+| R7 | Graceful interruption handling | ready |
+| R8 | Preamble injection | ready |
+| R9 | Prompt input modes | ready |
