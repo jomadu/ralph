@@ -8,7 +8,15 @@ The system exits with distinct codes for each termination reason, enabling scrip
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -18,3 +26,7 @@ _To be specified in Phase 3._
 - [ ] Exit code 130: interrupted by SIGINT or SIGTERM
 - [ ] No two termination reasons share an exit code
 - [ ] Exit codes are consistent regardless of verbosity, log level, or other output settings
+
+## Dependencies
+
+_None identified._

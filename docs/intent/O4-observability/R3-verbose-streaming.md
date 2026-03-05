@@ -8,7 +8,15 @@ The system streams the AI CLI's output to the terminal in real time when verbose
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -17,3 +25,7 @@ _To be specified in Phase 3._
 - [ ] Without --verbose, AI CLI output is captured silently and not displayed to the terminal
 - [ ] AI output streaming is controlled solely by the --verbose flag — --log-level does not affect it (e.g., --verbose --log-level warn streams AI output but suppresses Ralph's debug messages)
 - [ ] --log-level debug without --verbose does not enable AI output streaming
+
+## Dependencies
+
+_None identified._

@@ -8,7 +8,15 @@ The system warns the user when a config file contains keys that are not part of 
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -16,3 +24,7 @@ _To be specified in Phase 3._
 - [ ] Unrecognized nested keys within known sections also produce warnings
 - [ ] Each warning identifies the key name and the config file path where it was found
 - [ ] The presence of unknown keys does not prevent Ralph from starting or running
+
+## Dependencies
+
+_None identified._

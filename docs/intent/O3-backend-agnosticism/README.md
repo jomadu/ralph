@@ -37,9 +37,9 @@ The cursor-agent case is the hardest. Unlike the other CLIs which emit plain tex
 - Ralph does not execute commands through a shell. Commands are parsed and exec'd directly. Users needing pipes, redirects, or shell expansion must wrap their command in a script.
 - Ralph does not provide vendor-specific adapters in core. The cursor-agent wrapper script is the model: a shim that normalizes a non-conforming CLI to stdin-text-in / stdout-text-out.
 
-## Obstacles
+## Risks
 
-| Obstacle | Mitigating Requirement |
+| Risk | Mitigating Requirement |
 |----------|----------------------|
 | Each AI CLI has different flags for non-interactive stdin-based usage | R1 — Built-in command aliases |
 | Command strings require shell-style quoting (e.g., `--model "claude-3-5-sonnet"`) but Ralph doesn't use a shell | R2 — Shell-style command parsing |

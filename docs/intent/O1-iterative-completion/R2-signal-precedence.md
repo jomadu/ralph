@@ -8,7 +8,15 @@ The system resolves conflicting signals in a single iteration's output using a d
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -18,3 +26,7 @@ _To be specified in Phase 3._
 - [ ] When neither signal appears in output, the iteration is treated as no-signal — the consecutive failure counter is reset to zero and the loop proceeds to the next iteration
 - [ ] Signal scanning uses substring matching — the signal string can appear anywhere in the output
 - [ ] Signal scanning occurs after the AI CLI process exits, not during streaming
+
+## Dependencies
+
+_None identified._

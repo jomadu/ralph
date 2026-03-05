@@ -25,9 +25,9 @@ A loop runner that silently exits is a black box. The user re-runs the command, 
 - Ralph does not integrate with external monitoring, alerting, or observability systems.
 - Ralph does not support replaying or debugging past executions.
 
-## Obstacles
+## Risks
 
-| Obstacle | Mitigating Requirement |
+| Risk | Mitigating Requirement |
 |----------|----------------------|
 | User scripts around Ralph can't distinguish termination reasons programmatically | R1 — Distinct exit codes |
 | User doesn't know how long iterations took or whether performance is degrading | R2 — Iteration statistics |

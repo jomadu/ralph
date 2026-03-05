@@ -8,7 +8,15 @@ The system allows users to define custom AI command aliases in config files. Use
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -17,3 +25,7 @@ _To be specified in Phase 3._
 - [ ] A user-defined alias with the same name as a built-in alias overrides the built-in
 - [ ] Aliases defined in workspace config override aliases with the same name defined in global config
 - [ ] User-defined alias values are parsed using the same shell-style command parsing as direct commands
+
+## Dependencies
+
+_None identified._

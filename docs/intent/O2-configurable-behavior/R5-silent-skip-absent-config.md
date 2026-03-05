@@ -8,7 +8,15 @@ The system silently skips config files that do not exist at their default locati
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -16,3 +24,7 @@ _To be specified in Phase 3._
 - [ ] A missing workspace config file (./ralph-config.yml) does not produce an error or warning
 - [ ] When no config files are present, built-in defaults are used for all values
 - [ ] When --config specifies an explicit path that does not exist, Ralph exits with an error (the user explicitly named a file, so its absence is an error)
+
+## Dependencies
+
+_None identified._

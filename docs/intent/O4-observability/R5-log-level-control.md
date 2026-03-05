@@ -8,7 +8,15 @@ The system supports configurable log verbosity levels, allowing the user to cont
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -18,3 +26,7 @@ _To be specified in Phase 3._
 - [ ] --verbose sets the effective log level to debug (in addition to enabling AI output streaming per O4/R3)
 - [ ] --log-level explicitly sets the log level and takes precedence over --quiet and --verbose for log verbosity, but does not affect AI output streaming
 - [ ] All log output goes to stderr
+
+## Dependencies
+
+_None identified._

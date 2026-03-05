@@ -8,7 +8,15 @@ The system enforces a configurable upper bound on the number of iterations, stop
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -18,3 +26,7 @@ _To be specified in Phase 3._
 - [ ] The limit is configurable through the standard configuration hierarchy
 - [ ] Unlimited mode (--unlimited / -u) disables the iteration limit, running until a success signal, failure threshold, or interruption
 - [ ] The iteration limit must be at least 1
+
+## Dependencies
+
+_None identified._

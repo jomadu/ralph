@@ -8,7 +8,15 @@ The system verifies that the prompt source is valid and produces usable content 
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -18,3 +26,7 @@ _To be specified in Phase 3._
 - [ ] If the file exists but is not readable (permission denied), Ralph exits with a clear error message
 - [ ] When reading from stdin, Ralph exits with an error if stdin is empty (zero bytes)
 - [ ] All checks happen at startup, not deferred to the first iteration
+
+## Dependencies
+
+_None identified._

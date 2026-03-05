@@ -8,7 +8,15 @@ The system wraps the user's prompt with loop state — iteration number, iterati
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -18,3 +26,7 @@ _To be specified in Phase 3._
 - [ ] Preamble injection is enabled by default
 - [ ] Preamble can be disabled globally (loop.preamble: false) or per-prompt (prompts.<name>.loop.preamble: false)
 - [ ] When preamble is disabled, the prompt file content is piped directly to the AI CLI without any wrapping
+
+## Dependencies
+
+_None identified._

@@ -8,7 +8,15 @@ The system prints the fully assembled prompt — preamble plus prompt content �
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -17,3 +25,7 @@ _To be specified in Phase 3._
 - [ ] The output shows exactly what would be piped to the AI CLI's stdin on the first iteration
 - [ ] Configuration validation still runs in dry-run mode — invalid config produces errors before the prompt is displayed
 - [ ] Dry-run exits with code 0 on success
+
+## Dependencies
+
+_None identified._

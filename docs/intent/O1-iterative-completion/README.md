@@ -27,9 +27,9 @@ Without a loop runner, the user manually invokes the AI CLI, reads its output, d
 - Ralph does not re-read the prompt between iterations. The prompt is loaded once at loop start and reused. The preamble changes per iteration (iteration count, etc.), but the underlying prompt content is immutable for the duration of the loop.
 - Ralph does not retry a failed AI CLI process within the same iteration. A crash counts as one iteration.
 
-## Obstacles
+## Risks
 
-| Obstacle | Mitigating Requirement |
+| Risk | Mitigating Requirement |
 |----------|----------------------|
 | The AI CLI crashes or exits non-zero mid-execution | R1 — Process crash recovery with partial output capture |
 | Both success and failure signals appear in the same output | R2 — Signal precedence rules |

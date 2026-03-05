@@ -8,7 +8,15 @@ The system handles SIGINT and SIGTERM by terminating the current AI CLI process,
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -17,3 +25,7 @@ _To be specified in Phase 3._
 - [ ] Ralph exits with code 130 after handling the interruption
 - [ ] If no AI CLI process is running at the time of the signal (e.g., between iterations), Ralph exits immediately with code 130
 - [ ] A second SIGINT/SIGTERM during the wait forces immediate exit
+
+## Dependencies
+
+_None identified._

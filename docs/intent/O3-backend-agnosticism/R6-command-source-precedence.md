@@ -8,7 +8,15 @@ The system resolves the AI command from multiple possible sources using a determ
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -19,3 +27,7 @@ _To be specified in Phase 3._
 - [ ] There is no built-in default for ai_cmd or ai_cmd_alias — if no layer provides a value, resolution fails (see O3-R5)
 - [ ] At each precedence layer, a direct command (ai_cmd) takes precedence over an alias (ai_cmd_alias)
 - [ ] The resolved command source is visible in debug-level logging
+
+## Dependencies
+
+_None identified._

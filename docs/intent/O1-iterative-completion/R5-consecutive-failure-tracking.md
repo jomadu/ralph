@@ -8,7 +8,15 @@ The system tracks consecutive iterations that produce a failure signal and abort
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -18,3 +26,7 @@ _To be specified in Phase 3._
 - [ ] When the counter reaches the failure threshold, Ralph aborts and exits with code 1
 - [ ] The default failure threshold is 3
 - [ ] The threshold is configurable through the standard configuration hierarchy
+
+## Dependencies
+
+_None identified._

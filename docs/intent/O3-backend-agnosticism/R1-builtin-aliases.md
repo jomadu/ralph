@@ -8,7 +8,15 @@ The system ships with built-in command aliases for known AI CLIs, encoding the c
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -18,3 +26,7 @@ _To be specified in Phase 3._
 - [ ] User-defined aliases with the same name as a built-in alias override the built-in
 - [ ] The cursor-agent alias resolves to a wrapper script ([`cursor-wrapper.sh`](../../../scripts/cursor-wrapper.sh)) that parses structured JSON output and emits plain text suitable for signal scanning
 - [ ] If a wrapper script has a missing dependency (e.g., jq), it reports the missing dependency clearly
+
+## Dependencies
+
+_None identified._

@@ -23,9 +23,9 @@ Different tasks need different loop parameters. A one-shot bootstrap needs 1 ite
 - Ralph does not validate prompt file content — only that the file exists and is readable.
 - Ralph does not support config inheritance between prompt aliases. Each alias independently overrides the root `loop` section.
 
-## Obstacles
+## Risks
 
-| Obstacle | Mitigating Requirement |
+| Risk | Mitigating Requirement |
 |----------|----------------------|
 | Multiple config layers set the same key and user doesn't know which value is active | R1 — Configuration provenance tracking |
 | Config file has a typo in a key name and silently does nothing | R2 — Unknown key warnings |

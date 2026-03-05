@@ -8,7 +8,15 @@ The system enforces a configurable time limit on each AI CLI process invocation,
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -17,3 +25,7 @@ _To be specified in Phase 3._
 - [ ] A timed-out iteration counts as one completed iteration toward the max iteration limit
 - [ ] When iteration_timeout is 0 or unset, no time limit is enforced
 - [ ] The timeout applies to each iteration independently — a 60-second timeout means each iteration gets 60 seconds, not 60 seconds total
+
+## Dependencies
+
+_None identified._

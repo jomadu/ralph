@@ -8,7 +8,15 @@ The system allows each prompt alias to override any loop configuration value ind
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -17,3 +25,7 @@ _To be specified in Phase 3._
 - [ ] Environment variables and CLI flags still override prompt-level settings
 - [ ] Unspecified prompt-level values inherit from the root loop section
 - [ ] Each alias's overrides are independent — configuring one alias does not affect any other alias
+
+## Dependencies
+
+_None identified._

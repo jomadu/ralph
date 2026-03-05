@@ -10,7 +10,15 @@ A crash does not receive special treatment beyond what the loop already provides
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -20,3 +28,7 @@ _To be specified in Phase 3._
 - [ ] A crash counts as one completed iteration toward the max iteration limit
 - [ ] The loop proceeds to the next iteration after a crash (unless max iterations or failure threshold is reached)
 - [ ] Ralph does not retry the AI CLI process within the same iteration
+
+## Dependencies
+
+_None identified._

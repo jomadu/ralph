@@ -8,7 +8,15 @@ The system reports the current iteration number at the start of each iteration s
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -16,3 +24,7 @@ _To be specified in Phase 3._
 - [ ] Progress messages are emitted at info log level
 - [ ] Progress messages go to stderr so they do not interfere with AI output capture or stdout piping
 - [ ] Progress messages are suppressed when log level is set above info (--quiet or --log-level warn/error)
+
+## Dependencies
+
+_None identified._

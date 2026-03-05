@@ -8,7 +8,15 @@ The system passes the current process's environment variables and working direct
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -16,3 +24,7 @@ _To be specified in Phase 3._
 - [ ] The AI CLI process's working directory is the same as Ralph's working directory
 - [ ] Environment variables set by the user before invoking Ralph (API keys, PATH additions, config paths) are available to the AI CLI
 - [ ] Ralph does not modify, filter, or sanitize the inherited environment
+
+## Dependencies
+
+_None identified._

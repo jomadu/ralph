@@ -8,7 +8,15 @@ The system validates all resolved configuration values at load time and fails fa
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -22,3 +30,7 @@ _To be specified in Phase 3._
 - [ ] A prompt alias with an empty path produces a validation error
 - [ ] Validation errors prevent the loop from starting
 - [ ] Error messages identify the invalid value, the field name, and the config source (provenance)
+
+## Dependencies
+
+_None identified._

@@ -8,7 +8,15 @@ The system accepts prompts from multiple sources — a configured alias, a direc
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -18,3 +26,7 @@ _To be specified in Phase 3._
 - [ ] In all modes, the prompt content is read once at loop start and buffered in memory
 - [ ] The same buffered content is used for every iteration — changes to the prompt file on disk after loop start do not affect subsequent iterations
 - [ ] Prompt source validation (missing, unreadable, or empty) is handled by O2/R4 — Fail-fast on invalid prompt source
+
+## Dependencies
+
+_None identified._

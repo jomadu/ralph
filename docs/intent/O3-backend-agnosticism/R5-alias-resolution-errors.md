@@ -8,7 +8,15 @@ The system resolves AI command aliases to executable command strings and produce
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -16,3 +24,7 @@ _To be specified in Phase 3._
 - [ ] When an unknown alias is specified, Ralph exits with an error that names the unknown alias and lists available aliases
 - [ ] When no AI command is configured (no alias and no direct command), Ralph exits with an error explaining that an AI command must be configured
 - [ ] Resolution errors occur at startup, before the loop begins
+
+## Dependencies
+
+_None identified._

@@ -8,7 +8,15 @@ The system provides a command to list configured resources — prompt aliases an
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -19,3 +27,7 @@ _To be specified in Phase 3._
 - [ ] Each AI command alias entry shows the alias name and the resolved command string
 - [ ] User-defined aliases that override a built-in are indicated as such
 - [ ] The output is human-readable and formatted for terminal display
+
+## Dependencies
+
+_None identified._

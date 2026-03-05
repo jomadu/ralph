@@ -37,26 +37,22 @@ Starting from an outcome, ask three questions repeatedly:
 
 3. **"Why does this requirement exist?"** — For each candidate requirement, trace back up. It must connect to the outcome. If you can't articulate why, the requirement is either misplaced (belongs under a different outcome) or unjustified (shouldn't exist).
 
-### Obstacles
+### Risk Analysis
 
-For each outcome, ask **"what could prevent this from being true?"** Each answer is an obstacle. Obstacles are the primary tool for finding requirements you'd otherwise discover during implementation.
+For each outcome, ask **"what could prevent this from being true?"** Each answer is a risk. Risks surface requirements you'd otherwise discover during implementation. Each risk is documented in the outcome README with a reference to the requirement that mitigates it, providing traceability from risk to solution.
 
-Every obstacle must either:
-- Map to an existing requirement that mitigates it, or
-- Surface a new requirement that needs to be added
+Every risk must either map to an existing requirement or surface a new one. If a risk has no mitigating requirement, the decomposition is incomplete.
 
-If an obstacle has no mitigating requirement, the decomposition is incomplete.
-
-Examples of obstacles for a loop runner:
-- *"The AI CLI crashes mid-execution"* — surfaces a requirement for process crash recovery
-- *"Both success and failure signals appear in the output"* — surfaces a requirement for signal precedence rules
-- *"The user doesn't know which config value is active"* — surfaces a requirement for provenance tracking
+Examples of risks and the requirements they produce:
+- *"The AI CLI crashes mid-execution"* → a requirement for process crash recovery
+- *"Both success and failure signals appear in the output"* → a requirement for signal precedence rules
+- *"The user doesn't know which config value is active"* → a requirement for provenance tracking
 
 ### Completeness
 
 An outcome is fully decomposed when:
 - Every "how" question has been answered with a requirement
-- Every obstacle has a mitigating requirement
+- Every risk you can identify maps to a mitigating requirement
 - Every requirement traces back to the outcome via "why"
 - You cannot describe a realistic failure scenario that no requirement addresses
 
@@ -64,26 +60,26 @@ Decomposition is a judgment call, not a formula. The goal is sufficiency for bui
 
 ## Consistency
 
-Internal consistency is a first-class concern at every phase. Each layer of the intent tree introduces more documents and more surface area for contradiction. A single index page is trivially self-consistent. Multiple outcome files can silently diverge from each other and from the index. Requirements across outcomes can conflict. Specifications can prescribe incompatible behaviors.
+Internal consistency is a first-class concern at every step. Each layer of the intent tree introduces more documents and more surface area for contradiction. A single index page is trivially self-consistent. Multiple outcome files can silently diverge from each other and from the index. Requirements across outcomes can conflict. Specifications can prescribe incompatible behaviors.
 
-At every phase boundary, before locking, perform a consistency review across two dimensions:
+At every step boundary, before locking, perform a consistency review across two dimensions:
 
 - **Vertical consistency** — Does each document agree with the layer above it? Outcome detail files must match the index. Requirements must match their parent outcome. Specifications must match their requirement.
 - **Horizontal consistency** — Do documents at the same level agree with each other? Outcome files must not make contradictory claims or assume incompatible models of the system. Requirements across different outcomes must not prescribe conflicting behaviors. Specifications must not define mechanisms that cannot coexist.
 
-The expansion from one file to many is where inconsistency enters. When the product is a single index page, contradictions are visible on sight. The moment each outcome gets its own file, contradictions hide — one outcome's framing can drift from another's, and no single document reveals the conflict. The same is true when requirements fan out across outcomes. Each phase review must deliberately reunify the separate documents and read them as a set, not just individually.
+The expansion from one file to many is where inconsistency enters. When the product is a single index page, contradictions are visible on sight. The moment each outcome gets its own file, contradictions hide — one outcome's framing can drift from another's, and no single document reveals the conflict. The same is true when requirements fan out across outcomes. Each step's review must deliberately reunify the separate documents and read them as a set, not just individually.
 
 Inconsistency at any layer invalidates everything below it. Catching it early is cheap; catching it in specifications is expensive; catching it in implementation is worse.
 
 ## Phased Development
 
-Build the intent tree in three phases. Complete and review each phase before starting the next. Ambiguity compounds across layers — a vague outcome produces wrong requirements, which produce wrong specifications. Each phase is an annealing step: apply heat (scrutiny), let it settle (review), then lock it in before building the next layer on top.
+Build the intent tree in five steps. Each step produces artifacts, reviews them, and locks them before the next step begins. The pattern is **compress, then expand** — write one-liners first, then expand into full documents. This happens twice: once for outcomes, once for requirements. Compressed forms are cheap to review for consistency because everything fits on one page. Expanded forms are reviewed against the locked compression above them.
 
-### Phase 1a: Outcome Index
+### Step 1: Outcome Index
 
-Write the root `README.md` first. One table — each outcome as a one-line statement with its verification criteria. No directories, no detail. This is the product on a single page.
+Write the root `README.md`. One table — each outcome as a one-line statement with its verification criteria. No directories, no detail. This is the product on a single page.
 
-**Review criteria:**
+**Review:**
 - Each outcome is a present-tense assertion about the world, not a feature description
 - Outcomes don't overlap — if two outcomes could share a requirement, they may be the same outcome
 - Verification criteria are observable by a user, not by a test suite
@@ -92,49 +88,59 @@ Write the root `README.md` first. One table — each outcome as a one-line state
 
 Lock the index before expanding. If the one-liners aren't right, the detail won't save them.
 
-### Phase 1b: Outcome Detail
+### Step 2: Outcome Detail
 
-Expand each outcome into its own directory and README. Why it matters, full verification, non-outcomes, obstacles. The index is the contract; the detail is the justification.
+Expand each outcome into its own directory and README. Statement, why it matters, full verification, non-outcomes. These files define the problem space. They do not reference requirements or risks — those come later.
 
-**Review criteria:**
-- The detail is consistent with the one-liner in the index — if they diverge, fix the index first
-- Obstacles are realistic, not hypothetical
+**Review:**
+- Each outcome detail is consistent with its one-liner in the index — if they diverge, fix the index first
 - Non-outcomes are clear enough that someone could push back on scope and point to this list
-
-**Consistency review:** Read all outcome files as a set. Check that no two outcomes make contradictory claims, imply overlapping scope, or assume incompatible models of the user, the system, or the domain. Each outcome was written in isolation — this review is the first time they are read together, and it's where silent divergence surfaces.
+- Read all outcome files as a set: no two outcomes make contradictory claims, imply overlapping scope, or assume incompatible models of the user, the system, or the domain
 
 Lock outcome detail before proceeding. Changes after this point ripple through everything below.
 
-### Phase 2: Requirements
+### Step 3: Requirement Index
 
-Decompose each outcome into requirements using the why/how/how-else chain. Map every obstacle to a mitigating requirement. Write the requirement statement and acceptance criteria. No specifications yet — stay at the "what," not the "how."
+Decompose each outcome into requirements using the why/how/how-else chain and risk analysis (see Decomposition). For each outcome, append two tables to its README: a risks table mapping each risk to its mitigating requirement, and a requirements table with one-line summaries. No requirement documents yet.
 
-**Review criteria:**
+This is the compressed form of the requirements layer. All requirement one-liners and risk mappings across all outcomes should be reviewable as a set, the same way the outcome index was.
+
+**Review:**
 - Every requirement traces to exactly one outcome
-- Every obstacle has a mitigating requirement
 - Requirements are capabilities ("the system detects X"), not implementations ("use a regex to scan for X")
-- Acceptance criteria are concrete and testable
 - No requirement is redundant with another under the same outcome
+- Every risk maps to a mitigating requirement
 - The set of requirements under each outcome is sufficient — you can't describe a realistic failure that nothing addresses
+- Read all requirement one-liners across all outcomes as a single set: no two requirements prescribe contradictory capabilities or overlap in scope
 
-**Consistency review:** Read all requirements across all outcomes as a single set. Check that no two requirements — even under different outcomes — prescribe contradictory behaviors, make incompatible assumptions, or define the same concept differently. A requirement written under O1 may silently conflict with one under O3; neither file reveals this on its own. This review must also verify that requirements remain vertically consistent with their parent outcome detail — they should not introduce scope, assumptions, or framing that the outcome doesn't support.
+Lock requirement one-liners before expanding.
+
+### Step 4: Requirement Detail
+
+Expand each requirement into its own file within its outcome directory. Requirement statement, acceptance criteria. No specifications yet — stay at the "what," not the "how."
+
+**Review:**
+- Each requirement document is consistent with its one-liner in the outcome README — if they diverge, fix the one-liner first
+- Acceptance criteria are concrete and testable
+- Read all requirement documents across all outcomes as a single set: no two requirements prescribe contradictory behaviors, make incompatible assumptions, or define the same concept differently
+- Requirements remain vertically consistent with their parent outcome detail — they do not introduce scope, assumptions, or framing that the outcome doesn't support
 
 Lock requirements before proceeding. Specification changes are cheap; requirement changes are not.
 
-### Phase 3: Specifications
+### Step 5: Specifications
 
 Fill in the specification section of each requirement. Schemas, formats, algorithms, edge cases, error handling. This is where implementation detail lives.
 
-**Review criteria:**
+**Review:**
 - An engineer or AI agent can build from this specification without asking clarifying questions
 - Edge cases are enumerated, not hand-waved
 - The specification doesn't exceed what the requirement asks for (gold-plating)
-
-**Consistency review:** Read all specifications as a single set. Check that no specification prescribes behavior, formats, schemas, or mechanisms that conflict with any other specification — including those under different outcomes. Specifications are the most detailed layer and the most likely to introduce subtle incompatibilities (e.g., two specs defining the same data structure differently, or assuming contradictory ordering guarantees). Each specification must also remain vertically consistent with its parent requirement — it should implement what the requirement asks for, nothing more and nothing less.
+- Read all specifications as a single set: no specification prescribes behavior, formats, schemas, or mechanisms that conflict with any other specification
+- Each specification remains vertically consistent with its parent requirement — it implements what the requirement asks for, nothing more and nothing less
 
 ### Why This Order Matters
 
-Each layer is a lossy compression of the intent above it. Requirements are a compression of outcomes; specifications are a compression of requirements. If you write all three at once, errors in the upper layers silently propagate downward and get baked into detail that feels authoritative but is wrong. Phasing forces you to get the intent right before you commit to the mechanism.
+The five steps alternate between compression and expansion. Compressed forms (outcome one-liners, requirement one-liners) are easy to hold in your head and cheap to review for consistency. Expanded forms (outcome detail, requirement documents, specifications) add depth but also surface area for contradiction. By locking the compressed form before expanding, you ensure that the detail is anchored to a reviewed, consistent summary. If you write all layers at once, errors in the upper layers silently propagate downward and get baked into detail that feels authoritative but is wrong.
 
 ## Index — `docs/intent/README.md`
 
@@ -169,7 +175,7 @@ Each outcome directory has a README that fully defines the outcome.
 
 **Non-outcomes** — What this outcome explicitly does not cover. Prevents scope creep and clarifies boundaries.
 
-**Obstacles** — What could prevent this outcome from being true. Each obstacle must map to a mitigating requirement. Obstacles are discovered by asking *"what could go wrong?"* and are the primary mechanism for surfacing missing requirements.
+**Risks** — What could prevent this outcome from being true. Each risk maps to a mitigating requirement, providing traceability from risk to solution. Risks are discovered through risk analysis during decomposition (see Decomposition).
 
 ### Template
 
@@ -193,10 +199,10 @@ Each outcome directory has a README that fully defines the outcome.
 - <What this does not cover>
 - <What this is not responsible for>
 
-## Obstacles
+## Risks
 
-| Obstacle | Mitigating Requirement |
-|----------|----------------------|
+| Risk | Mitigating Requirement |
+|------|----------------------|
 | What could prevent this outcome | R<n> — <Title> |
 | ... | ... |
 
@@ -208,6 +214,8 @@ Each outcome directory has a README that fully defines the outcome.
 | R2 | ... | ... |
 ```
 
+The risks and requirements tables are appended in Step 3. During Steps 1 and 2, the outcome README ends after non-outcomes.
+
 ## Requirement — `R<n>-<slug>.md`
 
 Each requirement file contains both the requirement statement and its buildable specification. One file, two sections — the "what" and the "how" stay together.
@@ -218,9 +226,14 @@ Each requirement file contains both the requirement statement and its buildable 
 
 **Requirement** — What the system must do. Written as a capability statement.
 
-**Specification** — The buildable detail. Schemas, formats, algorithms, edge cases, error handling. An engineer or AI agent reads this section and implements from it.
+**Specification** — The buildable detail. Schemas, formats, algorithms, edge cases, error handling. An engineer or AI agent reads this section and implements from it. This section can use subsections, code blocks, tables, and diagrams as needed. It includes two standard subsections:
+
+- **Edge cases** — A structured table of boundary conditions and the system's expected behavior for each. Forces enumeration rather than prose — every edge case is a row, not a paragraph.
+- **Examples** — Concrete scenarios with input, expected output, and how to verify the result. Examples bridge the gap between abstract acceptance criteria and buildable understanding. An implementer can run the example and check their work.
 
 **Acceptance criteria** — Concrete conditions that must be true for this requirement to be considered met.
+
+**Dependencies** *(optional)* — Other requirements or system capabilities that must exist before this requirement can be implemented. Omit if the requirement is self-contained.
 
 ### Template
 
@@ -239,10 +252,35 @@ Each requirement file contains both the requirement statement and its buildable 
 
 <This section can be as long as needed. Use subsections, code blocks, tables, diagrams.>
 
+### Edge cases
+
+| Condition | Expected Behavior |
+|-----------|-------------------|
+| <Boundary condition> | <How the system responds> |
+| <Error scenario> | <How the system responds> |
+
+### Examples
+
+#### <Scenario name>
+
+**Input:**
+<Input data, command, or setup>
+
+**Expected output:**
+<Output data, behavior, or result>
+
+**Verification:**
+- <How to verify the outcome>
+
 ## Acceptance criteria
 
 - [ ] <Concrete, testable condition>
 - [ ] <...>
+
+## Dependencies
+
+- <R<n> — Requirement that must exist first>
+- <Other prerequisite>
 ```
 
 ## Rules

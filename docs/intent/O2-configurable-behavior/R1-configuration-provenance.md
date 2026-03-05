@@ -8,7 +8,15 @@ The system tracks the source layer of each resolved configuration value so the u
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -16,3 +24,7 @@ _To be specified in Phase 3._
 - [ ] Provenance information is available via debug-level logging
 - [ ] When multiple layers set the same key, the highest-precedence layer wins and the provenance reflects that winning layer
 - [ ] Precedence order is: CLI flags > environment variables > workspace config > global config > built-in defaults
+
+## Dependencies
+
+_None identified._

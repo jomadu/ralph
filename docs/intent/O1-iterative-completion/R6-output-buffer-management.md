@@ -8,7 +8,15 @@ The system captures AI CLI output into a bounded buffer, discarding the oldest c
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -18,3 +26,7 @@ _To be specified in Phase 3._
 - [ ] The default buffer size is 10MB (10,485,760 bytes)
 - [ ] The buffer size is configurable through the standard configuration hierarchy
 - [ ] Each iteration starts with a fresh, empty buffer
+
+## Dependencies
+
+_None identified._

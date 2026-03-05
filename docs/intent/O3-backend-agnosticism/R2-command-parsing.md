@@ -8,7 +8,15 @@ The system parses command strings using shell-style quoting rules — supporting
 
 ## Specification
 
-_To be specified in Phase 3._
+_To be specified._
+
+### Edge cases
+
+_To be specified._
+
+### Examples
+
+_To be specified._
 
 ## Acceptance criteria
 
@@ -17,3 +25,7 @@ _To be specified in Phase 3._
 - [ ] Escaped characters within quoted strings are handled
 - [ ] The parsed command is executed directly via exec, not through a shell
 - [ ] Shell features (pipes, redirects, glob expansion, variable substitution) are not interpreted and do not cause silent misbehavior
+
+## Dependencies
+
+_None identified._
