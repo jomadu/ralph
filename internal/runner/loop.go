@@ -5,13 +5,13 @@ import (
 	"context"
 	"errors"
 	"io"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/maxdunn/ralph/internal/config"
+	"github.com/maxdunn/ralph/internal/logger"
 )
 
 // Exit code errors
@@ -125,15 +125,15 @@ func Loop(
 		if iterationMode == "max-iterations" && i > maxIterations {
 			// Max iterations exhausted without success signal
 			// Report statistics before exit (O4/R2)
-			log.Println(stats.Report())
+			logger.Info(stats.Report())
 			return ExitCodeExhausted
 		}
 
 		// Emit iteration progress message to stderr (O4/R6)
 		if iterationMode == "unlimited" {
-			log.Printf("INFO: Iteration %d (unlimited)", i)
+			logger.Info("Iteration %d (unlimited)", i)
 		} else {
-			log.Printf("INFO: Iteration %d/%d", i, maxIterations)
+			logger.Info("Iteration %d/%d", i, maxIterations)
 		}
 
 		result := RunIteration(ctx, i, aiCmd, promptContent, cfg, contextStrings, verbose)
@@ -149,7 +149,7 @@ func Loop(
 
 		// Log crashes (non-zero exit) at warn level (O1/R1)
 		if result.ExitCode != 0 {
-			log.Printf("WARN: AI process exited with code %d (crash)", result.ExitCode)
+			logger.Warn("AI process exited with code %d (crash)", result.ExitCode)
 		}
 
 		// Scan for signals after process exit
@@ -159,14 +159,14 @@ func Loop(
 		switch outcome {
 		case OutcomeSuccess:
 			// Success signal found - report statistics and exit with success (O4/R2)
-			log.Println(stats.Report())
+			logger.Info(stats.Report())
 			return nil
 		case OutcomeFailure:
 			// Failure signal found - increment consecutive failure counter
 			consecutiveFailures++
 			if consecutiveFailures >= failureThreshold {
 				// Failure threshold reached - report statistics and abort loop (O4/R2)
-				log.Println(stats.Report())
+				logger.Info(stats.Report())
 				return ExitCodeFailureThreshold
 			}
 			// Continue to next iteration

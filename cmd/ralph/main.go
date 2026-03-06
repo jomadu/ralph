@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/maxdunn/ralph/internal/cmdparse"
 	"github.com/maxdunn/ralph/internal/config"
+	"github.com/maxdunn/ralph/internal/logger"
 	"github.com/maxdunn/ralph/internal/prompt"
 	"github.com/maxdunn/ralph/internal/runner"
 )
@@ -134,6 +135,17 @@ var runCmd = &cobra.Command{
 
 		// Overlay CLI flags (after prompt overrides, so CLI takes precedence)
 		config.OverlayCLIFlags(&cfg, cliFlags)
+
+		// Initialize logger with effective log level (O4/R5)
+		// Precedence: --log-level > --quiet > --verbose > config > default (info)
+		logLevel := cfg.Loop.LogLevel.Value
+		if cmd.Flags().Changed("verbose") && !cmd.Flags().Changed("log-level") && !cmd.Flags().Changed("quiet") {
+			logLevel = "debug"
+		}
+		if err := logger.SetLevel(logLevel); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
 
 		// Load prompt content
 		src, err := prompt.LoadPrompt(mode, alias, fileFlag, &cfg)
