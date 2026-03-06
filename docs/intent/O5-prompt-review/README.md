@@ -54,4 +54,28 @@ The review output path (`--review-output` or the temp directory) and the prompt 
 - The reviewer does not replace human judgment on content or correctness. It checks structure and discipline relevant to loop behavior.
 - The reviewer is not a general-purpose markdown or prose linter. Evaluation is tuned for Ralph prompts and Ralph’s execution model (fresh process per iteration, filesystem state, preamble, signal scanning).
 
-Risks and requirements tables will be added in Step 3 (Requirement Index).
+## Risks
+
+| Risk | Mitigating Requirement |
+|------|------------------------|
+| User runs review with stdin and `--apply` but omits `--prompt-output` | [R5 — Apply with confirmation and revision phase](R5-apply-confirmation-revision-phase.md) |
+| Report path (`--review-output` or temp) is unwritable or invalid | [R3 — Review output path](R3-review-output-path.md), [R8 — Review failure handling](R8-review-failure-handling.md) |
+| AI does not write the report to the specified path | [R9 — Report file verification](R9-report-file-verification.md) |
+| Revision phase fails (AI does not write revised prompt to path) | [R5 — Apply with confirmation and revision phase](R5-apply-confirmation-revision-phase.md), [R8 — Review failure handling](R8-review-failure-handling.md) |
+| User does not know where the report was written when `--review-output` is unset | [R3 — Review output path](R3-review-output-path.md) |
+| Review instructions (built-in or configured) missing or wrong | [R2 — Review prompt composition](R2-review-prompt-composition.md) |
+| Config invalid, prompt source missing, or AI spawn fails | [R8 — Review failure handling](R8-review-failure-handling.md) |
+
+## Requirements
+
+| ID | Requirement | Status |
+|----|-------------|--------|
+| [R1](R1-review-command-input-modes.md) | Review command with alias, file, and stdin input modes | draft |
+| [R2](R2-review-prompt-composition.md) | Review prompt composition (instructions + user prompt, path interpolation) | draft |
+| [R3](R3-review-output-path.md) | Review output path (`--review-output` or temp; report always to file) | draft |
+| [R4](R4-prompt-output-path.md) | Prompt output path (`--prompt-output` for revised prompt; required when apply + stdin) | draft |
+| [R5](R5-apply-confirmation-revision-phase.md) | Apply with confirmation and revision phase (interpolation, stdin+apply validation) | draft |
+| [R6](R6-report-format-exit-codes.md) | Report format and exit code derivation (narrative, machine-parseable, full revision; exit 0/1/2) | draft |
+| [R7](R7-configurable-review-stdout.md) | Configurable review output to stdout | draft |
+| [R8](R8-review-failure-handling.md) | Review failure handling (invalid config, missing prompt, spawn failure, invalid apply → exit 2) | draft |
+| [R9](R9-report-file-verification.md) | Report file verification (report exists at expected path after run; else exit 2) | draft |
