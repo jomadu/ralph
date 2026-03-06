@@ -67,9 +67,17 @@ func RunIteration(
 		stderr = buffer
 	}
 
+	// Apply per-iteration timeout if configured (O1/R3)
+	iterCtx := ctx
+	var cancel context.CancelFunc
+	if cfg.Loop.IterationTimeout.Value > 0 {
+		iterCtx, cancel = context.WithTimeout(ctx, time.Duration(cfg.Loop.IterationTimeout.Value)*time.Second)
+		defer cancel()
+	}
+
 	// Spawn AI process with assembled prompt as stdin
 	stdin := bytes.NewReader(assembled)
-	exitCode, err := SpawnAIWithContext(ctx, aiCmd, stdin, stdout, stderr)
+	exitCode, err := SpawnAIWithContext(iterCtx, aiCmd, stdin, stdout, stderr)
 
 	duration := time.Since(start)
 	interrupted := exitCode == 130
