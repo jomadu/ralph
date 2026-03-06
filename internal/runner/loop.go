@@ -2,28 +2,34 @@ package runner
 
 import (
 	"bytes"
+	"context"
 	"errors"
-	"io"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/maxdunn123/ralph/internal/config"
+	"github.com/maxdunn/ralph/internal/config"
 )
 
 // Exit code errors
 var (
 	ExitCodeExhausted         = errors.New("max iterations exhausted")
 	ExitCodeFailureThreshold  = errors.New("failure threshold reached")
+	ExitCodeInterrupted       = errors.New("interrupted")
 )
 
 // IterationResult captures the outcome of a single iteration.
 type IterationResult struct {
-	Output   []byte
-	ExitCode int
-	Error    error
+	Output      []byte
+	ExitCode    int
+	Error       error
+	Interrupted bool
 }
 
 // RunIteration executes a single iteration: assemble prompt, spawn process, capture output.
 func RunIteration(
+	ctx context.Context,
 	iteration int,
 	aiCmd []string,
 	promptContent []byte,
@@ -47,12 +53,15 @@ func RunIteration(
 
 	// Spawn AI process with assembled prompt as stdin
 	stdin := bytes.NewReader(assembled)
-	exitCode, err := SpawnAI(aiCmd, stdin, buffer, buffer)
+	exitCode, err := SpawnAIWithContext(ctx, aiCmd, stdin, buffer, buffer)
+
+	interrupted := exitCode == 130
 
 	return IterationResult{
-		Output:   buffer.Bytes(),
-		ExitCode: exitCode,
-		Error:    err,
+		Output:      buffer.Bytes(),
+		ExitCode:    exitCode,
+		Error:       err,
+		Interrupted: interrupted,
 	}
 }
 
@@ -68,14 +77,39 @@ func Loop(
 	failureThreshold := cfg.Loop.FailureThreshold.Value
 	consecutiveFailures := 0
 
+	// Setup signal handling for SIGINT/SIGTERM (O1/R7)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(sigChan)
+
+	go func() {
+		<-sigChan
+		cancel()
+	}()
+
 	for i := 1; ; i++ {
+		// Check for interruption between iterations (O1/R7)
+		select {
+		case <-ctx.Done():
+			return ExitCodeInterrupted
+		default:
+		}
+
 		// Check iteration limit before executing iteration (O1/R4)
 		if iterationMode == "max-iterations" && i > maxIterations {
 			// Max iterations exhausted without success signal
 			return ExitCodeExhausted
 		}
 
-		result := RunIteration(i, aiCmd, promptContent, cfg, contextStrings)
+		result := RunIteration(ctx, i, aiCmd, promptContent, cfg, contextStrings)
+
+		// If interrupted, discard output and exit 130 (O1/R7)
+		if result.Interrupted {
+			return ExitCodeInterrupted
+		}
 
 		// Log crashes (non-zero exit) at warn level (O1/R1)
 		if result.ExitCode != 0 {
