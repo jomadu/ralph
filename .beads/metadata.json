@@ -2,6 +2,5 @@
   "database": "dolt",
   "backend": "dolt",
   "dolt_mode": "server",
-  "dolt_database": "ralph",
-  "project_id": "011c0f9b-c84d-44be-a876-3de454acfc48"
+  "dolt_database": "ralph"
 }
