@@ -414,7 +414,7 @@ func overlayEnvironment(cfg *ConfigWithProvenance) error {
 
 	// RALPH_LOOP_LOG_LEVEL
 	if v := os.Getenv("RALPH_LOOP_LOG_LEVEL"); v != "" {
-		// log_level not yet in config struct; will be added when O4/R5 is implemented
+		cfg.Loop.LogLevel = ValueWithProvenance[string]{Value: v, Provenance: ProvenanceEnv}
 	}
 
 	// RALPH_LOOP_SHOW_AI_OUTPUT
