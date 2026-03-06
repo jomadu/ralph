@@ -2,7 +2,7 @@
 
 ## Work Tracking System
 
-This project does not use a dedicated issue-tracking CLI. Use markdown TODOs, task lists, or your preferred method for tracking work. `PLAN.md` and `TASK.md` provide feature context.
+This project uses **bd (beads)** for all issue tracking. Run `bd --help` for commands; `bd prime` for full workflow context. Do not use markdown TODOs or other trackers. `PLAN.md` and `TASK.md` provide feature context.
 
 ## Feature Input
 
@@ -182,7 +182,7 @@ For more details, see README.md and docs/QUICKSTART.md.
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
-   bd sync
+   bd dolt push
    git push
    git status  # MUST show "up to date with origin"
    ```

@@ -269,22 +269,20 @@ T1 (review subcommand + R1 input modes)
 
 ---
 
-## Filing issues (bd)
+## Beads (bd) issue mapping
 
-After review, create issues for each task so work can be claimed and tracked:
+| Plan task | Bead ID    | Dependencies (blocked by) |
+|-----------|------------|----------------------------|
+| T1        | ralph-e8a  | —                          |
+| T2        | ralph-wrd  | ralph-e8a                  |
+| T3        | ralph-orr  | ralph-e8a                  |
+| T4        | ralph-5vr  | ralph-e8a                  |
+| T5        | ralph-5b8  | ralph-orr, ralph-5vr       |
+| T6        | ralph-xkg  | ralph-5vr *(see note)*     |
+| T7        | ralph-bgo  | ralph-e8a                  |
+| T8        | ralph-1a3  | ralph-orr, ralph-5b8, ralph-xkg, ralph-bgo |
+| T9        | ralph-b1e  | ralph-orr, ralph-5b8, ralph-xkg, ralph-bgo |
 
-```bash
-bd create "O5 T1: Review subcommand and R1 input modes" --description="$(cat <<'EOF'
-Implement ralph review subcommand and R1 input resolution (file > alias > stdin). See PLAN.md T1 and docs/intent/O5-prompt-review/R1-review-command-input-modes.md.
-EOF
-)" -t task -p 1 --json
+**Note:** T6 (ralph-xkg) is stored in beads with a single dependency on T4 (ralph-5vr). Per the plan, T6 should be done after T5 (report file verification); complete T5 (ralph-5b8) before T6 when implementing.
 
-bd create "O5 T2: R3 review output path" --description="$(cat <<'EOF'
-Report path: --review-output or temp; communicate path when temp; validate writable. See PLAN.md T2 and R3-review-output-path.md.
-EOF
-)" -t task -p 1 --deps discovered-from:bd-<T1_ID> --json
-
-# ... (similar for T3–T9 with deps from PLAN.md)
-```
-
-Replace `bd-<T1_ID>` etc. with actual issue IDs after creation.
+**Check ready work:** `bd ready` or `bd ready --json`. **Claim:** `bd update <id> --claim`. **Close:** `bd close <id> --reason "Completed"`.
