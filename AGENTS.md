@@ -1,6 +1,37 @@
-# Agent Instructions
+# AGENTS.md
 
-This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
+## Work Tracking System
+
+**System:** beads (bd CLI)
+
+This project uses **bd (beads)** for all issue tracking. Run `bd onboard` to get started. Do NOT use markdown TODOs, task lists, or other tracking methods.
+
+**Query ready work:**
+```bash
+bd ready --json
+```
+
+**Update status (claim work atomically):**
+```bash
+bd update <id> --claim --json
+```
+
+**Close issue:**
+```bash
+bd close <id> --reason "Completed" --json
+```
+
+**Create issue:**
+```bash
+bd create "Issue title" --description="Detailed context" -t bug|feature|task -p 0-4 --json
+bd create "Issue title" --description="What this issue is about" -p 1 --deps discovered-from:bd-123 --json
+```
+
+Issue types: `bug`, `feature`, `task`, `epic`, `chore`. Priorities: `0` (critical) to `4` (backlog). Use `--json` for programmatic use. Link discovered work with `discovered-from` dependencies. bd auto-syncs to `.beads/issues.jsonl`; no manual export/import needed.
+
+## Feature Input
+
+`TASK.md` contains feature requirements and specifications for Ralph.
 
 ## Quick Reference
 
@@ -12,139 +43,80 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
-## Non-Interactive Shell Commands
+**Non-interactive shell commands:** Use `-f` / `-rf` with `cp`, `mv`, `rm` to avoid hanging on confirmation prompts (e.g. `cp -f source dest`, `rm -rf directory`). Use `-y` for apt-get, `BatchMode=yes` for ssh/scp, `HOMEBREW_NO_AUTO_UPDATE=1` for brew.
 
-**ALWAYS use non-interactive flags** with file operations to avoid hanging on confirmation prompts.
+## Planning System
 
-Shell commands like `cp`, `mv`, and `rm` may be aliased to include `-i` (interactive) mode on some systems, causing the agent to hang indefinitely waiting for y/n input.
+`PLAN.md` documents the current plan (create when needed). Agent can run `bd create` commands to file issues from a plan.
 
-**Use these forms instead:**
-```bash
-# Force overwrite without prompting
-cp -f source dest           # NOT: cp source dest
-mv -f source dest           # NOT: mv source dest
-rm -f file                  # NOT: rm file
+## Build/Test/Lint Commands
 
-# For recursive operations
-rm -rf directory            # NOT: rm -r directory
-cp -rf source dest          # NOT: cp -r source dest
-```
+Implementation not yet present (Ralph is in specification phase):
 
-**Other commands that may prompt:**
-- `scp` - use `-o BatchMode=yes` for non-interactive
-- `ssh` - use `-o BatchMode=yes` to fail instead of prompting
-- `apt-get` - use `-y` flag
-- `brew` - use `HOMEBREW_NO_AUTO_UPDATE=1` env var
+- **Test:** Manual verification (no automated tests yet)
+- **Build:** Not required (no build artifact yet)
+- **Lint:** Not configured
 
-<!-- BEGIN BEADS INTEGRATION -->
-## Issue Tracking with bd (beads)
+When Go or another implementation is added, document commands here and keep in sync with the repository.
 
-**IMPORTANT**: This project uses **bd (beads)** for ALL issue tracking. Do NOT use markdown TODOs, task lists, or other tracking methods.
+## Specification Definition
 
-### Why bd?
+Specifications live in `docs/intent/`. Index at `docs/intent/README.md`. Methodology in `building-intent.md` at repository root.
 
-- Dependency-aware: Track blockers and relationships between issues
-- Git-friendly: Auto-syncs to JSONL for version control
-- Agent-optimized: JSON output, ready work detection, discovered-from links
-- Prevents duplicate tracking systems and confusion
+Format: Outcome/requirement hierarchy. Each outcome has a directory `O<n>-<slug>/` with `README.md` (outcome, risks, requirement one-liners) and `R<n>-<slug>.md` (requirement + specification). Every specification traces to a requirement; every requirement traces to an outcome.
 
-### Quick Start
+Exclude: `docs/intent/README.md` is the index, not a single spec.
 
-**Check for ready work:**
+Current state: Intent tree defined (O1–O4 and requirements). Implementation pending.
 
-```bash
-bd ready --json
-```
+## Implementation Definition
 
-**Create new issues:**
+Location: `scripts/`, root-level scripts (e.g. `cursor-wrapper.sh`), and (when present) any future `cmd/`, `internal/`, or equivalent.
 
-```bash
-bd create "Issue title" --description="Detailed context" -t bug|feature|task -p 0-4 --json
-bd create "Issue title" --description="What this issue is about" -p 1 --deps discovered-from:bd-123 --json
-```
+Patterns:
+- `scripts/*.sh` — Scripts and wrappers
+- `cursor-wrapper.sh` — Cursor integration script
 
-**Claim and update:**
+Excludes: `.git/`, `.beads/`, `docs/` (specifications), `AGENTS.md`, `PLAN.md`, `TASK.md`, `building-intent.md`
 
-```bash
-bd update <id> --claim --json
-bd update bd-42 --priority 1 --json
-```
+Implementation status: Specs and intent complete; runtime implementation (e.g. Go loop runner) not yet built per TASK.md.
 
-**Complete work:**
+## Audit Output
 
-```bash
-bd close bd-42 --reason "Completed" --json
-```
+Audit results written to `AUDIT.md` at repository root.
 
-### Issue Types
+## Quality Criteria
 
-- `bug` - Something broken
-- `feature` - New functionality
-- `task` - Work item (tests, docs, refactoring)
-- `epic` - Large feature with subtasks
-- `chore` - Maintenance (dependencies, tooling)
+**Specifications:**
+- All outcomes have README with outcome definition and risks (PASS/FAIL)
+- All requirements have traceability to an outcome (PASS/FAIL)
+- Examples and implementation notes where applicable (PASS/FAIL)
 
-### Priorities
+**Implementation:**
+- When tests exist: test command passes (PASS/FAIL)
+- When build exists: build command succeeds (PASS/FAIL)
+- Documentation and examples match actual behavior (PASS/FAIL)
 
-- `0` - Critical (security, data loss, broken builds)
-- `1` - High (major features, important bugs)
-- `2` - Medium (default, nice-to-have)
-- `3` - Low (polish, optimization)
-- `4` - Backlog (future ideas)
+**Refactoring triggers:**
+- Spec/implementation divergence
+- Test failures (when tests exist)
+- Unclear or broken documentation
 
-### Workflow for AI Agents
+## Operational Learnings
 
-1. **Check ready work**: `bd ready` shows unblocked issues
-2. **Claim your task atomically**: `bd update <id> --claim`
-3. **Work on it**: Implement, test, document
-4. **Discover new work?** Create linked issue:
-   - `bd create "Found bug" --description="Details about what was found" -p 1 --deps discovered-from:<parent-id>`
-5. **Complete**: `bd close <id> --reason "Done"`
+Last verified: (update when verified)
 
-### Auto-Sync
+**Working:**
+- bd (beads) for issue tracking; `bd ready --json`, `bd update <id> --claim`, `bd close <id> --reason "..."` work
+- Intent structure in `docs/intent/` with O1–O4 and requirements
+- TASK.md defines Ralph scope and design; building-intent.md defines spec methodology
 
-bd automatically syncs with git:
+**Not working:**
+- No automated test or build yet (implementation pending)
 
-- Exports to `.beads/issues.jsonl` after changes (5s debounce)
-- Imports from JSONL when newer (e.g., after `git pull`)
-- No manual export/import needed!
+**Rationale:**
+- Beads used for dependency-aware, git-friendly, agent-optimized tracking
+- Specification model follows outcome → requirement → specification from building-intent.md
+- Non-interactive shell commands and Landing the Plane reduce agent hangs and stranded work
 
-### Important Rules
-
-- ✅ Use bd for ALL task tracking
-- ✅ Always use `--json` flag for programmatic use
-- ✅ Link discovered work with `discovered-from` dependencies
-- ✅ Check `bd ready` before asking "what should I work on?"
-- ❌ Do NOT create markdown TODO lists
-- ❌ Do NOT use external issue trackers
-- ❌ Do NOT duplicate tracking systems
-
-For more details, see README.md and docs/QUICKSTART.md.
-
-## Landing the Plane (Session Completion)
-
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
-
-**MANDATORY WORKFLOW:**
-
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
-   ```bash
-   git pull --rebase
-   bd sync
-   git push
-   git status  # MUST show "up to date with origin"
-   ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
-
-**CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
-
-<!-- END BEADS INTEGRATION -->
+**Session completion (Landing the Plane):** When ending a work session, complete: (1) File issues for remaining work, (2) Run quality gates if code changed, (3) Update issue status, (4) `git pull --rebase`, `bd sync`, `git push` until `git status` shows "up to date with origin", (5) Clean up and hand off. Work is NOT complete until `git push` succeeds.
