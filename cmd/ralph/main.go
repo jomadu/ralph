@@ -53,9 +53,11 @@ var (
 	// Prompt input
 	fileFlag string
 
-	// Review-specific flags (T1; T2 adds --review-output)
-	reviewFileFlag    string
-	reviewOutputFlag  string
+	// Review-specific flags (T1; T2 adds --review-output; T7 adds --prompt-output, --apply for validation)
+	reviewFileFlag         string
+	reviewOutputFlag       string
+	reviewPromptOutputFlag string
+	reviewApplyFlag        bool
 )
 
 var runCmd = &cobra.Command{
@@ -386,6 +388,15 @@ var reviewCmd = &cobra.Command{
 			os.Exit(2)
 		}
 
+		// R4: Resolve prompt output path; validate stdin+apply requires --prompt-output (T7)
+		reviewInputMode := promptModeToReviewInputMode(mode)
+		promptOutputResult, err := review.ResolvePromptOutputPath(reviewInputMode, reviewApplyFlag, reviewPromptOutputFlag, src.Path)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(2)
+		}
+		_ = promptOutputResult // T8 will use .Path for revision-phase interpolation
+
 		// R3: Resolve report path (--review-output or temp); validate before spawning AI (T2)
 		reportPath, isTemp, err := review.ResolveReportPath(reviewOutputFlag)
 		if err != nil {
@@ -442,6 +453,8 @@ func init() {
 	runCmd.Flags().StringVarP(&fileFlag, "file", "f", "", "Read prompt from file")
 	reviewCmd.Flags().StringVarP(&reviewFileFlag, "file", "f", "", "Read prompt from file (R1: wins over alias)")
 	reviewCmd.Flags().StringVar(&reviewOutputFlag, "review-output", "", "Write review report to this path (default: temp file; path communicated to user)")
+	reviewCmd.Flags().StringVar(&reviewPromptOutputFlag, "prompt-output", "", "Write suggested revised prompt to this path; required with --apply when input is stdin (R4)")
+	reviewCmd.Flags().BoolVar(&reviewApplyFlag, "apply", false, "Apply suggested revision to prompt file (or --prompt-output when set); with stdin, --prompt-output required (R5)")
 
 	// Loop control
 	runCmd.Flags().IntVarP(&maxIterationsFlag, "max-iterations", "n", 0, "Override max iterations")
@@ -475,6 +488,20 @@ func init() {
 	rootCmd.AddCommand(reviewCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(versionCmd)
+}
+
+// promptModeToReviewInputMode maps prompt.Mode to review.InputMode for R4 path resolution.
+func promptModeToReviewInputMode(mode prompt.Mode) review.InputMode {
+	switch mode {
+	case prompt.ModeAlias:
+		return review.InputModeAlias
+	case prompt.ModeFile:
+		return review.InputModeFile
+	case prompt.ModeStdin:
+		return review.InputModeStdin
+	default:
+		return review.InputModeStdin
+	}
 }
 
 func main() {
