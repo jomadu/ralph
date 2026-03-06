@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -35,6 +36,7 @@ func RunIteration(
 	promptContent []byte,
 	cfg *config.ConfigWithProvenance,
 	contextStrings []string,
+	verbose bool,
 ) IterationResult {
 	// Generate preamble
 	preamble := GeneratePreamble(PreambleConfig{
@@ -51,9 +53,19 @@ func RunIteration(
 	// Create bounded buffer for output capture
 	buffer := NewBoundedBuffer(cfg.Loop.MaxOutputBuffer.Value)
 
+	// Setup output writers: buffer always captures, optionally mirror to terminal
+	var stdout, stderr io.Writer
+	if verbose {
+		stdout = io.MultiWriter(buffer, os.Stderr)
+		stderr = io.MultiWriter(buffer, os.Stderr)
+	} else {
+		stdout = buffer
+		stderr = buffer
+	}
+
 	// Spawn AI process with assembled prompt as stdin
 	stdin := bytes.NewReader(assembled)
-	exitCode, err := SpawnAIWithContext(ctx, aiCmd, stdin, buffer, buffer)
+	exitCode, err := SpawnAIWithContext(ctx, aiCmd, stdin, stdout, stderr)
 
 	interrupted := exitCode == 130
 
@@ -76,6 +88,7 @@ func Loop(
 	iterationMode := cfg.Loop.IterationMode.Value
 	failureThreshold := cfg.Loop.FailureThreshold.Value
 	consecutiveFailures := 0
+	verbose := cfg.Loop.ShowAIOutput.Value
 
 	// Setup signal handling for SIGINT/SIGTERM (O1/R7)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -104,7 +117,7 @@ func Loop(
 			return ExitCodeExhausted
 		}
 
-		result := RunIteration(ctx, i, aiCmd, promptContent, cfg, contextStrings)
+		result := RunIteration(ctx, i, aiCmd, promptContent, cfg, contextStrings, verbose)
 
 		// If interrupted, discard output and exit 130 (O1/R7)
 		if result.Interrupted {
