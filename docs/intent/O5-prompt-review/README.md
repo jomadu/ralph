@@ -48,7 +48,7 @@ The review output path (`--review-output` or the temp directory) and the prompt 
 ## Non-outcomes
 
 - The reviewer does not run or modify the execution loop. It does not execute the user’s task.
-- The review instructions (the prompt that tells the AI how to evaluate) are Ralph’s (built-in or configured), not the user’s; the user supplies only the prompt to be reviewed.
+- The review (and revision) instructions are Ralph’s — embedded in the binary (e.g. via Go embed); not read from the user’s repository. The user supplies only the prompt to be reviewed.
 - The reviewer does not modify the user’s prompt file unless the user requests apply and confirms (or uses `-y`). Without apply, the reviewer only reports; the user edits manually. Apply is valid for alias, file path, or stdin; when the prompt is from stdin, `--prompt-output` is required with `--apply` to specify where to write the revised prompt.
 - The reviewer does not enforce a single prompt style or template. It evaluates qualities that support Ralph’s execution model (signals, state, iteration awareness, scope, convergence), not a fixed format.
 - The reviewer does not replace human judgment on content or correctness. It checks structure and discipline relevant to loop behavior.
@@ -63,7 +63,7 @@ The review output path (`--review-output` or the temp directory) and the prompt 
 | AI does not write the report to the specified path | [R9 — Report file verification](R9-report-file-verification.md) |
 | Revision phase fails (AI does not write revised prompt to path) | [R5 — Apply with confirmation and revision phase](R5-apply-confirmation-revision-phase.md), [R8 — Review failure handling](R8-review-failure-handling.md) |
 | User does not know where the report was written when `--review-output` is unset | [R3 — Review output path](R3-review-output-path.md) |
-| Review instructions (built-in or configured) missing or wrong | [R2 — Review prompt composition](R2-review-prompt-composition.md) |
+| Review or revision instructions (embedded in binary) missing or wrong | [R2 — Review prompt composition](R2-review-prompt-composition.md) |
 | Config invalid, prompt source missing, or AI spawn fails | [R8 — Review failure handling](R8-review-failure-handling.md) |
 
 ## Requirements

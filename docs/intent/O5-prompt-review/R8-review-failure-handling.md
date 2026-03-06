@@ -8,7 +8,42 @@ The system treats certain conditions as review failures and exits with code 2. T
 
 ## Specification
 
-(To be specified in Step 5.)
+**Conditions that must yield exit 2 (review failure or invalid apply):**
+
+1. **Configuration invalid or required config missing** — e.g. config file is malformed (YAML parse error), or a required key for review is missing. Ralph must report the failure (message to stderr or stdout) and exit 2. Do not proceed to load prompt or spawn AI.
+2. **Prompt source invalid (alias or file input)** — Alias not found in config; file path missing; file unreadable (permission); file empty (0 bytes). Per O2 R4 semantics: fail fast with a clear message (e.g. "unknown prompt alias \"x\"", "prompt file not found: path", "prompt file not readable: path", "prompt file is empty: path"). Exit 2 before any AI invocation.
+3. **Stdin empty** — When input mode is stdin and no data is read (empty pipe or no stdin). Exit 2 with message (e.g. "no prompt content from stdin").
+4. **AI command cannot be spawned or fails before review completes** — AI binary not found, spawn fails, or process exits in a way that prevents the review from completing (e.g. crash before writing report). Exit 2. Distinguish from "AI ran but reported errors in the prompt" (exit 1).
+5. **Invalid apply request** — Stdin + `--apply` without `--prompt-output`. Message must tell the user what is wrong (e.g. "stdin input with --apply requires --prompt-output <path>"). Exit 2 before revision phase.
+6. **Review output path invalid or unwritable** — Per R3: `--review-output` path has unwritable parent, or path is a directory; temp dir unavailable. Exit 2 before spawning AI.
+7. **Report file missing after review phase** — Per R9: file not found at the expected path after AI exits. Exit 2.
+8. **Revision phase apply: revision file missing** — If implementation verifies that the revision was written when apply was requested, and the file is missing after revision phase, exit 2 (consistent with R5 edge case).
+
+**Error messages:** Each failure must produce a message that allows the user or script to correct the condition. Examples: missing alias → "unknown prompt alias \"<alias>\""; stdin + apply no path → "stdin input with --apply requires --prompt-output <path>"; unwritable path → "cannot write report to <path>: <reason>".
+
+**Consistency:** Exit 2 is used only for "review did not complete" or "apply invalid." Exit 0 and 1 are used only when the review completed and the report file exists (R9 passed); then 0 = no errors in prompt, 1 = errors in prompt. Scripts can rely on exit 2 to mean "do not trust the report or apply."
+
+### Edge cases
+
+| Condition | Expected Behavior |
+|-----------|-------------------|
+| Config file missing (optional config) | If config is optional, proceed with defaults; if required for review, exit 2. Document. |
+| Multiple failures (e.g. invalid config and invalid path) | Report first encountered failure; exit 2; do not cascade. |
+| AI exits non-zero but wrote the report | If R9 passes (file exists), derive exit 0 or 1 from report content; do not use exit 2 for AI exit code alone. |
+
+### Examples
+
+#### Alias not found
+
+**Input:** `ralph review unknown-alias`
+
+**Expected output:** Message like "unknown prompt alias \"unknown-alias\""; exit 2.
+
+#### Stdin + apply without --prompt-output
+
+**Input:** `cat p.md | ralph review --apply`
+
+**Expected output:** Message like "stdin input with --apply requires --prompt-output <path>"; exit 2.
 
 ## Acceptance criteria
 
