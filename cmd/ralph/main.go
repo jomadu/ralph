@@ -142,6 +142,26 @@ var runCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		// Dry-run mode: print assembled prompt and exit (O4/R4)
+		if dryRunFlag {
+			maxIterations := cfg.Loop.DefaultMaxIterations.Value
+			iterationMode := cfg.Loop.IterationMode.Value
+			preambleEnabled := cfg.Loop.Preamble.Value
+
+			preambleCfg := runner.PreambleConfig{
+				Enabled:        preambleEnabled,
+				Iteration:      1,
+				MaxIterations:  maxIterations,
+				Unlimited:      iterationMode == "unlimited",
+				ContextStrings: contextFlags,
+			}
+
+			preamble := runner.GeneratePreamble(preambleCfg)
+			assembled := runner.AssemblePrompt(preamble, src.Content)
+			fmt.Print(string(assembled))
+			os.Exit(0)
+		}
+
 		// Resolve AI command (alias or direct command)
 		resolution, err := config.ResolveAICommand(cfg)
 		if err != nil {
