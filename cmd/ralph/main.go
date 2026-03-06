@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -55,12 +56,14 @@ var (
 	// Prompt input
 	fileFlag string
 
-	// Review-specific flags (T1; T2 adds --review-output; T7 adds --prompt-output, --apply; T8 adds -y)
-	reviewFileFlag         string
-	reviewOutputFlag       string
-	reviewPromptOutputFlag string
-	reviewApplyFlag        bool
-	reviewYesFlag          bool
+	// Review-specific flags (T1; T2 adds --review-output; T7 adds --prompt-output, --apply; T8 adds -y; T9/R7 adds --quiet, --report-to-file-only)
+	reviewFileFlag           string
+	reviewOutputFlag         string
+	reviewPromptOutputFlag   string
+	reviewApplyFlag          bool
+	reviewYesFlag            bool
+	reviewQuietFlag          bool   // R7: do not stream AI output to stdout
+	reviewReportToFileOnlyFlag bool // R7: do not print report content to stdout (report still written to file)
 )
 
 var runCmd = &cobra.Command{
@@ -429,8 +432,15 @@ var reviewCmd = &cobra.Command{
 			os.Exit(2)
 		}
 
-		// Single AI invocation; report is file at reportPath (R2), not parsed from stdout
-		_, err = runner.SpawnAI(aiArgv, bytes.NewReader(composed), os.Stdout, os.Stderr)
+		// Single AI invocation; report is file at reportPath (R2), not parsed from stdout.
+		// R7: --quiet suppresses AI output to stdout (stream to discard).
+		reviewPhaseStdout := io.Writer(os.Stdout)
+		reviewPhaseStderr := io.Writer(os.Stderr)
+		if reviewQuietFlag {
+			reviewPhaseStdout = io.Discard
+			reviewPhaseStderr = io.Discard
+		}
+		_, err = runner.SpawnAI(aiArgv, bytes.NewReader(composed), reviewPhaseStdout, reviewPhaseStderr)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: AI spawn failed: %v\n", err)
 			os.Exit(2)
@@ -440,6 +450,14 @@ var reviewCmd = &cobra.Command{
 		if err := review.VerifyReportExists(reportPath); err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(2)
+		}
+
+		// R7: By default print report content to stdout (report is always in file per R3). --report-to-file-only skips this.
+		if !reviewReportToFileOnlyFlag {
+			reportContent, readErr := os.ReadFile(reportPath)
+			if readErr == nil {
+				os.Stdout.Write(reportContent)
+			}
 		}
 
 		// R6: Parse report for machine-parseable summary; derive exit 0 (no errors) or 1 (errors in prompt).
@@ -460,7 +478,9 @@ var reviewCmd = &cobra.Command{
 					fmt.Fprintf(os.Stderr, "error: %v\n", err)
 					os.Exit(2)
 				}
-				_, err = runner.SpawnAI(aiArgv, bytes.NewReader(revPrompt), os.Stdout, os.Stderr)
+				// R7: revision phase uses same quiet behavior (no AI output to stdout when --quiet)
+				revStdout, revStderr := reviewPhaseStdout, reviewPhaseStderr
+				_, err = runner.SpawnAI(aiArgv, bytes.NewReader(revPrompt), revStdout, revStderr)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "error: revision phase spawn failed: %v\n", err)
 					os.Exit(2)
@@ -489,6 +509,8 @@ func init() {
 	reviewCmd.Flags().StringVar(&reviewPromptOutputFlag, "prompt-output", "", "Write suggested revised prompt to this path; required with --apply when input is stdin (R4)")
 	reviewCmd.Flags().BoolVar(&reviewApplyFlag, "apply", false, "Apply suggested revision to prompt file (or --prompt-output when set); with stdin, --prompt-output required (R5)")
 	reviewCmd.Flags().BoolVarP(&reviewYesFlag, "yes", "y", false, "Apply without confirmation prompt; required for non-interactive apply (R5)")
+	reviewCmd.Flags().BoolVarP(&reviewQuietFlag, "quiet", "q", false, "Do not stream AI output to stdout (R7); report still written to file")
+	reviewCmd.Flags().BoolVar(&reviewReportToFileOnlyFlag, "report-to-file-only", false, "Do not print report content to stdout; report only written to file (R7)")
 
 	// Loop control
 	runCmd.Flags().IntVarP(&maxIterationsFlag, "max-iterations", "n", 0, "Override max iterations")
