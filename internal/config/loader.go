@@ -36,6 +36,14 @@ func LoadConfig() (Config, error) {
 // Missing default config files are skipped silently.
 // Returns the merged config with provenance or an error.
 func LoadConfigWithProvenance() (ConfigWithProvenance, error) {
+	return LoadConfigWithProvenanceAndExplicit("")
+}
+
+// LoadConfigWithProvenanceAndExplicit loads configuration with provenance tracking.
+// If explicitPath is non-empty, it is used as the sole file-based config (global and workspace are skipped).
+// If explicitPath is empty, global and workspace configs are loaded (missing files skipped silently).
+// Returns the merged config with provenance or an error.
+func LoadConfigWithProvenanceAndExplicit(explicitPath string) (ConfigWithProvenance, error) {
 	cfg := DefaultConfigWithProvenance()
 
 	// Load builtin aliases with default provenance
@@ -43,18 +51,24 @@ func LoadConfigWithProvenance() (ConfigWithProvenance, error) {
 		cfg.AICmdAliases[name] = ValueWithProvenance[string]{Value: cmd, Provenance: ProvenanceDefault}
 	}
 
-	// Load global config if it exists
-	globalPath := GlobalConfigPath()
-	if globalPath != "" {
-		if err := overlayFileWithProvenance(globalPath, &cfg, ProvenanceGlobal, true); err != nil {
+	if explicitPath != "" {
+		// Explicit config: load only this file, error if missing
+		if err := overlayFileWithProvenance(explicitPath, &cfg, ProvenanceFile, false); err != nil {
 			return cfg, err
 		}
-	}
+	} else {
+		// Default config: load global and workspace, skip if missing
+		globalPath := GlobalConfigPath()
+		if globalPath != "" {
+			if err := overlayFileWithProvenance(globalPath, &cfg, ProvenanceGlobal, true); err != nil {
+				return cfg, err
+			}
+		}
 
-	// Load workspace config if it exists
-	workspacePath := WorkspaceConfigPath()
-	if err := overlayFileWithProvenance(workspacePath, &cfg, ProvenanceWorkspace, true); err != nil {
-		return cfg, err
+		workspacePath := WorkspaceConfigPath()
+		if err := overlayFileWithProvenance(workspacePath, &cfg, ProvenanceWorkspace, true); err != nil {
+			return cfg, err
+		}
 	}
 
 	// Overlay environment variables
@@ -308,5 +322,50 @@ func parseBool(s string) (bool, error) {
 		return false, nil
 	default:
 		return false, fmt.Errorf("not a boolean value")
+	}
+}
+
+// CLIFlags holds CLI flag values for config overlay.
+type CLIFlags struct {
+	MaxIterations    *int
+	FailureThreshold *int
+	IterationTimeout *int
+	MaxOutputBuffer  *int
+	Preamble         *bool
+	AICmdAlias       *string
+	SignalSuccess    *string
+	SignalFailure    *string
+	ShowAIOutput     *bool
+}
+
+// OverlayCLIFlags applies CLI flag values to config with ProvenanceCLI.
+// Only non-nil flag values are applied.
+func OverlayCLIFlags(cfg *ConfigWithProvenance, flags CLIFlags) {
+	if flags.MaxIterations != nil {
+		cfg.Loop.DefaultMaxIterations = ValueWithProvenance[int]{Value: *flags.MaxIterations, Provenance: ProvenanceCLI}
+	}
+	if flags.FailureThreshold != nil {
+		cfg.Loop.FailureThreshold = ValueWithProvenance[int]{Value: *flags.FailureThreshold, Provenance: ProvenanceCLI}
+	}
+	if flags.IterationTimeout != nil {
+		cfg.Loop.IterationTimeout = ValueWithProvenance[int]{Value: *flags.IterationTimeout, Provenance: ProvenanceCLI}
+	}
+	if flags.MaxOutputBuffer != nil {
+		cfg.Loop.MaxOutputBuffer = ValueWithProvenance[int]{Value: *flags.MaxOutputBuffer, Provenance: ProvenanceCLI}
+	}
+	if flags.Preamble != nil {
+		// preamble field not yet in config struct; will be added when O1/R8 is implemented
+	}
+	if flags.AICmdAlias != nil {
+		cfg.Loop.AICmdAlias = ValueWithProvenance[string]{Value: *flags.AICmdAlias, Provenance: ProvenanceCLI}
+	}
+	if flags.SignalSuccess != nil {
+		cfg.Loop.SignalSuccess = ValueWithProvenance[string]{Value: *flags.SignalSuccess, Provenance: ProvenanceCLI}
+	}
+	if flags.SignalFailure != nil {
+		cfg.Loop.SignalFailure = ValueWithProvenance[string]{Value: *flags.SignalFailure, Provenance: ProvenanceCLI}
+	}
+	if flags.ShowAIOutput != nil {
+		cfg.Loop.ShowAIOutput = ValueWithProvenance[bool]{Value: *flags.ShowAIOutput, Provenance: ProvenanceCLI}
 	}
 }
