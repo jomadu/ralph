@@ -188,7 +188,36 @@ var listAliasesCmd = &cobra.Command{
 	Use:   "aliases",
 	Short: "List AI command aliases",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("list aliases: not implemented")
+		cfg, err := config.LoadConfigWithProvenanceAndExplicit(configFlag)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+
+		plainCfg := config.Config{AICmdAliases: make(map[string]string)}
+		for k, v := range cfg.AICmdAliases {
+			plainCfg.AICmdAliases[k] = v.Value
+		}
+
+		merged := config.MergedAliases(plainCfg)
+		
+		var keys []string
+		for k := range merged {
+			keys = append(keys, k)
+		}
+		
+		// Sort alphabetically
+		for i := 0; i < len(keys); i++ {
+			for j := i + 1; j < len(keys); j++ {
+				if keys[i] > keys[j] {
+					keys[i], keys[j] = keys[j], keys[i]
+				}
+			}
+		}
+
+		for _, k := range keys {
+			fmt.Printf("%s:\n  command: %s\n", k, merged[k])
+		}
 	},
 }
 
@@ -203,6 +232,8 @@ var versionCmd = &cobra.Command{
 func init() {
 	// Configuration
 	runCmd.Flags().StringVar(&configFlag, "config", "", "Explicit config file path")
+	listPromptsCmd.Flags().StringVar(&configFlag, "config", "", "Explicit config file path")
+	listAliasesCmd.Flags().StringVar(&configFlag, "config", "", "Explicit config file path")
 
 	// Prompt input
 	runCmd.Flags().StringVarP(&fileFlag, "file", "f", "", "Read prompt from file")
