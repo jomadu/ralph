@@ -2,54 +2,56 @@
 
 ## Statement
 
-Ralph prompts can be reviewed for quality and structure before or without running the loop, with actionable feedback, an optional suggested revision of the entire prompt, and a machine-readable result; the user may apply the revision to the prompt file with confirmation or non-interactive `--apply -y`.
+Prompts can be reviewed for quality and structure before or without running the loop. The user supplies the prompt by alias, file path, or stdin (e.g. pipe).
+
+Ralph composes a review prompt that instructs the AI to produce the report — narrative feedback, machine-parseable summary, and a full suggested revision — and to write it to the appropriate location. Ralph runs one AI invocation. The review prompt is constructed so the AI outputs the report there; Ralph does not interpret the AI output to derive the report. The report is always saved to a file: the path from `--review-output` or, when not set, the system temporary storage (e.g. the temp directory). By default the output of the AI command and the report are exposed to stdout; this is configurable. The user can direct the revised prompt to a path via `--prompt-output`.
+
+To update the source file with the suggested revision, the user requests apply (confirmation or `--apply -y`). Ralph may run the AI again (revision phase) to produce the revision. The review output path (from `--review-output` or the temp directory) and the prompt output path (from `--prompt-output`, or the source file path when applying to an alias or file) are interpolated into the prompt given to the AI during the revision phase, so the AI is instructed where to read the report from and where to write the revised prompt. When the prompt came from stdin, there is no source file to overwrite; with `--apply`, `--prompt-output` is required so that path can be interpolated into the revision-phase prompt. Apply otherwise works as normal.
 
 ## Why it matters
 
-Without a reviewer, users discover prompt problems only when they run the loop: the AI never emits a success signal, or it fails repeatedly, or it does too much in one iteration. The user inspects output, guesses that the prompt lacks signal discipline or convergence criteria, and edits by trial and error. There is no structured way to check whether a prompt instructs the AI to emit success/failure correctly, references filesystem or work-tracking state, acknowledges the loop, or defines "done." A reviewer gives feedback before execution and enables CI or pre-commit checks so prompt quality can be evaluated without running the task.
+Without a reviewer, problems show up only when the loop runs: the AI never emits a success signal, fails repeatedly, or does too much in one iteration. The user inspects output, guesses that the prompt lacks signal discipline or convergence criteria, and edits by trial and error. There is no structured way to check whether a prompt instructs the AI to emit success/failure correctly, references filesystem or work-tracking state, acknowledges the loop, or defines “done.” A reviewer gives feedback before execution and enables CI or pre-commit checks so prompt quality can be evaluated without running the task. Configurable outputs (report, revised prompt) let users save results and—when using stdin—obtain a file with the recommended changes.
 
 ## Verification
 
-- User runs `ralph review <alias>`. Ralph loads the prompt for that alias, runs the reviewer (one-shot AI evaluation), and prints a report to stdout; exit code 0 (no errors), 1 (errors), or 2 (review failed to run or apply invalid).
-- User runs `ralph review -f ./prompts/my-prompt.md`. Ralph reads the file, runs the reviewer, and prints the report; exit code reflects result.
-- User pipes a prompt: `cat prompt.md | ralph review`. Ralph reads stdin, runs the reviewer, and prints the report; exit code reflects result.
-- User runs `ralph review build --output report.txt`. The report is written to the file; stdout is silent; exit code still reflects result.
+User runs `ralph review` with prompt from alias, `-f <path>`, or stdin; receives a report (including suggested revision); with `--apply`, can write revision to the prompt file (confirm or `-y`); exit 0 (ok), 1 (errors in prompt), 2 (review failed or apply invalid).
+
+**Input (alias, file path, or stdin)**
+
+- User runs `ralph review <alias>`. Ralph loads the prompt for that alias and runs the reviewer; the report is always written to a file (see Output paths); by default the AI command output and the report are exposed to stdout (configurable). Exit code reflects result.
+- User runs `ralph review -f ./prompts/my-prompt.md`. Ralph reads the file, runs the reviewer; report is written to a file; by default the AI command output and the report are exposed to stdout (configurable).
+- User runs `cat prompt.md | ralph review` (or pipes prompt via stdin). Ralph reads stdin, runs the reviewer; report is written to a file; by default the AI command output and the report are exposed to stdout (configurable). Exit code reflects result.
+
+**Output paths**
+
+- The report is always saved to a file. When `--review-output` is set (e.g. `ralph review build --review-output report.txt`), the report is written to that path. When `--review-output` is not set, the report is written to the system temporary storage (e.g. the temp directory). By default the output of the AI command and the report are exposed to stdout; this is configurable. Exit code reflects result.
+- User runs `ralph review -f prompt.md --prompt-output prompt-revised.md`. The suggested revised prompt is written to the specified path; the source file is not overwritten.
+- User runs `cat prompt.md | ralph review --prompt-output revised.md`. The suggested revised prompt is written to `revised.md`. When input is stdin and the user requests apply, `--prompt-output` is required.
+
+**Apply and output paths**
+
+The review output path (`--review-output` or the temp directory) and the prompt output path (`--prompt-output` or the source file when applying) are interpolated into the prompt given to the AI during the revision phase.
+
 - User runs `ralph review build --apply`. After the report, Ralph prompts to apply the suggested revision to the prompt file; on confirmation, the revised content is written to the path for that alias.
-- User runs `ralph review -f prompt.md --apply -y`. The suggested revision is applied to `prompt.md` without prompting (non-interactive). Exit code reflects review result; the file is updated when a suggested revision was present.
-- The report includes narrative feedback (e.g. signal discipline, statefulness, scope, convergence), a machine-parseable summary so scripts or CI can gate on exit code, and may include a suggested revision of the entire prompt (full revised text for the user to copy or apply).
+- User runs `ralph review -f prompt.md --apply -y`. The suggested revision is applied to `prompt.md` without prompting; exit code reflects review result; the file is updated with the suggested revision.
+- User runs `ralph review` with prompt from stdin and `--apply --prompt-output revised.md`. Apply works as normal; `--prompt-output` is required so Ralph knows where to write the revised prompt (there is no source file to overwrite). If `--apply` is used with stdin but without `--prompt-output`, the system reports an error (e.g. exit code 2).
+
+**Report and exit codes**
+
+- The report includes narrative feedback (e.g. signal discipline, statefulness, scope, convergence), a machine-parseable summary so scripts or CI can gate on the result, and the full suggested revision.
+- Exit code 0: review completed, no errors (or only warnings if specified). Exit code 1: review completed, one or more errors in the prompt. Exit code 2: review failed to run (config invalid, prompt load failure, AI missing or spawn failed) or apply invalid (e.g. `--apply` with stdin but without `--prompt-output`).
+
+**Workflow**
+
+- Ralph composes the review prompt (Ralph’s instructions plus the user’s prompt to be reviewed) so that it tells the AI where to write the report: the path from `--review-output` or, if unset, the system temporary storage (e.g. the temp directory). Ralph runs one AI process; the AI produces the report and writes it to that location. Ralph does not interpret the AI output to derive the report. The report is always saved to a file; by default the AI command output and the report are exposed to stdout (configurable). For the revision phase of the review (when the revised prompt is produced and written), Ralph interpolates both the review output path (from `--review-output` or the temp directory) and the prompt output path into the prompt given to the AI: the prompt output path is either the source file (when applying to an alias or `-f` file) or the path from `--prompt-output` (required when applying with stdin). The AI is instructed where to read the report from and where to write the revised prompt.
 
 ## Non-outcomes
 
-- The reviewer does not run or modify the execution loop. It does not execute the user's task.
-- The reviewer does not modify the user's prompt file unless the user requests it: with `--apply`, the user confirms (or uses `-y` in non-interactive mode) to write the suggested revision. Without `--apply`, the reviewer only reports; the user edits the prompt manually. `--apply` is only valid when the prompt was loaded from an alias or from a file path (`-f`), not from stdin (no destination).
-- The reviewer does not enforce a single prompt style or template. It evaluates qualities that support Ralph's execution model (signals, state, iteration awareness, scope, convergence), not a fixed format.
+- The reviewer does not run or modify the execution loop. It does not execute the user’s task.
+- The review instructions (the prompt that tells the AI how to evaluate) are Ralph’s (built-in or configured), not the user’s; the user supplies only the prompt to be reviewed.
+- The reviewer does not modify the user’s prompt file unless the user requests apply and confirms (or uses `-y`). Without apply, the reviewer only reports; the user edits manually. Apply is valid for alias, file path, or stdin; when the prompt is from stdin, `--prompt-output` is required with `--apply` to specify where to write the revised prompt.
+- The reviewer does not enforce a single prompt style or template. It evaluates qualities that support Ralph’s execution model (signals, state, iteration awareness, scope, convergence), not a fixed format.
 - The reviewer does not replace human judgment on content or correctness. It checks structure and discipline relevant to loop behavior.
-- The reviewer is not a general-purpose markdown or prose linter. Evaluation is tuned for Ralph prompts and Ralph's execution model (fresh process per iteration, filesystem state, preamble, signal scanning).
+- The reviewer is not a general-purpose markdown or prose linter. Evaluation is tuned for Ralph prompts and Ralph’s execution model (fresh process per iteration, filesystem state, preamble, signal scanning).
 
-## Risks
-
-| Risk | Mitigating Requirement |
-|------|------------------------|
-| User cannot supply the prompt from alias, file, or stdin in a consistent way | [R1 — Prompt input modes for review](R1-prompt-input-modes.md) |
-| Review does not run (config invalid, prompt load failure, AI command missing or spawn fails) | [R9 — Review failure handling](R9-review-failure-handling.md) |
-| AI output has no parseable summary line so exit code cannot be set correctly | [R4 — Review report content and parseable format](R4-report-content-format.md), [R5 — Machine-readable exit code](R5-machine-readable-exit-code.md) |
-| Suggested revision cannot be extracted from output for apply or display | [R4 — Review report content and parseable format](R4-report-content-format.md) |
-| User applies suggested revision by accident (no chance to decline) | [R7 — Apply confirmation](R7-apply-confirmation.md) |
-| User expects --apply to work when prompt was piped from stdin | [R8 — Apply invalid for stdin](R8-apply-invalid-stdin.md) |
-| Wrong file overwritten when applying (e.g. alias resolves elsewhere) | [R6 — Apply suggested revision to file](R6-apply-revision.md) |
-| Report lacks narrative feedback or suggested revision in a usable form | [R4 — Review report content and parseable format](R4-report-content-format.md) |
-| No AI command or config available for review subcommand | [R3 — Config and AI backend for review](R3-config-ai-backend.md) |
-
-## Requirements
-
-| ID | Requirement | Status |
-|----|-------------|--------|
-| [R1](R1-prompt-input-modes.md) | Prompt input modes for review | draft |
-| [R2](R2-one-shot-execution.md) | One-shot review execution | draft |
-| [R3](R3-config-ai-backend.md) | Config and AI backend for review | draft |
-| [R4](R4-report-content-format.md) | Review report content and parseable format | draft |
-| [R5](R5-machine-readable-exit-code.md) | Machine-readable exit code | draft |
-| [R6](R6-apply-revision.md) | Apply suggested revision to file | draft |
-| [R7](R7-apply-confirmation.md) | Apply confirmation | draft |
-| [R8](R8-apply-invalid-stdin.md) | Apply invalid for stdin | draft |
-| [R9](R9-review-failure-handling.md) | Review failure handling | draft |
+Risks and requirements tables will be added in Step 3 (Requirement Index).

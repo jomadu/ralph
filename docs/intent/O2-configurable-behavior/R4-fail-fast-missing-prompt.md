@@ -61,7 +61,7 @@ The prompt file is read once during validation. The contents are held in memory 
 | Prompt file is a symlink to a valid file | Ralph follows the symlink. Validation checks the target file's existence and readability. |
 | Prompt file is a symlink to a nonexistent file | Error: `prompt file not found: <resolved-path>` (after symlink resolution) |
 | Stdin is a pipe that has not yet received data and stays open | Ralph blocks waiting for EOF. This is standard behavior for stdin reading — the user must close the pipe. |
-| Both `-f` and a positional alias are provided | CLI parsing determines which mode is active. `-f` takes precedence; the alias argument is ignored. |
+| Both `-f` and a positional alias are provided | Error: alias and file flag are mutually exclusive (O1/R9). Ralph exits with a clear message; no prompt source validation runs. |
 | Alias is valid but file becomes unreadable between validation and first iteration | Extremely unlikely race condition. Ralph does not re-check — the file was read into memory during validation. |
 
 ### Examples
