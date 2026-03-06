@@ -92,6 +92,13 @@ var runCmd = &cobra.Command{
 		if cmd.Flags().Changed("verbose") {
 			cliFlags.ShowAIOutput = &verboseFlag
 		}
+		if cmd.Flags().Changed("quiet") {
+			quietLevel := "error"
+			cliFlags.LogLevel = &quietLevel
+		}
+		if cmd.Flags().Changed("log-level") {
+			cliFlags.LogLevel = &logLevelFlag
+		}
 
 		// Handle preamble/no-preamble flags
 		if cmd.Flags().Changed("preamble") {

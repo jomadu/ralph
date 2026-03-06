@@ -357,6 +357,7 @@ type CLIFlags struct {
 	SignalSuccess    *string
 	SignalFailure    *string
 	ShowAIOutput     *bool
+	LogLevel         *string
 }
 
 // OverlayCLIFlags applies CLI flag values to config with ProvenanceCLI.
@@ -391,5 +392,8 @@ func OverlayCLIFlags(cfg *ConfigWithProvenance, flags CLIFlags) {
 	}
 	if flags.ShowAIOutput != nil {
 		cfg.Loop.ShowAIOutput = ValueWithProvenance[bool]{Value: *flags.ShowAIOutput, Provenance: ProvenanceCLI}
+	}
+	if flags.LogLevel != nil {
+		cfg.Loop.LogLevel = ValueWithProvenance[string]{Value: *flags.LogLevel, Provenance: ProvenanceCLI}
 	}
 }
