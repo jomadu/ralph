@@ -7,6 +7,7 @@ This directory is the **canonical location** for user-facing documentation for R
 | Document | Description | Intent |
 |----------|-------------|--------|
 | [Configuration](configuration.md) | Config file location, key loop options, and precedence (config vs env vs CLI) | [O2](../intent/O2-configurable-behavior/README.md) — Configurable behavior |
+| [AI backends and aliases](ai-backends-and-aliases.md) | Built-in aliases, user-defined aliases, and direct command; how to choose or override the AI CLI | [O3](../intent/O3-backend-agnosticism/README.md) — Backend agnosticism |
 | [Cursor Agent workaround](cursor-agent-workaround.md) | Optional wrapper script for plain-text stdout and signal scanning when using the Cursor Agent backend | [O3](../intent/O3-backend-agnosticism/README.md) — Backend agnosticism; [R1](../intent/O3-backend-agnosticism/R1-builtin-aliases.md) built-in aliases |
 | [Review report summary format](review-report-format.md) | Machine-parseable summary line and exit codes for `ralph review` report output | [O5](../intent/O5-prompt-review/README.md) — Prompt review; [R6](../intent/O5-prompt-review/R6-report-format-exit-codes.md) report format |
 | [Ralph binary and build prompt](ralph-binary-and-build-prompt.md) | How to build the ralph binary, put it on PATH, and use the build procedure prompt for O5 tasks | [O5](../intent/O5-prompt-review/README.md) — Prompt review (developer workflow) |

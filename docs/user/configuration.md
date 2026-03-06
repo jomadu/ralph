@@ -61,7 +61,7 @@ These are the strings Ralph looks for in the AI CLI output to decide whether the
 - **CLI:** `ralph run build --ai-cmd-alias claude` or `ralph run build --ai-cmd "/path/to/agent"`
 - **Env:** `RALPH_LOOP_AI_CMD_ALIAS` or `RALPH_LOOP_AI_CMD`
 
-See the [Cursor Agent workaround](cursor-agent-workaround.md) for one common backend; a general AI backends and aliases topic is listed in the [user docs index](README.md) when available.
+See [AI backends and aliases](ai-backends-and-aliases.md) for built-in and user-defined aliases and direct command; see the [Cursor Agent workaround](cursor-agent-workaround.md) for that backend specifically.
 
 ### Logging and output
 
