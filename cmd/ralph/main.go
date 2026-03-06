@@ -1,12 +1,15 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/maxdunn/ralph/internal/cmdparse"
 	"github.com/maxdunn/ralph/internal/config"
 	"github.com/maxdunn/ralph/internal/prompt"
+	"github.com/maxdunn/ralph/internal/runner"
 )
 
 var rootCmd = &cobra.Command{
@@ -120,8 +123,57 @@ var runCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Printf("Prompt loaded: mode=%v, size=%d bytes\n", src.Mode, len(src.Content))
-		fmt.Println("run: loop execution not yet implemented")
+		// Resolve AI command from alias or direct command
+		var aiCmdString string
+		if aiCmdFlag != "" {
+			aiCmdString = aiCmdFlag
+		} else {
+			// Use alias (from flag or config default)
+			aliasToUse := cfg.Loop.AICmdAlias.Value
+			// Build Config from ConfigWithProvenance for MergedAliases
+			plainCfg := config.Config{
+				AICmdAliases: make(map[string]string),
+			}
+			for k, v := range cfg.AICmdAliases {
+				plainCfg.AICmdAliases[k] = v.Value
+			}
+			aliases := config.MergedAliases(plainCfg)
+			resolved, ok := aliases[aliasToUse]
+			if !ok {
+				fmt.Fprintf(os.Stderr, "error: unknown AI command alias: %s\n", aliasToUse)
+				os.Exit(1)
+			}
+			aiCmdString = resolved
+		}
+
+		// Parse AI command string into argv
+		aiCmd, err := cmdparse.Parse(aiCmdString)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: failed to parse AI command: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Execute loop
+		loopErr := runner.Loop(aiCmd, src.Content, &cfg, contextFlags)
+
+		// Map loop error to exit code per O4/R1
+		if loopErr == nil {
+			// Success signal received
+			os.Exit(0)
+		} else if errors.Is(loopErr, runner.ExitCodeFailureThreshold) {
+			// Failure threshold reached
+			os.Exit(1)
+		} else if errors.Is(loopErr, runner.ExitCodeExhausted) {
+			// Max iterations exhausted
+			os.Exit(2)
+		} else if errors.Is(loopErr, runner.ExitCodeInterrupted) {
+			// Interrupted by SIGINT/SIGTERM
+			os.Exit(130)
+		} else {
+			// Unexpected error
+			fmt.Fprintf(os.Stderr, "error: %v\n", loopErr)
+			os.Exit(1)
+		}
 	},
 }
 
