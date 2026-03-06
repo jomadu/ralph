@@ -129,11 +129,12 @@ func validateSchema(cfg ConfigWithProvenance) ValidationErrors {
 
 	// Validate prompts
 	for alias, prompt := range cfg.Prompts {
-		if prompt.Path == "" {
+		if prompt.Path.Value == "" {
 			errors = append(errors, ValidationError{
-				Field:   fmt.Sprintf("prompts.%s.path", alias),
-				Value:   `""`,
-				Message: fmt.Sprintf("prompts.%s.path must not be empty", alias),
+				Field:      fmt.Sprintf("prompts.%s.path", alias),
+				Value:      `""`,
+				Message:    fmt.Sprintf("prompts.%s.path must not be empty", alias),
+				Provenance: prompt.Path.Provenance,
 			})
 		}
 	}

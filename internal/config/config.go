@@ -62,6 +62,7 @@ const (
 	ProvenanceGlobal    Provenance = "global"
 	ProvenanceWorkspace Provenance = "workspace"
 	ProvenanceFile      Provenance = "file"
+	ProvenancePrompt    Provenance = "prompt"
 	ProvenanceEnv       Provenance = "env"
 	ProvenanceCLI       Provenance = "cli"
 )
@@ -114,6 +115,16 @@ type PromptConfig struct {
 	Loop        *LoopConfig `yaml:"loop,omitempty"`
 }
 
+// PromptConfigWithProvenance tracks provenance for prompt configuration.
+type PromptConfigWithProvenance struct {
+	Path        ValueWithProvenance[string]
+	Name        ValueWithProvenance[string]
+	Description ValueWithProvenance[string]
+	Loop        *LoopConfig // Raw loop config from YAML
+	LoopRawMap  map[string]interface{} // Raw map for explicit field detection
+	Provenance  Provenance // Provenance of this prompt definition
+}
+
 // Config is the root configuration structure.
 type Config struct {
 	Loop          LoopConfig              `yaml:"loop"`
@@ -124,7 +135,7 @@ type Config struct {
 // ConfigWithProvenance is the resolved configuration with provenance metadata.
 type ConfigWithProvenance struct {
 	Loop         LoopConfigWithProvenance
-	Prompts      map[string]PromptConfig
+	Prompts      map[string]PromptConfigWithProvenance
 	AICmdAliases map[string]ValueWithProvenance[string]
 }
 
@@ -172,7 +183,7 @@ func DefaultConfigWithProvenance() ConfigWithProvenance {
 			SignalSuccess:        ValueWithProvenance[string]{Value: "<promise>SUCCESS</promise>", Provenance: ProvenanceDefault},
 			SignalFailure:        ValueWithProvenance[string]{Value: "<promise>FAILURE</promise>", Provenance: ProvenanceDefault},
 		},
-		Prompts:      make(map[string]PromptConfig),
+		Prompts:      make(map[string]PromptConfigWithProvenance),
 		AICmdAliases: make(map[string]ValueWithProvenance[string]),
 	}
 }

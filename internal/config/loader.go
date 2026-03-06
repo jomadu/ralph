@@ -152,9 +152,12 @@ func overlayFileWithProvenance(path string, cfg *ConfigWithProvenance, prov Prov
 		overlayLoopConfigWithMap(&cfg.Loop, &raw.Loop, loopMap, prov)
 	}
 
-	// Overlay prompts (no provenance for prompts yet)
-	for k, v := range raw.Prompts {
-		cfg.Prompts[k] = v
+	// Overlay prompts with field-level merging
+	if promptsMap, ok := rawMap["prompts"].(map[string]interface{}); ok {
+		for alias, rawPrompt := range raw.Prompts {
+			promptMap, _ := promptsMap[alias].(map[string]interface{})
+			overlayPromptConfig(cfg, alias, rawPrompt, promptMap, prov)
+		}
 	}
 
 	// Overlay AI command aliases
@@ -165,42 +168,128 @@ func overlayFileWithProvenance(path string, cfg *ConfigWithProvenance, prov Prov
 	return nil
 }
 
+// overlayPromptConfig overlays a prompt configuration with field-level merging and provenance tracking.
+func overlayPromptConfig(cfg *ConfigWithProvenance, alias string, src PromptConfig, rawMap map[string]interface{}, prov Provenance) {
+	existing, exists := cfg.Prompts[alias]
+	if !exists {
+		// New prompt: create with all fields from source
+		existing = PromptConfigWithProvenance{
+			Path:        ValueWithProvenance[string]{Value: src.Path, Provenance: prov},
+			Name:        ValueWithProvenance[string]{Value: src.Name, Provenance: prov},
+			Description: ValueWithProvenance[string]{Value: src.Description, Provenance: prov},
+			Loop:        src.Loop,
+			LoopRawMap:  nil,
+			Provenance:  prov,
+		}
+		if loopMap, ok := rawMap["loop"].(map[string]interface{}); ok {
+			existing.LoopRawMap = loopMap
+		}
+	} else {
+		// Existing prompt: field-level merge
+		if _, ok := rawMap["path"]; ok {
+			existing.Path = ValueWithProvenance[string]{Value: src.Path, Provenance: prov}
+		}
+		if _, ok := rawMap["name"]; ok {
+			existing.Name = ValueWithProvenance[string]{Value: src.Name, Provenance: prov}
+		}
+		if _, ok := rawMap["description"]; ok {
+			existing.Description = ValueWithProvenance[string]{Value: src.Description, Provenance: prov}
+		}
+		if loopMap, ok := rawMap["loop"].(map[string]interface{}); ok {
+			existing.Loop = src.Loop
+			existing.LoopRawMap = loopMap
+			existing.Provenance = prov
+		}
+	}
+	cfg.Prompts[alias] = existing
+}
+
 // overlayLoopConfigWithMap overlays loop config values with provenance, using a map to detect explicit fields.
 func overlayLoopConfigWithMap(dst *LoopConfigWithProvenance, src *LoopConfig, rawMap map[string]interface{}, prov Provenance) {
+	overlayLoopConfigWithMapRespectingProvenance(dst, src, rawMap, prov, false)
+}
+
+// overlayLoopConfigWithMapRespectingProvenance overlays loop config values with provenance checking.
+// If respectProvenance is true, only overlay if the new provenance has higher or equal precedence.
+func overlayLoopConfigWithMapRespectingProvenance(dst *LoopConfigWithProvenance, src *LoopConfig, rawMap map[string]interface{}, prov Provenance, respectProvenance bool) {
 	if _, ok := rawMap["default_max_iterations"]; ok {
-		dst.DefaultMaxIterations = ValueWithProvenance[int]{Value: src.DefaultMaxIterations, Provenance: prov}
+		if !respectProvenance || provenancePrecedence(prov) <= provenancePrecedence(dst.DefaultMaxIterations.Provenance) {
+			dst.DefaultMaxIterations = ValueWithProvenance[int]{Value: src.DefaultMaxIterations, Provenance: prov}
+		}
 	}
 	if _, ok := rawMap["iteration_mode"]; ok {
-		dst.IterationMode = ValueWithProvenance[string]{Value: src.IterationMode, Provenance: prov}
+		if !respectProvenance || provenancePrecedence(prov) <= provenancePrecedence(dst.IterationMode.Provenance) {
+			dst.IterationMode = ValueWithProvenance[string]{Value: src.IterationMode, Provenance: prov}
+		}
 	}
 	if _, ok := rawMap["failure_threshold"]; ok {
-		dst.FailureThreshold = ValueWithProvenance[int]{Value: src.FailureThreshold, Provenance: prov}
+		if !respectProvenance || provenancePrecedence(prov) <= provenancePrecedence(dst.FailureThreshold.Provenance) {
+			dst.FailureThreshold = ValueWithProvenance[int]{Value: src.FailureThreshold, Provenance: prov}
+		}
 	}
 	if _, ok := rawMap["iteration_timeout"]; ok {
-		dst.IterationTimeout = ValueWithProvenance[int]{Value: src.IterationTimeout, Provenance: prov}
+		if !respectProvenance || provenancePrecedence(prov) <= provenancePrecedence(dst.IterationTimeout.Provenance) {
+			dst.IterationTimeout = ValueWithProvenance[int]{Value: src.IterationTimeout, Provenance: prov}
+		}
 	}
 	if _, ok := rawMap["max_output_buffer"]; ok {
-		dst.MaxOutputBuffer = ValueWithProvenance[int]{Value: src.MaxOutputBuffer, Provenance: prov}
+		if !respectProvenance || provenancePrecedence(prov) <= provenancePrecedence(dst.MaxOutputBuffer.Provenance) {
+			dst.MaxOutputBuffer = ValueWithProvenance[int]{Value: src.MaxOutputBuffer, Provenance: prov}
+		}
 	}
 	if _, ok := rawMap["show_ai_output"]; ok {
-		dst.ShowAIOutput = ValueWithProvenance[bool]{Value: src.ShowAIOutput, Provenance: prov}
+		if !respectProvenance || provenancePrecedence(prov) <= provenancePrecedence(dst.ShowAIOutput.Provenance) {
+			dst.ShowAIOutput = ValueWithProvenance[bool]{Value: src.ShowAIOutput, Provenance: prov}
+		}
 	}
 	if _, ok := rawMap["preamble"]; ok {
-		dst.Preamble = ValueWithProvenance[bool]{Value: src.Preamble, Provenance: prov}
+		if !respectProvenance || provenancePrecedence(prov) <= provenancePrecedence(dst.Preamble.Provenance) {
+			dst.Preamble = ValueWithProvenance[bool]{Value: src.Preamble, Provenance: prov}
+		}
 	}
 	if _, ok := rawMap["ai_cmd"]; ok {
-		dst.AICmd = ValueWithProvenance[string]{Value: src.AICmd, Provenance: prov}
+		if !respectProvenance || provenancePrecedence(prov) <= provenancePrecedence(dst.AICmd.Provenance) {
+			dst.AICmd = ValueWithProvenance[string]{Value: src.AICmd, Provenance: prov}
+		}
 	}
 	if _, ok := rawMap["ai_cmd_alias"]; ok {
-		dst.AICmdAlias = ValueWithProvenance[string]{Value: src.AICmdAlias, Provenance: prov}
+		if !respectProvenance || provenancePrecedence(prov) <= provenancePrecedence(dst.AICmdAlias.Provenance) {
+			dst.AICmdAlias = ValueWithProvenance[string]{Value: src.AICmdAlias, Provenance: prov}
+		}
 	}
 	if signalsMap, ok := rawMap["signals"].(map[string]interface{}); ok {
 		if _, ok := signalsMap["success"]; ok {
-			dst.SignalSuccess = ValueWithProvenance[string]{Value: src.Signals.Success, Provenance: prov}
+			if !respectProvenance || provenancePrecedence(prov) <= provenancePrecedence(dst.SignalSuccess.Provenance) {
+				dst.SignalSuccess = ValueWithProvenance[string]{Value: src.Signals.Success, Provenance: prov}
+			}
 		}
 		if _, ok := signalsMap["failure"]; ok {
-			dst.SignalFailure = ValueWithProvenance[string]{Value: src.Signals.Failure, Provenance: prov}
+			if !respectProvenance || provenancePrecedence(prov) <= provenancePrecedence(dst.SignalFailure.Provenance) {
+				dst.SignalFailure = ValueWithProvenance[string]{Value: src.Signals.Failure, Provenance: prov}
+			}
 		}
+	}
+}
+
+// provenancePrecedence returns the precedence order (lower number = higher precedence).
+func provenancePrecedence(prov Provenance) int {
+	switch prov {
+	case ProvenanceCLI:
+		return 0
+	case ProvenanceEnv:
+		return 1
+	case ProvenancePrompt:
+		return 2
+	case ProvenanceWorkspace:
+		return 3
+	case ProvenanceGlobal:
+		return 4
+	case ProvenanceFile:
+		return 5
+	case ProvenanceDefault:
+		return 6
+	default:
+		return 999
 	}
 }
 
@@ -406,4 +495,36 @@ func OverlayCLIFlags(cfg *ConfigWithProvenance, flags CLIFlags) {
 	if flags.LogLevel != nil {
 		cfg.Loop.LogLevel = ValueWithProvenance[string]{Value: *flags.LogLevel, Provenance: ProvenanceCLI}
 	}
+}
+
+// ResolveEffectiveConfigForPrompt returns the effective loop config for a specific prompt alias.
+// Prompt-level loop overrides are applied on top of the root loop config.
+// The returned config has prompt overrides applied but NOT env vars or CLI flags (caller must apply those).
+func ResolveEffectiveConfigForPrompt(cfg ConfigWithProvenance, promptAlias string) (ConfigWithProvenance, error) {
+	// Start with a copy of the base config
+	effective := cfg
+
+	// Look up the prompt
+	prompt, ok := cfg.Prompts[promptAlias]
+	if !ok {
+		return effective, fmt.Errorf("prompt alias %q not found", promptAlias)
+	}
+
+	// If the prompt has no loop overrides, return the base config
+	if prompt.Loop == nil {
+		return effective, nil
+	}
+
+	// Use the prompt's provenance for loop overrides
+	promptProv := prompt.Provenance
+
+	// Overlay loop config using the stored raw map for explicit field detection
+	if prompt.LoopRawMap != nil {
+		overlayLoopConfigWithMap(&effective.Loop, prompt.Loop, prompt.LoopRawMap, promptProv)
+	} else {
+		// Fallback to simple overlay if no raw map (shouldn't happen in normal operation)
+		overlayLoopConfig(&effective.Loop, prompt.Loop, promptProv)
+	}
+
+	return effective, nil
 }

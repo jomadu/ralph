@@ -1,0 +1,23 @@
+loop:
+  default_max_iterations: 10
+  failure_threshold: 3
+  ai_cmd_alias: kiro
+  signals:
+    success: "<promise>SUCCESS</promise>"
+    failure: "<promise>FAILURE</promise>"
+
+prompts:
+  test-override:
+    path: "./prompts/build.md"
+    loop:
+      default_max_iterations: 2
+      failure_threshold: 1
+  
+  test-no-override:
+    path: "./prompts/build.md"
+  
+  test-signal-override:
+    path: "./prompts/build.md"
+    loop:
+      signals:
+        success: "DONE"

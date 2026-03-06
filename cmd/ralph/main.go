@@ -111,9 +111,6 @@ var runCmd = &cobra.Command{
 			cliFlags.Preamble = &noPreamble
 		}
 
-		// Overlay CLI flags
-		config.OverlayCLIFlags(&cfg, cliFlags)
-
 		// Resolve prompt input mode
 		var alias string
 		if len(args) > 0 {
@@ -125,6 +122,18 @@ var runCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
+
+		// Apply prompt-level loop overrides if running from alias
+		if mode == prompt.ModeAlias {
+			cfg, err = config.ResolveEffectiveConfigForPrompt(cfg, alias)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error: %v\n", err)
+				os.Exit(1)
+			}
+		}
+
+		// Overlay CLI flags (after prompt overrides, so CLI takes precedence)
+		config.OverlayCLIFlags(&cfg, cliFlags)
 
 		// Load prompt content
 		src, err := prompt.LoadPrompt(mode, alias, fileFlag, &cfg)
@@ -180,7 +189,47 @@ var listPromptsCmd = &cobra.Command{
 	Use:   "prompts",
 	Short: "List prompt aliases",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("list prompts: not implemented")
+		cfg, err := config.LoadConfigWithProvenanceAndExplicit(configFlag)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+
+		if err := config.Validate(cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+
+		if len(cfg.Prompts) == 0 {
+			fmt.Println("No prompts configured.")
+			return
+		}
+
+		var keys []string
+		for k := range cfg.Prompts {
+			keys = append(keys, k)
+		}
+
+		// Sort alphabetically
+		for i := 0; i < len(keys); i++ {
+			for j := i + 1; j < len(keys); j++ {
+				if keys[i] > keys[j] {
+					keys[i], keys[j] = keys[j], keys[i]
+				}
+			}
+		}
+
+		for _, k := range keys {
+			p := cfg.Prompts[k]
+			fmt.Printf("%s:\n", k)
+			if p.Name.Value != "" {
+				fmt.Printf("  name: %s\n", p.Name.Value)
+			}
+			if p.Description.Value != "" {
+				fmt.Printf("  description: %s\n", p.Description.Value)
+			}
+			fmt.Printf("  path: %s\n", p.Path.Value)
+		}
 	},
 }
 

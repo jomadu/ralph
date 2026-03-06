@@ -85,7 +85,7 @@ func loadFromAlias(alias string, cfg *config.ConfigWithProvenance) (*Source, err
 		return nil, fmt.Errorf("unknown prompt alias %q", alias)
 	}
 
-	path := promptCfg.Path
+	path := promptCfg.Path.Value
 	if path == "" {
 		return nil, fmt.Errorf("prompt alias %q has no path configured", alias)
 	}
