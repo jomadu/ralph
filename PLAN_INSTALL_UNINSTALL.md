@@ -36,17 +36,18 @@ T2 and T3 can be implemented in parallel after T1. T4 (documentation) should ref
 - **Install state:** The uninstall script must know where the binary was placed (so it can remove only that file and not touch other copies). Use a **state file** that the install script writes and the uninstall script reads. Suggested location: `~/.config/ralph/install-state` (or a single line in a file like `~/.config/ralph/.install-path`). Content: the directory path where `ralph` was installed (so uninstall can `rm "$INSTALL_DIR/ralph"`). If the install script supports a user-specified directory, that path must be what is recorded. Do **not** store user config in this file; this file is only for "where did we put the binary."
 - **Idempotency:** Uninstall script should tolerate "binary already deleted" or "state file missing" (treat as "not installed" and exit 0 or report clearly). Install script overwriting an existing install (same or different dir) is acceptable: update state file and replace binary.
 
-**Decisions to document in this task (for T2/T3):**
+**Convention (T1 decisions):**
 
-- Default install directory (e.g. `$HOME/bin` if it exists and is writable, else `/usr/local/bin` with a note about sudo; or always `$HOME/bin` and document "ensure ~/bin is on PATH").
-- State file path and format (e.g. `~/.config/ralph/install-state` with one line: `INSTALL_DIR=/path/to/dir` or just `/path/to/dir`).
-- Override mechanism for install directory (env var and/or flag).
+- **Default install directory:** `$HOME/bin`. Rationale: user-writable without sudo; commonly on PATH on macOS and Linux. Documentation (T4) will state "ensure ~/bin is on your PATH" or "add ~/bin to PATH if needed."
+- **Override:** Environment variable `RALPH_INSTALL_DIR` (e.g. `RALPH_INSTALL_DIR=/usr/local/bin`). Install script may also support `--dir <path>`; if so, `--dir` overrides `RALPH_INSTALL_DIR`. Resolved path (absolute) is what is written to the state file and used for install/uninstall.
+- **State file path:** `~/.config/ralph/install-state`. Resolve `~` per shell (e.g. `$HOME`); use same resolution as Ralph config (e.g. `$HOME/.config/ralph/install-state`). This file is **only** for install/uninstall script use; it is not user config and is not `ralph-config.yml`.
+- **State file format:** Single line containing the absolute path of the install directory (no key prefix). Example: `/Users/jane/bin`. Install script writes this line (and only this line); uninstall script reads it to get `INSTALL_DIR`, then removes `$INSTALL_DIR/ralph` and then removes the state file. No other keys or user config in this file.
 
 **Acceptance:**
 
-- [ ] Default install directory is chosen and documented in this plan or a short design note.
-- [ ] State file path and format are defined; install script will write it; uninstall script will read it and remove only the binary at that path, then remove the state file.
-- [ ] User config files are never written or deleted by these scripts; state file is separate from `ralph-config.yml`.
+- [x] Default install directory is chosen and documented in this plan or a short design note.
+- [x] State file path and format are defined; install script will write it; uninstall script will read it and remove only the binary at that path, then remove the state file.
+- [x] User config files are never written or deleted by these scripts; state file is separate from `ralph-config.yml`.
 
 ---
 
