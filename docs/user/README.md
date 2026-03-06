@@ -10,13 +10,24 @@ This directory is the **canonical location** for user-facing documentation for R
 | [Review report summary format](review-report-format.md) | Machine-parseable summary line and exit codes for `ralph review` report output | [O5](../intent/O5-prompt-review/README.md) — Prompt review; [R6](../intent/O5-prompt-review/R6-report-format-exit-codes.md) report format |
 | [Ralph binary and build prompt](ralph-binary-and-build-prompt.md) | How to build the ralph binary, put it on PATH, and use the build procedure prompt for O5 tasks | [O5](../intent/O5-prompt-review/README.md) — Prompt review (developer workflow) |
 
-## How to add a topic
-
-1. Create a new file under `docs/user/` (e.g. `docs/user/my-topic.md`). Use kebab-case for filenames.
-2. Add a row to the **Topics** table above: document link, short description, and intent link (outcome and/or requirement from `docs/intent/`) when applicable.
-3. In the topic file, add an **Intent** line at the top linking to the relevant outcome/requirement so traceability is explicit.
-
 ## Policy
 
-- User-facing docs here should not contradict the intent tree. When behavior is specified in a requirement, user docs describe the same behavior in user terms.
-- New topics that stem from the intent tree (e.g. workarounds referenced in a requirement) should be added here and linked from the relevant requirement or outcome where appropriate.
+This section defines what belongs where, how to add or update user-facing docs, and how they relate to the intent tree. Full specification: [O7 R5 — Policy and maintenance](../intent/O7-user-facing-documentation/R5-documentation-policy-and-maintenance.md).
+
+### What goes where
+
+- **User-facing docs (`docs/user/`):** Task-oriented content for *users* of Ralph: how to configure, run, choose a backend, apply workarounds, install and uninstall. Written in user terms; may summarize or link to intent or CLI reference. Must align with product behavior and be discoverable (e.g. linked from the root README).
+- **Intent tree (`docs/intent/`):** Outcomes, requirements, and specifications for *builders* and maintainers. Source of truth for behavior. Not written as end-user how-tos. User docs may reference outcomes/requirements for traceability.
+- **Root README:** High-level project description, quick start, install/uninstall summary or link, and link(s) to user docs. README may duplicate a minimal subset of user doc content for convenience; the canonical detail lives in user docs or intent as appropriate.
+
+### Adding a topic
+
+1. Create a new file under `docs/user/` (e.g. `docs/user/my-topic.md`). Use kebab-case for filenames.
+2. Add a row to the **Topics** table in this index: document link, short description, and intent link (outcome and/or requirement from `docs/intent/`) when the topic implements or explains a specific requirement.
+3. In the topic file, add an **Intent** line at the top linking to the relevant outcome/requirement so traceability is explicit.
+
+### Updating and alignment
+
+- When behavior or intent changes, update any user doc that describes that behavior so docs stay aligned with the product. When a requirement in the intent tree changes, update the linked user doc(s) that trace to it.
+- User-facing docs must not contradict the intent tree. Where a topic traces to a requirement, that requirement is authoritative for behavior; the user doc translates it into user-oriented language.
+- If a topic becomes obsolete (e.g. a workaround is no longer needed), remove or archive the doc and update the index.
