@@ -1,6 +1,8 @@
 # Review report summary format (O5 R6)
 
-When you run `ralph review`, the AI writes a report file. The report must include a **machine-parseable summary line** so scripts and CI can gate on the result without parsing narrative text.
+**Intent:** [O5 — Prompt review](../intent/O5-prompt-review/README.md); [R6 — Report format and exit codes](../intent/O5-prompt-review/R6-report-format-exit-codes.md)
+
+When you run `ralph review`, the AI writes a report file. *(Note: the `ralph review` subcommand is not yet implemented; this doc describes the intended report format and exit codes per the specification.)* The report must include a **machine-parseable summary line** so scripts and CI can gate on the result without parsing narrative text.
 
 ## Canonical format
 

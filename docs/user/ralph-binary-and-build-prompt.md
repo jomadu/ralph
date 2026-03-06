@@ -1,5 +1,7 @@
 # Using the Ralph Binary and Build Prompt for Prompt Review
 
+**Intent:** [O5 — Prompt review](../intent/O5-prompt-review/README.md) (developer workflow for building ralph and using the build procedure prompt)
+
 This doc explains how to **build and run the ralph binary** and how to use the **build procedure prompt** (`prompts/build.md`) to burn down the **Prompt Review (O5)** tasks.
 
 ---

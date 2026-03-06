@@ -2,6 +2,8 @@
 
 This directory is the **canonical location** for user-facing documentation for Ralph: how-tos, workarounds, and examples. It is produced from or aligned with the intent tree under [docs/intent/](../intent/). When a topic corresponds to a requirement or outcome, that linkage is noted so the intent tree remains the source of truth and user docs stay consistent with specifications.
 
+**Limitations:** Some described features (e.g. `ralph review`) are specified in the intent tree but not yet implemented; those docs state that or link to the spec. Install/uninstall is documented in the root README and tested on macOS and Linux; Windows is not yet supported.
+
 ## Topics
 
 | Document | Description | Intent |
