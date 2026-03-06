@@ -515,15 +515,12 @@ func ResolveEffectiveConfigForPrompt(cfg ConfigWithProvenance, promptAlias strin
 		return effective, nil
 	}
 
-	// Use the prompt's provenance for loop overrides
-	promptProv := prompt.Provenance
-
 	// Overlay loop config using the stored raw map for explicit field detection
 	if prompt.LoopRawMap != nil {
-		overlayLoopConfigWithMap(&effective.Loop, prompt.Loop, prompt.LoopRawMap, promptProv)
+		overlayLoopConfigWithMap(&effective.Loop, prompt.Loop, prompt.LoopRawMap, ProvenancePrompt)
 	} else {
 		// Fallback to simple overlay if no raw map (shouldn't happen in normal operation)
-		overlayLoopConfig(&effective.Loop, prompt.Loop, promptProv)
+		overlayLoopConfig(&effective.Loop, prompt.Loop, ProvenancePrompt)
 	}
 
 	return effective, nil
