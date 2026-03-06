@@ -31,6 +31,10 @@ ralph run -f ./prompts/fix-tests.md
 cat prompts/build.md | ralph run
 ```
 
+## Documentation
+
+User documentation (how-tos, workarounds, and examples) is in **[User docs](docs/user/)**. The [user docs index](docs/user/README.md) lists all topics.
+
 ## How It Works
 
 Each iteration:
