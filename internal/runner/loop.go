@@ -117,6 +117,13 @@ func Loop(
 			return ExitCodeExhausted
 		}
 
+		// Emit iteration progress message to stderr (O4/R6)
+		if iterationMode == "unlimited" {
+			log.Printf("INFO: Iteration %d (unlimited)", i)
+		} else {
+			log.Printf("INFO: Iteration %d/%d", i, maxIterations)
+		}
+
 		result := RunIteration(ctx, i, aiCmd, promptContent, cfg, contextStrings, verbose)
 
 		// If interrupted, discard output and exit 130 (O1/R7)
