@@ -10,6 +10,7 @@ import (
 	"github.com/maxdunn/ralph/internal/config"
 	"github.com/maxdunn/ralph/internal/logger"
 	"github.com/maxdunn/ralph/internal/prompt"
+	"github.com/maxdunn/ralph/internal/review"
 	"github.com/maxdunn/ralph/internal/runner"
 )
 
@@ -51,8 +52,9 @@ var (
 	// Prompt input
 	fileFlag string
 
-	// Review-specific flags (T1; --review-output, --apply, --prompt-output stubbed later)
-	reviewFileFlag string
+	// Review-specific flags (T1; T2 adds --review-output)
+	reviewFileFlag    string
+	reviewOutputFlag  string
 )
 
 var runCmd = &cobra.Command{
@@ -383,7 +385,18 @@ var reviewCmd = &cobra.Command{
 			os.Exit(2)
 		}
 
-		_ = src // T2–T9 will use src; for T1 just verify load and exit 0
+		// R3: Resolve report path (--review-output or temp); validate before spawning AI (T2)
+		reportPath, isTemp, err := review.ResolveReportPath(reviewOutputFlag)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(2)
+		}
+		if isTemp {
+			fmt.Fprintf(os.Stderr, "Report will be written to: %s\n", reportPath)
+		}
+
+		_ = src
+		_ = reportPath // T3 will interpolate into prompt; R9 will verify file at this path
 		fmt.Fprintf(os.Stderr, "review: loaded %d bytes (stub; full review not yet implemented)\n", len(src.Content))
 		os.Exit(0)
 	},
@@ -399,6 +412,7 @@ func init() {
 	// Prompt input
 	runCmd.Flags().StringVarP(&fileFlag, "file", "f", "", "Read prompt from file")
 	reviewCmd.Flags().StringVarP(&reviewFileFlag, "file", "f", "", "Read prompt from file (R1: wins over alias)")
+	reviewCmd.Flags().StringVar(&reviewOutputFlag, "review-output", "", "Write review report to this path (default: temp file; path communicated to user)")
 
 	// Loop control
 	runCmd.Flags().IntVarP(&maxIterationsFlag, "max-iterations", "n", 0, "Override max iterations")
