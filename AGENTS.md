@@ -76,6 +76,7 @@ Location: `scripts/`, root-level scripts (e.g. `cursor-wrapper.sh`), and (when p
 Patterns:
 - `scripts/*.sh` — Scripts and wrappers
 - `cursor-wrapper.sh` — Cursor integration script
+- `testdata/` — Test fixture files (e.g. config YAMLs used only by tests). See O2-R5 for the convention; integration tests use `--config testdata/<fixture>.yml` from repo root.
 
 Excludes: `.git/`, `.beads/`, `docs/` (specifications), `AGENTS.md`, `PLAN.md`, `TASK.md`, `building-intent.md`
 

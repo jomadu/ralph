@@ -34,7 +34,9 @@ When the user provides `--config <path>`:
 3. If the file exists but is not readable, Ralph exits with error: `config file not readable: <path>: permission denied`. Exit code 1.
 4. If the file exists and is readable, parse it as the sole file-based config layer.
 
-The distinction is intent: default locations are optional convenience; `--config` expresses an explicit expectation of a fully deterministic file-based config. This is critical for testing — an integration test that passes `--config ./test-config.yml` is not polluted by a developer's global config in their home directory.
+The distinction is intent: default locations are optional convenience; `--config` expresses an explicit expectation of a fully deterministic file-based config. This is critical for testing — an integration test that passes `--config ./testdata/test-config.yml` (or another path under the project's test fixture directory) is not polluted by a developer's global config in their home directory.
+
+**Test fixture configs:** Config files used only for tests (e.g. integration or manual testing) live in the repository root directory `testdata/`. Example: `testdata/test-config.yml`. Tests that need a deterministic config source should use `--config testdata/<fixture>.yml` when run from the repository root.
 
 **Global config directory resolution:**
 
