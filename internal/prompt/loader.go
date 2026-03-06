@@ -26,22 +26,20 @@ type Source struct {
 }
 
 // ResolveMode determines the prompt input mode from CLI arguments and stdin state.
-// Returns an error if the mode is ambiguous or no source is identified.
+// Resolution order (O5 R1, shared by run and review): (1) if -f present use file,
+// (2) else positional alias, (3) else stdin. When both alias and -f are present,
+// file wins and alias is ignored.
+// Returns an error only when no source is identified (no alias, no file, no piped stdin).
 func ResolveMode(alias string, filePath string) (Mode, error) {
 	hasAlias := alias != ""
 	hasFile := filePath != ""
 
-	// Check for ambiguous input
-	if hasAlias && hasFile {
-		return 0, fmt.Errorf("ambiguous prompt source: cannot use both alias %q and --file %q", alias, filePath)
-	}
-
-	// Mode resolution order
-	if hasAlias {
-		return ModeAlias, nil
-	}
+	// Mode resolution order: file > alias > stdin (O5 R1)
 	if hasFile {
 		return ModeFile, nil
+	}
+	if hasAlias {
+		return ModeAlias, nil
 	}
 
 	// Check if stdin is piped

@@ -50,6 +50,9 @@ var (
 
 	// Prompt input
 	fileFlag string
+
+	// Review-specific flags (T1; --review-output, --apply, --prompt-output stubbed later)
+	reviewFileFlag string
 )
 
 var runCmd = &cobra.Command{
@@ -340,14 +343,62 @@ var versionCmd = &cobra.Command{
 	},
 }
 
+// reviewCmd implements the ralph review subcommand (O5). T1: input modes and validation; rest stubbed.
+var reviewCmd = &cobra.Command{
+	Use:   "review [alias]",
+	Short: "Review a prompt for quality and structure (O5)",
+	Run: func(cmd *cobra.Command, args []string) {
+		cfg, err := config.LoadConfigWithProvenanceAndExplicit(configFlag)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(2)
+		}
+		if err := config.Validate(cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(2)
+		}
+
+		var alias string
+		if len(args) > 0 {
+			alias = args[0]
+		}
+		// R1: resolution order file > alias > stdin (same ResolveMode as run)
+		mode, err := prompt.ResolveMode(alias, reviewFileFlag)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(2)
+		}
+
+		if mode == prompt.ModeAlias {
+			cfg, err = config.ResolveEffectiveConfigForPrompt(cfg, alias)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error: %v\n", err)
+				os.Exit(2)
+			}
+		}
+
+		src, err := prompt.LoadPrompt(mode, alias, reviewFileFlag, &cfg)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(2)
+		}
+
+		_ = src // T2–T9 will use src; for T1 just verify load and exit 0
+		fmt.Fprintf(os.Stderr, "review: loaded %d bytes (stub; full review not yet implemented)\n", len(src.Content))
+		os.Exit(0)
+	},
+}
+
 func init() {
 	// Configuration
 	runCmd.Flags().StringVar(&configFlag, "config", "", "Explicit config file path")
 	listPromptsCmd.Flags().StringVar(&configFlag, "config", "", "Explicit config file path")
 	listAliasesCmd.Flags().StringVar(&configFlag, "config", "", "Explicit config file path")
+	reviewCmd.Flags().StringVar(&configFlag, "config", "", "Explicit config file path")
 
 	// Prompt input
 	runCmd.Flags().StringVarP(&fileFlag, "file", "f", "", "Read prompt from file")
+	reviewCmd.Flags().StringVarP(&reviewFileFlag, "file", "f", "", "Read prompt from file (R1: wins over alias)")
 
 	// Loop control
 	runCmd.Flags().IntVarP(&maxIterationsFlag, "max-iterations", "n", 0, "Override max iterations")
@@ -378,6 +429,7 @@ func init() {
 	listCmd.AddCommand(listPromptsCmd)
 	listCmd.AddCommand(listAliasesCmd)
 	rootCmd.AddCommand(runCmd)
+	rootCmd.AddCommand(reviewCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(versionCmd)
 }
