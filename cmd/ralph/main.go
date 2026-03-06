@@ -432,12 +432,21 @@ var reviewCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "error: AI spawn failed: %v\n", err)
 			os.Exit(2)
 		}
-		if exitCode != 0 {
-			fmt.Fprintf(os.Stderr, "error: AI process exited with code %d\n", exitCode)
+
+		// R9: Verify report file exists at reportPath after review-phase AI exits (R8 condition 7)
+		if err := review.VerifyReportExists(reportPath); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(2)
 		}
 
-		// T5/R9 will verify report file exists; T6 will derive exit 0/1 from content. For T3, exit 0.
+		// R8 edge case: If AI exited non-zero but report exists, derive exit from report content (T6).
+		// Until T6 parses report, treat as success when report is present; do not exit 2 for AI exit code alone.
+		if exitCode != 0 {
+			// Report exists; T6 will later derive 0 vs 1 from content. For now exit 0.
+			os.Exit(0)
+		}
+
+		// T6 will derive exit 0 vs 1 from report content. For now exit 0.
 		os.Exit(0)
 	},
 }

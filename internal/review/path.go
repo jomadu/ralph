@@ -22,22 +22,27 @@ func ResolveReportPath(explicitPath string) (reportPath string, isTemp bool, err
 	return path, true, err
 }
 
+// reportPathErr formats an error for report path validation (R8: "cannot write report to <path>: <reason>").
+func reportPathErr(path string, reason string) error {
+	return fmt.Errorf("cannot write report to %s: %s", path, reason)
+}
+
 func resolveExplicitPath(explicitPath string) (string, error) {
 	path, err := filepath.Abs(explicitPath)
 	if err != nil {
-		return "", fmt.Errorf("review output path invalid: %w", err)
+		return "", reportPathErr(explicitPath, err.Error())
 	}
 
 	info, err := os.Stat(path)
 	if err == nil {
 		if info.IsDir() {
-			return "", fmt.Errorf("review output path is a directory (must be a file): %s", path)
+			return "", reportPathErr(path, "path is a directory (must be a file)")
 		}
 		// Existing file: overwrite allowed per R3
 		return path, nil
 	}
 	if !os.IsNotExist(err) {
-		return "", fmt.Errorf("review output path: %w", err)
+		return "", reportPathErr(path, err.Error())
 	}
 
 	// Path does not exist; ensure parent exists and is writable
@@ -45,16 +50,16 @@ func resolveExplicitPath(explicitPath string) (string, error) {
 	parentInfo, err := os.Stat(parent)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return "", fmt.Errorf("review output path invalid: parent directory does not exist: %s", parent)
+			return "", reportPathErr(path, "parent directory does not exist: "+parent)
 		}
-		return "", fmt.Errorf("review output path: %w", err)
+		return "", reportPathErr(path, err.Error())
 	}
 	if !parentInfo.IsDir() {
-		return "", fmt.Errorf("review output path invalid: parent is not a directory: %s", parent)
+		return "", reportPathErr(path, "parent is not a directory: "+parent)
 	}
 
 	if err := checkWritable(parent); err != nil {
-		return "", fmt.Errorf("review output path unwritable: %w", err)
+		return "", reportPathErr(path, err.Error())
 	}
 	return path, nil
 }
@@ -62,28 +67,28 @@ func resolveExplicitPath(explicitPath string) (string, error) {
 func resolveTempPath() (string, error) {
 	dir := os.TempDir()
 	if dir == "" {
-		return "", fmt.Errorf("system temporary directory not available")
+		return "", fmt.Errorf("cannot write report: system temporary directory not available")
 	}
 	dirInfo, err := os.Stat(dir)
 	if err != nil {
-		return "", fmt.Errorf("temp directory unavailable: %w", err)
+		return "", fmt.Errorf("cannot write report: temp directory unavailable: %w", err)
 	}
 	if !dirInfo.IsDir() {
-		return "", fmt.Errorf("temp path is not a directory: %s", dir)
+		return "", fmt.Errorf("cannot write report: temp path is not a directory: %s", dir)
 	}
 	if err := checkWritable(dir); err != nil {
-		return "", fmt.Errorf("temp directory not writable: %w", err)
+		return "", fmt.Errorf("cannot write report: temp directory not writable: %w", err)
 	}
 
 	// Create a unique path: create then remove so we get a path the OS guarantees is unique
 	f, err := os.CreateTemp(dir, "ralph-review-*.md")
 	if err != nil {
-		return "", fmt.Errorf("temp directory not writable: %w", err)
+		return "", fmt.Errorf("cannot write report: temp directory not writable: %w", err)
 	}
 	path := f.Name()
 	_ = f.Close()
 	if err := os.Remove(path); err != nil {
-		return "", fmt.Errorf("failed to reserve temp path: %w", err)
+		return "", fmt.Errorf("cannot write report: failed to reserve temp path: %w", err)
 	}
 	return path, nil
 }
@@ -215,4 +220,33 @@ func checkFileWritable(path string) error {
 		return err
 	}
 	return f.Close()
+}
+
+// VerifyReportExists checks that a regular file exists at reportPath after the review-phase AI exits (R9).
+// If the file is missing, a directory, or a symlink to a missing file, returns an error (caller should exit 2 per R8).
+func VerifyReportExists(reportPath string) error {
+	info, err := os.Lstat(reportPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("report file not found at %s", reportPath)
+		}
+		return fmt.Errorf("report path: %w", err)
+	}
+	if info.IsDir() {
+		return fmt.Errorf("report file not found at %s: path is a directory", reportPath)
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		// Symlink: resolve and check target exists (R9: symlink to missing file → exit 2)
+		target, err := os.Stat(reportPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return fmt.Errorf("report file not found at %s (symlink target missing)", reportPath)
+			}
+			return fmt.Errorf("report path: %w", err)
+		}
+		if target.IsDir() {
+			return fmt.Errorf("report file not found at %s: symlink target is a directory", reportPath)
+		}
+	}
+	return nil
 }
