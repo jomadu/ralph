@@ -427,7 +427,7 @@ var reviewCmd = &cobra.Command{
 		}
 
 		// Single AI invocation; report is file at reportPath (R2), not parsed from stdout
-		exitCode, err := runner.SpawnAI(aiArgv, bytes.NewReader(composed), os.Stdout, os.Stderr)
+		_, err = runner.SpawnAI(aiArgv, bytes.NewReader(composed), os.Stdout, os.Stderr)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: AI spawn failed: %v\n", err)
 			os.Exit(2)
@@ -439,15 +439,9 @@ var reviewCmd = &cobra.Command{
 			os.Exit(2)
 		}
 
-		// R8 edge case: If AI exited non-zero but report exists, derive exit from report content (T6).
-		// Until T6 parses report, treat as success when report is present; do not exit 2 for AI exit code alone.
-		if exitCode != 0 {
-			// Report exists; T6 will later derive 0 vs 1 from content. For now exit 0.
-			os.Exit(0)
-		}
-
-		// T6 will derive exit 0 vs 1 from report content. For now exit 0.
-		os.Exit(0)
+		// R6: Parse report for machine-parseable summary; derive exit 0 (no errors) or 1 (errors in prompt).
+		code := review.ParseReportSummary(reportPath)
+		os.Exit(code)
 	},
 }
 

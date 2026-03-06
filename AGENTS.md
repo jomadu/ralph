@@ -42,6 +42,7 @@ Patterns:
 - `scripts/*.sh` — Scripts and wrappers
 - `scripts/cursor-wrapper.sh` — Optional Cursor Agent wrapper (user-facing doc: `docs/user/cursor-agent-workaround.md`); built-in `cursor-agent` alias is the raw `agent` command
 - `testdata/` — Test fixture files (e.g. config YAMLs used only by tests). See O2-R5 for the convention; integration tests use `--config testdata/<fixture>.yml` from repo root.
+- **Review report summary (O5 R6):** Machine-parseable line format and exit code derivation are documented in `docs/user/review-report-format.md`; parser in `internal/review/summary.go`.
 
 Excludes: `.git/`, `docs/` (specifications), `AGENTS.md`, `PLAN.md`, `TASK.md`, `building-intent.md`
 
