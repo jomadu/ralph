@@ -71,11 +71,11 @@ T2 and T3 can be implemented in parallel after T1. T4 (documentation) should ref
 
 **Acceptance:**
 
-- [ ] From repo root (with Go), running `./scripts/install.sh` builds the binary (if needed), installs it to the default directory, and writes the state file.
-- [ ] With `RALPH_INSTALL_DIR` (or equivalent) set, the script installs to that directory and records it in the state file.
-- [ ] After install, the binary at `$INSTALL_DIR/ralph` exists and is executable; `ralph version` works in a new shell if that dir is on PATH.
-- [ ] Script uses `-f` for copy/move and avoids interactive prompts when a default or env is provided.
-- [ ] Clear error message when not run from repo and no pre-built binary path is provided.
+- [x] From repo root (with Go), running `./scripts/install.sh` builds the binary (if needed), installs it to the default directory, and writes the state file.
+- [x] With `RALPH_INSTALL_DIR` (or equivalent) set, the script installs to that directory and records it in the state file.
+- [x] After install, the binary at `$INSTALL_DIR/ralph` exists and is executable; `ralph version` works in a new shell if that dir is on PATH.
+- [x] Script uses `-f` for copy/move and avoids interactive prompts when a default or env is provided.
+- [x] Clear error message when not run from repo and no pre-built binary path is provided.
 
 ---
 
