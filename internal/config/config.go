@@ -1,9 +1,49 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 )
+
+// CommandResolution holds the result of AI command resolution.
+type CommandResolution struct {
+	Command string
+	Source  string // "direct command" or "alias <name>"
+}
+
+// ResolveAICommand resolves the AI command from effective config.
+// Direct command (AICmd) takes precedence over alias (AICmdAlias).
+// Returns error if neither is configured.
+func ResolveAICommand(cfg ConfigWithProvenance) (CommandResolution, error) {
+	// Step 1: Check for direct command
+	if cfg.Loop.AICmd.Value != "" {
+		return CommandResolution{
+			Command: cfg.Loop.AICmd.Value,
+			Source:  "direct command",
+		}, nil
+	}
+
+	// Step 2: Check for alias
+	if cfg.Loop.AICmdAlias.Value != "" {
+		aliasName := cfg.Loop.AICmdAlias.Value
+		
+		// Look up alias in merged alias map
+		if aliasValue, ok := cfg.AICmdAliases[aliasName]; ok {
+			return CommandResolution{
+				Command: aliasValue.Value,
+				Source:  fmt.Sprintf("alias %s", aliasName),
+			}, nil
+		}
+		
+		// Alias not found - this should be caught by validation
+		return CommandResolution{}, fmt.Errorf("unknown AI command alias %q", aliasName)
+	}
+
+	// Step 3: No command configured
+	return CommandResolution{}, fmt.Errorf("no AI command configured: set ai_cmd or ai_cmd_alias via config, environment, or CLI flags")
+}
+
 
 // Provenance identifies the source layer of a config value.
 type Provenance string
@@ -27,6 +67,7 @@ type LoopConfig struct {
 	ShowAIOutput         bool   `yaml:"show_ai_output"`
 	LogLevel             string `yaml:"log_level"`
 	Preamble             bool   `yaml:"preamble"`
+	AICmd                string `yaml:"ai_cmd"`
 	AICmdAlias           string `yaml:"ai_cmd_alias"`
 	Signals              struct {
 		Success string `yaml:"success"`
@@ -44,6 +85,7 @@ type LoopConfigWithProvenance struct {
 	ShowAIOutput         ValueWithProvenance[bool]
 	LogLevel             ValueWithProvenance[string]
 	Preamble             ValueWithProvenance[bool]
+	AICmd                ValueWithProvenance[string]
 	AICmdAlias           ValueWithProvenance[string]
 	SignalSuccess        ValueWithProvenance[string]
 	SignalFailure        ValueWithProvenance[string]
@@ -89,7 +131,8 @@ func DefaultConfig() Config {
 			ShowAIOutput:         false,
 			LogLevel:             "info",
 			Preamble:             true,
-			AICmdAlias:           "claude",
+			AICmd:                "",
+			AICmdAlias:           "",
 			Signals: struct {
 				Success string `yaml:"success"`
 				Failure string `yaml:"failure"`
@@ -115,7 +158,8 @@ func DefaultConfigWithProvenance() ConfigWithProvenance {
 			ShowAIOutput:         ValueWithProvenance[bool]{Value: false, Provenance: ProvenanceDefault},
 			LogLevel:             ValueWithProvenance[string]{Value: "info", Provenance: ProvenanceDefault},
 			Preamble:             ValueWithProvenance[bool]{Value: true, Provenance: ProvenanceDefault},
-			AICmdAlias:           ValueWithProvenance[string]{Value: "claude", Provenance: ProvenanceDefault},
+			AICmd:                ValueWithProvenance[string]{Value: "", Provenance: ProvenanceDefault},
+			AICmdAlias:           ValueWithProvenance[string]{Value: "", Provenance: ProvenanceDefault},
 			SignalSuccess:        ValueWithProvenance[string]{Value: "<promise>SUCCESS</promise>", Provenance: ProvenanceDefault},
 			SignalFailure:        ValueWithProvenance[string]{Value: "<promise>FAILURE</promise>", Provenance: ProvenanceDefault},
 		},

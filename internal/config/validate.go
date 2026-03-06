@@ -145,7 +145,10 @@ func validateSchema(cfg ConfigWithProvenance) ValidationErrors {
 func validateSemantic(cfg ConfigWithProvenance) ValidationErrors {
 	var errors ValidationErrors
 
-	// Validate ai_cmd_alias resolution
+	// Validate AI command resolution
+	// Note: We don't fail validation if neither ai_cmd nor ai_cmd_alias is set,
+	// because ResolveAICommand will produce a clear error at runtime.
+	// We only validate that if an alias is specified, it exists.
 	if cfg.Loop.AICmdAlias.Value != "" {
 		if _, exists := cfg.AICmdAliases[cfg.Loop.AICmdAlias.Value]; !exists {
 			errors = append(errors, ValidationError{

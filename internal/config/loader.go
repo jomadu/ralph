@@ -188,6 +188,9 @@ func overlayLoopConfigWithMap(dst *LoopConfigWithProvenance, src *LoopConfig, ra
 	if _, ok := rawMap["preamble"]; ok {
 		dst.Preamble = ValueWithProvenance[bool]{Value: src.Preamble, Provenance: prov}
 	}
+	if _, ok := rawMap["ai_cmd"]; ok {
+		dst.AICmd = ValueWithProvenance[string]{Value: src.AICmd, Provenance: prov}
+	}
 	if _, ok := rawMap["ai_cmd_alias"]; ok {
 		dst.AICmdAlias = ValueWithProvenance[string]{Value: src.AICmdAlias, Provenance: prov}
 	}
@@ -222,6 +225,9 @@ func overlayLoopConfig(dst *LoopConfigWithProvenance, src *LoopConfig, prov Prov
 	dst.ShowAIOutput = ValueWithProvenance[bool]{Value: src.ShowAIOutput, Provenance: prov}
 	// Preamble is bool, overlay always
 	dst.Preamble = ValueWithProvenance[bool]{Value: src.Preamble, Provenance: prov}
+	if src.AICmd != "" {
+		dst.AICmd = ValueWithProvenance[string]{Value: src.AICmd, Provenance: prov}
+	}
 	if src.AICmdAlias != "" {
 		dst.AICmdAlias = ValueWithProvenance[string]{Value: src.AICmdAlias, Provenance: prov}
 	}
@@ -266,7 +272,7 @@ func loadFile(path string, cfg *Config, silent bool) error {
 func overlayEnvironment(cfg *ConfigWithProvenance) error {
 	// RALPH_LOOP_AI_CMD
 	if v := os.Getenv("RALPH_LOOP_AI_CMD"); v != "" {
-		// ai_cmd not yet in config struct; will be added when O3/R6 is implemented
+		cfg.Loop.AICmd = ValueWithProvenance[string]{Value: v, Provenance: ProvenanceEnv}
 	}
 
 	// RALPH_LOOP_AI_CMD_ALIAS
@@ -353,6 +359,7 @@ type CLIFlags struct {
 	IterationTimeout *int
 	MaxOutputBuffer  *int
 	Preamble         *bool
+	AICmd            *string
 	AICmdAlias       *string
 	SignalSuccess    *string
 	SignalFailure    *string
@@ -380,6 +387,9 @@ func OverlayCLIFlags(cfg *ConfigWithProvenance, flags CLIFlags) {
 	}
 	if flags.Preamble != nil {
 		cfg.Loop.Preamble = ValueWithProvenance[bool]{Value: *flags.Preamble, Provenance: ProvenanceCLI}
+	}
+	if flags.AICmd != nil {
+		cfg.Loop.AICmd = ValueWithProvenance[string]{Value: *flags.AICmd, Provenance: ProvenanceCLI}
 	}
 	if flags.AICmdAlias != nil {
 		cfg.Loop.AICmdAlias = ValueWithProvenance[string]{Value: *flags.AICmdAlias, Provenance: ProvenanceCLI}
