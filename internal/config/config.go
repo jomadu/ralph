@@ -1,5 +1,10 @@
 package config
 
+import (
+	"os"
+	"path/filepath"
+)
+
 // LoopConfig holds loop execution settings.
 type LoopConfig struct {
 	DefaultMaxIterations int    `yaml:"default_max_iterations"`
@@ -50,4 +55,25 @@ func DefaultConfig() Config {
 		Prompts:      make(map[string]PromptConfig),
 		AICmdAliases: BuiltinAliases(),
 	}
+}
+
+// GlobalConfigPath resolves the global config file path using the fallback chain:
+// RALPH_CONFIG_HOME → XDG_CONFIG_HOME/ralph → ~/.config/ralph
+func GlobalConfigPath() string {
+	if dir := os.Getenv("RALPH_CONFIG_HOME"); dir != "" {
+		return filepath.Join(dir, "ralph-config.yml")
+	}
+	if dir := os.Getenv("XDG_CONFIG_HOME"); dir != "" {
+		return filepath.Join(dir, "ralph", "ralph-config.yml")
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(home, ".config", "ralph", "ralph-config.yml")
+}
+
+// WorkspaceConfigPath returns the workspace config file path relative to cwd.
+func WorkspaceConfigPath() string {
+	return "ralph-config.yml"
 }
