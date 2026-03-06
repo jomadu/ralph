@@ -24,6 +24,7 @@ type LoopConfig struct {
 	IterationTimeout     int    `yaml:"iteration_timeout"`
 	MaxOutputBuffer      int    `yaml:"max_output_buffer"`
 	ShowAIOutput         bool   `yaml:"show_ai_output"`
+	Preamble             bool   `yaml:"preamble"`
 	AICmdAlias           string `yaml:"ai_cmd_alias"`
 	Signals              struct {
 		Success string `yaml:"success"`
@@ -38,6 +39,7 @@ type LoopConfigWithProvenance struct {
 	IterationTimeout     ValueWithProvenance[int]
 	MaxOutputBuffer      ValueWithProvenance[int]
 	ShowAIOutput         ValueWithProvenance[bool]
+	Preamble             ValueWithProvenance[bool]
 	AICmdAlias           ValueWithProvenance[string]
 	SignalSuccess        ValueWithProvenance[string]
 	SignalFailure        ValueWithProvenance[string]
@@ -80,6 +82,7 @@ func DefaultConfig() Config {
 			IterationTimeout:     300,
 			MaxOutputBuffer:      10485760, // 10 MB
 			ShowAIOutput:         false,
+			Preamble:             true,
 			AICmdAlias:           "claude",
 			Signals: struct {
 				Success string `yaml:"success"`
@@ -103,6 +106,7 @@ func DefaultConfigWithProvenance() ConfigWithProvenance {
 			IterationTimeout:     ValueWithProvenance[int]{Value: 300, Provenance: ProvenanceDefault},
 			MaxOutputBuffer:      ValueWithProvenance[int]{Value: 10485760, Provenance: ProvenanceDefault},
 			ShowAIOutput:         ValueWithProvenance[bool]{Value: false, Provenance: ProvenanceDefault},
+			Preamble:             ValueWithProvenance[bool]{Value: true, Provenance: ProvenanceDefault},
 			AICmdAlias:           ValueWithProvenance[string]{Value: "claude", Provenance: ProvenanceDefault},
 			SignalSuccess:        ValueWithProvenance[string]{Value: "<promise>SUCCESS</promise>", Provenance: ProvenanceDefault},
 			SignalFailure:        ValueWithProvenance[string]{Value: "<promise>FAILURE</promise>", Provenance: ProvenanceDefault},

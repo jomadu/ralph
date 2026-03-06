@@ -182,6 +182,9 @@ func overlayLoopConfigWithMap(dst *LoopConfigWithProvenance, src *LoopConfig, ra
 	if _, ok := rawMap["show_ai_output"]; ok {
 		dst.ShowAIOutput = ValueWithProvenance[bool]{Value: src.ShowAIOutput, Provenance: prov}
 	}
+	if _, ok := rawMap["preamble"]; ok {
+		dst.Preamble = ValueWithProvenance[bool]{Value: src.Preamble, Provenance: prov}
+	}
 	if _, ok := rawMap["ai_cmd_alias"]; ok {
 		dst.AICmdAlias = ValueWithProvenance[string]{Value: src.AICmdAlias, Provenance: prov}
 	}
@@ -211,6 +214,8 @@ func overlayLoopConfig(dst *LoopConfigWithProvenance, src *LoopConfig, prov Prov
 	}
 	// ShowAIOutput is bool, check if explicitly set (requires more sophisticated detection; for now overlay always)
 	dst.ShowAIOutput = ValueWithProvenance[bool]{Value: src.ShowAIOutput, Provenance: prov}
+	// Preamble is bool, overlay always
+	dst.Preamble = ValueWithProvenance[bool]{Value: src.Preamble, Provenance: prov}
 	if src.AICmdAlias != "" {
 		dst.AICmdAlias = ValueWithProvenance[string]{Value: src.AICmdAlias, Provenance: prov}
 	}
@@ -309,6 +314,15 @@ func overlayEnvironment(cfg *ConfigWithProvenance) error {
 		cfg.Loop.ShowAIOutput = ValueWithProvenance[bool]{Value: val, Provenance: ProvenanceEnv}
 	}
 
+	// RALPH_LOOP_PREAMBLE
+	if v := os.Getenv("RALPH_LOOP_PREAMBLE"); v != "" {
+		val, err := parseBool(v)
+		if err != nil {
+			return fmt.Errorf("invalid RALPH_LOOP_PREAMBLE: %q: %w", v, err)
+		}
+		cfg.Loop.Preamble = ValueWithProvenance[bool]{Value: val, Provenance: ProvenanceEnv}
+	}
+
 	return nil
 }
 
@@ -354,7 +368,7 @@ func OverlayCLIFlags(cfg *ConfigWithProvenance, flags CLIFlags) {
 		cfg.Loop.MaxOutputBuffer = ValueWithProvenance[int]{Value: *flags.MaxOutputBuffer, Provenance: ProvenanceCLI}
 	}
 	if flags.Preamble != nil {
-		// preamble field not yet in config struct; will be added when O1/R8 is implemented
+		cfg.Loop.Preamble = ValueWithProvenance[bool]{Value: *flags.Preamble, Provenance: ProvenanceCLI}
 	}
 	if flags.AICmdAlias != nil {
 		cfg.Loop.AICmdAlias = ValueWithProvenance[string]{Value: *flags.AICmdAlias, Provenance: ProvenanceCLI}
