@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -52,6 +54,11 @@ func LoadConfigWithProvenance() (ConfigWithProvenance, error) {
 	// Load workspace config if it exists
 	workspacePath := WorkspaceConfigPath()
 	if err := overlayFileWithProvenance(workspacePath, &cfg, ProvenanceWorkspace, true); err != nil {
+		return cfg, err
+	}
+
+	// Overlay environment variables
+	if err := overlayEnvironment(&cfg); err != nil {
 		return cfg, err
 	}
 
@@ -179,4 +186,78 @@ func loadFile(path string, cfg *Config, silent bool) error {
 	}
 
 	return nil
+}
+
+// overlayEnvironment reads RALPH_* environment variables and overlays them onto config.
+func overlayEnvironment(cfg *ConfigWithProvenance) error {
+	// RALPH_LOOP_AI_CMD
+	if v := os.Getenv("RALPH_LOOP_AI_CMD"); v != "" {
+		// ai_cmd not yet in config struct; will be added when O3/R6 is implemented
+	}
+
+	// RALPH_LOOP_AI_CMD_ALIAS
+	if v := os.Getenv("RALPH_LOOP_AI_CMD_ALIAS"); v != "" {
+		cfg.Loop.AICmdAlias = ValueWithProvenance[string]{Value: v, Provenance: ProvenanceEnv}
+	}
+
+	// RALPH_LOOP_ITERATION_MODE
+	if v := os.Getenv("RALPH_LOOP_ITERATION_MODE"); v != "" {
+		// iteration_mode not yet in config struct; will be added when O1/R4 is implemented
+	}
+
+	// RALPH_LOOP_DEFAULT_MAX_ITERATIONS
+	if v := os.Getenv("RALPH_LOOP_DEFAULT_MAX_ITERATIONS"); v != "" {
+		val, err := strconv.Atoi(v)
+		if err != nil {
+			return fmt.Errorf("invalid RALPH_LOOP_DEFAULT_MAX_ITERATIONS: %q: %w", v, err)
+		}
+		cfg.Loop.DefaultMaxIterations = ValueWithProvenance[int]{Value: val, Provenance: ProvenanceEnv}
+	}
+
+	// RALPH_LOOP_FAILURE_THRESHOLD
+	if v := os.Getenv("RALPH_LOOP_FAILURE_THRESHOLD"); v != "" {
+		val, err := strconv.Atoi(v)
+		if err != nil {
+			return fmt.Errorf("invalid RALPH_LOOP_FAILURE_THRESHOLD: %q: %w", v, err)
+		}
+		cfg.Loop.FailureThreshold = ValueWithProvenance[int]{Value: val, Provenance: ProvenanceEnv}
+	}
+
+	// RALPH_LOOP_ITERATION_TIMEOUT
+	if v := os.Getenv("RALPH_LOOP_ITERATION_TIMEOUT"); v != "" {
+		val, err := strconv.Atoi(v)
+		if err != nil {
+			return fmt.Errorf("invalid RALPH_LOOP_ITERATION_TIMEOUT: %q: %w", v, err)
+		}
+		cfg.Loop.IterationTimeout = ValueWithProvenance[int]{Value: val, Provenance: ProvenanceEnv}
+	}
+
+	// RALPH_LOOP_LOG_LEVEL
+	if v := os.Getenv("RALPH_LOOP_LOG_LEVEL"); v != "" {
+		// log_level not yet in config struct; will be added when O4/R5 is implemented
+	}
+
+	// RALPH_LOOP_SHOW_AI_OUTPUT
+	if v := os.Getenv("RALPH_LOOP_SHOW_AI_OUTPUT"); v != "" {
+		val, err := parseBool(v)
+		if err != nil {
+			return fmt.Errorf("invalid RALPH_LOOP_SHOW_AI_OUTPUT: %q: %w", v, err)
+		}
+		cfg.Loop.ShowAIOutput = ValueWithProvenance[bool]{Value: val, Provenance: ProvenanceEnv}
+	}
+
+	return nil
+}
+
+// parseBool parses common boolean representations.
+func parseBool(s string) (bool, error) {
+	s = strings.ToLower(strings.TrimSpace(s))
+	switch s {
+	case "true", "1", "yes", "on":
+		return true, nil
+	case "false", "0", "no", "off", "":
+		return false, nil
+	default:
+		return false, fmt.Errorf("not a boolean value")
+	}
 }
