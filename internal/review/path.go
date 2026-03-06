@@ -225,27 +225,36 @@ func checkFileWritable(path string) error {
 // VerifyReportExists checks that a regular file exists at reportPath after the review-phase AI exits (R9).
 // If the file is missing, a directory, or a symlink to a missing file, returns an error (caller should exit 2 per R8).
 func VerifyReportExists(reportPath string) error {
-	info, err := os.Lstat(reportPath)
+	return verifyFileExists(reportPath, "report")
+}
+
+// VerifyRevisionExists checks that a regular file exists at revisionPath after the revision-phase AI exits (R5, R8).
+// When apply was requested, if the AI did not write to the prompt output path, returns error (caller should exit 2).
+func VerifyRevisionExists(revisionPath string) error {
+	return verifyFileExists(revisionPath, "revision")
+}
+
+func verifyFileExists(path string, label string) error {
+	info, err := os.Lstat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("report file not found at %s", reportPath)
+			return fmt.Errorf("%s file not found at %s", label, path)
 		}
-		return fmt.Errorf("report path: %w", err)
+		return fmt.Errorf("%s path: %w", label, err)
 	}
 	if info.IsDir() {
-		return fmt.Errorf("report file not found at %s: path is a directory", reportPath)
+		return fmt.Errorf("%s file not found at %s: path is a directory", label, path)
 	}
 	if info.Mode()&os.ModeSymlink != 0 {
-		// Symlink: resolve and check target exists (R9: symlink to missing file → exit 2)
-		target, err := os.Stat(reportPath)
+		target, err := os.Stat(path)
 		if err != nil {
 			if os.IsNotExist(err) {
-				return fmt.Errorf("report file not found at %s (symlink target missing)", reportPath)
+				return fmt.Errorf("%s file not found at %s (symlink target missing)", label, path)
 			}
-			return fmt.Errorf("report path: %w", err)
+			return fmt.Errorf("%s path: %w", label, err)
 		}
 		if target.IsDir() {
-			return fmt.Errorf("report file not found at %s: symlink target is a directory", reportPath)
+			return fmt.Errorf("%s file not found at %s: symlink target is a directory", label, path)
 		}
 	}
 	return nil

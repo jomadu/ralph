@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/maxdunn/ralph/internal/cmdparse"
@@ -53,11 +55,12 @@ var (
 	// Prompt input
 	fileFlag string
 
-	// Review-specific flags (T1; T2 adds --review-output; T7 adds --prompt-output, --apply for validation)
+	// Review-specific flags (T1; T2 adds --review-output; T7 adds --prompt-output, --apply; T8 adds -y)
 	reviewFileFlag         string
 	reviewOutputFlag       string
 	reviewPromptOutputFlag string
 	reviewApplyFlag        bool
+	reviewYesFlag          bool
 )
 
 var runCmd = &cobra.Command{
@@ -348,7 +351,7 @@ var versionCmd = &cobra.Command{
 	},
 }
 
-// reviewCmd implements the ralph review subcommand (O5). T1: input modes and validation; rest stubbed.
+// reviewCmd implements the ralph review subcommand (O5). T1–T8: input modes, report path, prompt composition, failure handling, report verification, exit codes, prompt output path, apply and revision phase.
 var reviewCmd = &cobra.Command{
 	Use:   "review [alias]",
 	Short: "Review a prompt for quality and structure (O5)",
@@ -441,6 +444,33 @@ var reviewCmd = &cobra.Command{
 
 		// R6: Parse report for machine-parseable summary; derive exit 0 (no errors) or 1 (errors in prompt).
 		code := review.ParseReportSummary(reportPath)
+
+		// R5 (T8): Apply and revision phase — only when --apply and we have a prompt output path
+		if reviewApplyFlag && promptOutputResult.NeedPath && promptOutputResult.Path != "" {
+			confirmed := reviewYesFlag
+			if !reviewYesFlag {
+				confirmed = confirmApply(promptOutputResult.Path)
+				if !confirmed {
+					os.Exit(code)
+				}
+			}
+			if confirmed {
+				revPrompt, err := review.ComposeRevisionPrompt(reportPath, promptOutputResult.Path)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "error: %v\n", err)
+					os.Exit(2)
+				}
+				_, err = runner.SpawnAI(aiArgv, bytes.NewReader(revPrompt), os.Stdout, os.Stderr)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "error: revision phase spawn failed: %v\n", err)
+					os.Exit(2)
+				}
+				if err := review.VerifyRevisionExists(promptOutputResult.Path); err != nil {
+					fmt.Fprintf(os.Stderr, "error: %v\n", err)
+					os.Exit(2)
+				}
+			}
+		}
 		os.Exit(code)
 	},
 }
@@ -458,6 +488,7 @@ func init() {
 	reviewCmd.Flags().StringVar(&reviewOutputFlag, "review-output", "", "Write review report to this path (default: temp file; path communicated to user)")
 	reviewCmd.Flags().StringVar(&reviewPromptOutputFlag, "prompt-output", "", "Write suggested revised prompt to this path; required with --apply when input is stdin (R4)")
 	reviewCmd.Flags().BoolVar(&reviewApplyFlag, "apply", false, "Apply suggested revision to prompt file (or --prompt-output when set); with stdin, --prompt-output required (R5)")
+	reviewCmd.Flags().BoolVarP(&reviewYesFlag, "yes", "y", false, "Apply without confirmation prompt; required for non-interactive apply (R5)")
 
 	// Loop control
 	runCmd.Flags().IntVarP(&maxIterationsFlag, "max-iterations", "n", 0, "Override max iterations")
@@ -491,6 +522,27 @@ func init() {
 	rootCmd.AddCommand(reviewCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(versionCmd)
+}
+
+// confirmApply prompts the user to apply the revision to path. Returns true on y/yes, false on decline or no TTY (no -y).
+// R5: no TTY and no -y → treat as decline (do not hang); caller should exit 0 or 1 without applying, or exit 2 with "use -y for non-interactive apply".
+func confirmApply(path string) bool {
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		return false
+	}
+	if (stat.Mode() & os.ModeCharDevice) == 0 {
+		// Not a TTY (e.g. piped); do not prompt — treat as decline
+		fmt.Fprintf(os.Stderr, "Apply revision to %s? No TTY; use --yes (-y) for non-interactive apply.\n", path)
+		return false
+	}
+	fmt.Fprintf(os.Stderr, "Apply revision to %s? [y/N] ", path)
+	scanner := bufio.NewScanner(os.Stdin)
+	if !scanner.Scan() {
+		return false
+	}
+	line := strings.TrimSpace(strings.ToLower(scanner.Text()))
+	return line == "y" || line == "yes"
 }
 
 // promptModeToReviewInputMode maps prompt.Mode to review.InputMode for R4 path resolution.
