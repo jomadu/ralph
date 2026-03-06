@@ -11,7 +11,8 @@ import (
 
 // Exit code errors
 var (
-	ExitCodeExhausted = errors.New("max iterations exhausted")
+	ExitCodeExhausted         = errors.New("max iterations exhausted")
+	ExitCodeFailureThreshold  = errors.New("failure threshold reached")
 )
 
 // IterationResult captures the outcome of a single iteration.
@@ -64,6 +65,8 @@ func Loop(
 ) error {
 	maxIterations := cfg.Loop.DefaultMaxIterations.Value
 	iterationMode := cfg.Loop.IterationMode.Value
+	failureThreshold := cfg.Loop.FailureThreshold.Value
+	consecutiveFailures := 0
 
 	for i := 1; ; i++ {
 		// Check iteration limit before executing iteration (O1/R4)
@@ -82,18 +85,24 @@ func Loop(
 		// Scan for signals after process exit
 		outcome := ScanForSignals(result.Output, cfg.Loop.SignalSuccess.Value, cfg.Loop.SignalFailure.Value)
 
-		// Handle iteration outcome
+		// Handle iteration outcome (O1/R5)
 		switch outcome {
 		case OutcomeSuccess:
 			// Success signal found - exit loop with success
 			return nil
 		case OutcomeFailure:
-			// Failure signal found - for now, continue loop
-			// TODO: Consecutive failure tracking (ralph-wnp)
+			// Failure signal found - increment consecutive failure counter
+			consecutiveFailures++
+			if consecutiveFailures >= failureThreshold {
+				// Failure threshold reached - abort loop
+				return ExitCodeFailureThreshold
+			}
+			// Continue to next iteration
 			continue
 		case OutcomeNoSignal:
-			// No signal found - continue to next iteration
-			// TODO: Reset failure counter (ralph-wnp)
+			// No signal found - reset consecutive failure counter
+			consecutiveFailures = 0
+			// Continue to next iteration
 			continue
 		}
 	}
