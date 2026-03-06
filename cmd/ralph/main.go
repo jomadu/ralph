@@ -147,6 +147,20 @@ var runCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		// Log config provenance at debug level (O2/R1)
+		logger.Debug("config: loop.iteration_mode = %s (source: %s)", cfg.Loop.IterationMode.Value, cfg.Loop.IterationMode.Provenance)
+		logger.Debug("config: loop.default_max_iterations = %d (source: %s)", cfg.Loop.DefaultMaxIterations.Value, cfg.Loop.DefaultMaxIterations.Provenance)
+		logger.Debug("config: loop.failure_threshold = %d (source: %s)", cfg.Loop.FailureThreshold.Value, cfg.Loop.FailureThreshold.Provenance)
+		logger.Debug("config: loop.iteration_timeout = %d (source: %s)", cfg.Loop.IterationTimeout.Value, cfg.Loop.IterationTimeout.Provenance)
+		logger.Debug("config: loop.max_output_buffer = %d (source: %s)", cfg.Loop.MaxOutputBuffer.Value, cfg.Loop.MaxOutputBuffer.Provenance)
+		logger.Debug("config: loop.log_level = %s (source: %s)", cfg.Loop.LogLevel.Value, cfg.Loop.LogLevel.Provenance)
+		logger.Debug("config: loop.show_ai_output = %v (source: %s)", cfg.Loop.ShowAIOutput.Value, cfg.Loop.ShowAIOutput.Provenance)
+		logger.Debug("config: loop.preamble = %v (source: %s)", cfg.Loop.Preamble.Value, cfg.Loop.Preamble.Provenance)
+		logger.Debug("config: loop.ai_cmd = %s (source: %s)", cfg.Loop.AICmd.Value, cfg.Loop.AICmd.Provenance)
+		logger.Debug("config: loop.ai_cmd_alias = %s (source: %s)", cfg.Loop.AICmdAlias.Value, cfg.Loop.AICmdAlias.Provenance)
+		logger.Debug("config: loop.signals.success = %s (source: %s)", cfg.Loop.SignalSuccess.Value, cfg.Loop.SignalSuccess.Provenance)
+		logger.Debug("config: loop.signals.failure = %s (source: %s)", cfg.Loop.SignalFailure.Value, cfg.Loop.SignalFailure.Provenance)
+
 		// Load prompt content
 		src, err := prompt.LoadPrompt(mode, alias, fileFlag, &cfg)
 		if err != nil {
@@ -156,6 +170,22 @@ var runCmd = &cobra.Command{
 
 		// Dry-run mode: print assembled prompt and exit (O4/R4)
 		if dryRunFlag {
+			// Print config with provenance (O2/R1)
+			fmt.Fprintf(os.Stderr, "=== Configuration ===\n")
+			fmt.Fprintf(os.Stderr, "loop.iteration_mode = %s (source: %s)\n", cfg.Loop.IterationMode.Value, cfg.Loop.IterationMode.Provenance)
+			fmt.Fprintf(os.Stderr, "loop.default_max_iterations = %d (source: %s)\n", cfg.Loop.DefaultMaxIterations.Value, cfg.Loop.DefaultMaxIterations.Provenance)
+			fmt.Fprintf(os.Stderr, "loop.failure_threshold = %d (source: %s)\n", cfg.Loop.FailureThreshold.Value, cfg.Loop.FailureThreshold.Provenance)
+			fmt.Fprintf(os.Stderr, "loop.iteration_timeout = %d (source: %s)\n", cfg.Loop.IterationTimeout.Value, cfg.Loop.IterationTimeout.Provenance)
+			fmt.Fprintf(os.Stderr, "loop.max_output_buffer = %d (source: %s)\n", cfg.Loop.MaxOutputBuffer.Value, cfg.Loop.MaxOutputBuffer.Provenance)
+			fmt.Fprintf(os.Stderr, "loop.log_level = %s (source: %s)\n", cfg.Loop.LogLevel.Value, cfg.Loop.LogLevel.Provenance)
+			fmt.Fprintf(os.Stderr, "loop.show_ai_output = %v (source: %s)\n", cfg.Loop.ShowAIOutput.Value, cfg.Loop.ShowAIOutput.Provenance)
+			fmt.Fprintf(os.Stderr, "loop.preamble = %v (source: %s)\n", cfg.Loop.Preamble.Value, cfg.Loop.Preamble.Provenance)
+			fmt.Fprintf(os.Stderr, "loop.ai_cmd = %s (source: %s)\n", cfg.Loop.AICmd.Value, cfg.Loop.AICmd.Provenance)
+			fmt.Fprintf(os.Stderr, "loop.ai_cmd_alias = %s (source: %s)\n", cfg.Loop.AICmdAlias.Value, cfg.Loop.AICmdAlias.Provenance)
+			fmt.Fprintf(os.Stderr, "loop.signals.success = %s (source: %s)\n", cfg.Loop.SignalSuccess.Value, cfg.Loop.SignalSuccess.Provenance)
+			fmt.Fprintf(os.Stderr, "loop.signals.failure = %s (source: %s)\n", cfg.Loop.SignalFailure.Value, cfg.Loop.SignalFailure.Provenance)
+			fmt.Fprintf(os.Stderr, "\n=== Assembled Prompt ===\n")
+
 			maxIterations := cfg.Loop.DefaultMaxIterations.Value
 			iterationMode := cfg.Loop.IterationMode.Value
 			preambleEnabled := cfg.Loop.Preamble.Value
