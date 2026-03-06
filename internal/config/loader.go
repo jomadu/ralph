@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strconv"
@@ -350,6 +351,16 @@ func loadFile(path string, cfg *Config, silent bool) error {
 		return fmt.Errorf("failed to read config %s: %w", path, err)
 	}
 
+	// Strict decode to detect unknown keys (O2/R2)
+	var strictCfg Config
+	dec := yaml.NewDecoder(bytes.NewReader(data))
+	dec.KnownFields(true)
+	if err := dec.Decode(&strictCfg); err != nil {
+		// Unknown key detected - emit warning but continue
+		fmt.Fprintf(os.Stderr, "warning: unknown config key in %s: %v\n", path, err)
+	}
+
+	// Permissive decode to get actual config values
 	if err := yaml.Unmarshal(data, cfg); err != nil {
 		return fmt.Errorf("failed to parse config %s: %w", path, err)
 	}
