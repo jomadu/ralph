@@ -48,6 +48,6 @@ func DefaultConfig() Config {
 			},
 		},
 		Prompts:      make(map[string]PromptConfig),
-		AICmdAliases: make(map[string]string),
+		AICmdAliases: BuiltinAliases(),
 	}
 }
