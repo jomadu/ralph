@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/maxdunn/ralph/internal/config"
+	"github.com/maxdunn/ralph/internal/prompt"
 )
 
 var rootCmd = &cobra.Command{
@@ -96,8 +97,27 @@ var runCmd = &cobra.Command{
 		// Overlay CLI flags
 		config.OverlayCLIFlags(&cfg, cliFlags)
 
-		fmt.Printf("Config loaded successfully. Loop config: %+v\n", cfg.Loop)
-		fmt.Println("run: not fully implemented")
+		// Resolve prompt input mode
+		var alias string
+		if len(args) > 0 {
+			alias = args[0]
+		}
+
+		mode, err := prompt.ResolveMode(alias, fileFlag)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Load prompt content
+		src, err := prompt.LoadPrompt(mode, alias, fileFlag, &cfg)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("Prompt loaded: mode=%v, size=%d bytes\n", src.Mode, len(src.Content))
+		fmt.Println("run: loop execution not yet implemented")
 	},
 }
 
