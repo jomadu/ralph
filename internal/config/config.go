@@ -20,6 +20,7 @@ const (
 // LoopConfig holds loop execution settings.
 type LoopConfig struct {
 	DefaultMaxIterations int    `yaml:"default_max_iterations"`
+	IterationMode        string `yaml:"iteration_mode"`
 	FailureThreshold     int    `yaml:"failure_threshold"`
 	IterationTimeout     int    `yaml:"iteration_timeout"`
 	MaxOutputBuffer      int    `yaml:"max_output_buffer"`
@@ -35,6 +36,7 @@ type LoopConfig struct {
 // LoopConfigWithProvenance holds loop config with provenance metadata.
 type LoopConfigWithProvenance struct {
 	DefaultMaxIterations ValueWithProvenance[int]
+	IterationMode        ValueWithProvenance[string]
 	FailureThreshold     ValueWithProvenance[int]
 	IterationTimeout     ValueWithProvenance[int]
 	MaxOutputBuffer      ValueWithProvenance[int]
@@ -78,6 +80,7 @@ func DefaultConfig() Config {
 	return Config{
 		Loop: LoopConfig{
 			DefaultMaxIterations: 5,
+			IterationMode:        "max-iterations",
 			FailureThreshold:     3,
 			IterationTimeout:     300,
 			MaxOutputBuffer:      10485760, // 10 MB
@@ -102,6 +105,7 @@ func DefaultConfigWithProvenance() ConfigWithProvenance {
 	return ConfigWithProvenance{
 		Loop: LoopConfigWithProvenance{
 			DefaultMaxIterations: ValueWithProvenance[int]{Value: 5, Provenance: ProvenanceDefault},
+			IterationMode:        ValueWithProvenance[string]{Value: "max-iterations", Provenance: ProvenanceDefault},
 			FailureThreshold:     ValueWithProvenance[int]{Value: 3, Provenance: ProvenanceDefault},
 			IterationTimeout:     ValueWithProvenance[int]{Value: 300, Provenance: ProvenanceDefault},
 			MaxOutputBuffer:      ValueWithProvenance[int]{Value: 10485760, Provenance: ProvenanceDefault},

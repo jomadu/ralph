@@ -2,9 +2,15 @@ package runner
 
 import (
 	"bytes"
+	"errors"
 	"io"
 
 	"github.com/maxdunn123/ralph/internal/config"
+)
+
+// Exit code errors
+var (
+	ExitCodeExhausted = errors.New("max iterations exhausted")
 )
 
 // IterationResult captures the outcome of a single iteration.
@@ -26,7 +32,7 @@ func RunIteration(
 		Enabled:        cfg.Loop.Preamble.Value,
 		Iteration:      iteration,
 		MaxIterations:  cfg.Loop.DefaultMaxIterations.Value,
-		Unlimited:      false, // TODO: support unlimited mode when implemented
+		Unlimited:      cfg.Loop.IterationMode.Value == "unlimited",
 		ContextStrings: contextStrings,
 	})
 
@@ -54,8 +60,15 @@ func Loop(
 	contextStrings []string,
 ) error {
 	maxIterations := cfg.Loop.DefaultMaxIterations.Value
+	iterationMode := cfg.Loop.IterationMode.Value
 
-	for i := 1; i <= maxIterations; i++ {
+	for i := 1; ; i++ {
+		// Check iteration limit before executing iteration (O1/R4)
+		if iterationMode == "max-iterations" && i > maxIterations {
+			// Max iterations exhausted without success signal
+			return ExitCodeExhausted
+		}
+
 		result := RunIteration(i, aiCmd, promptContent, cfg, contextStrings)
 
 		// Scan for signals after process exit
@@ -76,8 +89,4 @@ func Loop(
 			continue
 		}
 	}
-
-	// Max iterations exhausted
-	// TODO: Exit code 2 (ralph-qim)
-	return nil
 }

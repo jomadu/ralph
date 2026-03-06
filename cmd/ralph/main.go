@@ -64,6 +64,10 @@ var runCmd = &cobra.Command{
 		if cmd.Flags().Changed("max-iterations") {
 			cliFlags.MaxIterations = &maxIterationsFlag
 		}
+		if cmd.Flags().Changed("unlimited") {
+			unlimited := "unlimited"
+			cliFlags.IterationMode = &unlimited
+		}
 		if cmd.Flags().Changed("failure-threshold") {
 			cliFlags.FailureThreshold = &failureThresholdFlag
 		}

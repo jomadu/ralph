@@ -170,6 +170,9 @@ func overlayLoopConfigWithMap(dst *LoopConfigWithProvenance, src *LoopConfig, ra
 	if _, ok := rawMap["default_max_iterations"]; ok {
 		dst.DefaultMaxIterations = ValueWithProvenance[int]{Value: src.DefaultMaxIterations, Provenance: prov}
 	}
+	if _, ok := rawMap["iteration_mode"]; ok {
+		dst.IterationMode = ValueWithProvenance[string]{Value: src.IterationMode, Provenance: prov}
+	}
 	if _, ok := rawMap["failure_threshold"]; ok {
 		dst.FailureThreshold = ValueWithProvenance[int]{Value: src.FailureThreshold, Provenance: prov}
 	}
@@ -202,6 +205,9 @@ func overlayLoopConfigWithMap(dst *LoopConfigWithProvenance, src *LoopConfig, ra
 func overlayLoopConfig(dst *LoopConfigWithProvenance, src *LoopConfig, prov Provenance) {
 	if src.DefaultMaxIterations != 0 {
 		dst.DefaultMaxIterations = ValueWithProvenance[int]{Value: src.DefaultMaxIterations, Provenance: prov}
+	}
+	if src.IterationMode != "" {
+		dst.IterationMode = ValueWithProvenance[string]{Value: src.IterationMode, Provenance: prov}
 	}
 	if src.FailureThreshold != 0 {
 		dst.FailureThreshold = ValueWithProvenance[int]{Value: src.FailureThreshold, Provenance: prov}
@@ -270,7 +276,7 @@ func overlayEnvironment(cfg *ConfigWithProvenance) error {
 
 	// RALPH_LOOP_ITERATION_MODE
 	if v := os.Getenv("RALPH_LOOP_ITERATION_MODE"); v != "" {
-		// iteration_mode not yet in config struct; will be added when O1/R4 is implemented
+		cfg.Loop.IterationMode = ValueWithProvenance[string]{Value: v, Provenance: ProvenanceEnv}
 	}
 
 	// RALPH_LOOP_DEFAULT_MAX_ITERATIONS
@@ -342,6 +348,7 @@ func parseBool(s string) (bool, error) {
 // CLIFlags holds CLI flag values for config overlay.
 type CLIFlags struct {
 	MaxIterations    *int
+	IterationMode    *string
 	FailureThreshold *int
 	IterationTimeout *int
 	MaxOutputBuffer  *int
@@ -357,6 +364,9 @@ type CLIFlags struct {
 func OverlayCLIFlags(cfg *ConfigWithProvenance, flags CLIFlags) {
 	if flags.MaxIterations != nil {
 		cfg.Loop.DefaultMaxIterations = ValueWithProvenance[int]{Value: *flags.MaxIterations, Provenance: ProvenanceCLI}
+	}
+	if flags.IterationMode != nil {
+		cfg.Loop.IterationMode = ValueWithProvenance[string]{Value: *flags.IterationMode, Provenance: ProvenanceCLI}
 	}
 	if flags.FailureThreshold != nil {
 		cfg.Loop.FailureThreshold = ValueWithProvenance[int]{Value: *flags.FailureThreshold, Provenance: ProvenanceCLI}

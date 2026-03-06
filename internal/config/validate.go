@@ -67,6 +67,16 @@ func validateSchema(cfg ConfigWithProvenance) ValidationErrors {
 		})
 	}
 
+	// loop.iteration_mode: must be "max-iterations" or "unlimited"
+	if cfg.Loop.IterationMode.Value != "max-iterations" && cfg.Loop.IterationMode.Value != "unlimited" {
+		errors = append(errors, ValidationError{
+			Field:      "loop.iteration_mode",
+			Value:      cfg.Loop.IterationMode.Value,
+			Message:    fmt.Sprintf("loop.iteration_mode must be \"max-iterations\" or \"unlimited\", got %q", cfg.Loop.IterationMode.Value),
+			Provenance: cfg.Loop.IterationMode.Provenance,
+		})
+	}
+
 	// loop.failure_threshold: minimum 1
 	if cfg.Loop.FailureThreshold.Value < 1 {
 		errors = append(errors, ValidationError{
