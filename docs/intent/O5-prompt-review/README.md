@@ -70,12 +70,12 @@ The review output path (`--review-output` or the temp directory) and the prompt 
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| [R1](R1-review-command-input-modes.md) | Review command with alias, file, and stdin input modes | draft |
-| [R2](R2-review-prompt-composition.md) | Review prompt composition (instructions + user prompt, path interpolation) | draft |
-| [R3](R3-review-output-path.md) | Review output path (`--review-output` or temp; report always to file) | draft |
-| [R4](R4-prompt-output-path.md) | Prompt output path (`--prompt-output` for revised prompt; required when apply + stdin) | draft |
-| [R5](R5-apply-confirmation-revision-phase.md) | Apply with confirmation and revision phase (interpolation, stdin+apply validation) | draft |
-| [R6](R6-report-format-exit-codes.md) | Report format and exit code derivation (narrative, machine-parseable, full revision; exit 0/1/2) | draft |
-| [R7](R7-configurable-review-stdout.md) | Configurable review output to stdout | draft |
-| [R8](R8-review-failure-handling.md) | Review failure handling (invalid config, missing prompt, spawn failure, invalid apply → exit 2) | draft |
-| [R9](R9-report-file-verification.md) | Report file verification (report exists at expected path after run; else exit 2) | draft |
+| [R1](R1-review-command-input-modes.md) | Review command with alias, file, and stdin input modes | ready |
+| [R2](R2-review-prompt-composition.md) | Review prompt composition (instructions + user prompt, path interpolation) | ready |
+| [R3](R3-review-output-path.md) | Review output path (`--review-output` or temp; report always to file) | ready |
+| [R4](R4-prompt-output-path.md) | Prompt output path (`--prompt-output` for revised prompt; required when apply + stdin) | ready |
+| [R5](R5-apply-confirmation-revision-phase.md) | Apply with confirmation and revision phase (interpolation, stdin+apply validation) | ready |
+| [R6](R6-report-format-exit-codes.md) | Report format and exit code derivation (narrative, machine-parseable, full revision; exit 0/1/2) | ready |
+| [R7](R7-configurable-review-stdout.md) | Configurable review output to stdout | ready |
+| [R8](R8-review-failure-handling.md) | Review failure handling (invalid config, missing prompt, spawn failure, invalid apply → exit 2) | ready |
+| [R9](R9-report-file-verification.md) | Report file verification (report exists at expected path after run; else exit 2) | ready |
