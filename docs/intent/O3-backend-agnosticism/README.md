@@ -17,9 +17,9 @@ The difficulty is that "accepts stdin, produces stdout" is the contract, but eve
 | `claude` | `claude -p --dangerously-skip-permissions` | `-p`: pipe/stdin mode. `--dangerously-skip-permissions`: skip interactive permission prompts |
 | `kiro` | `kiro-cli chat --no-interactive --trust-all-tools` | `chat`: subcommand for conversation. `--no-interactive`: suppress prompts. `--trust-all-tools`: skip tool confirmation |
 | `copilot` | `copilot --yolo` | `--yolo`: unattended execution without confirmation |
-| `cursor-agent` | [`cursor-wrapper.sh`](../../../scripts/cursor-wrapper.sh) | Wraps `agent -p --force --output-format stream-json --stream-partial-output`. Outputs structured JSON — requires a wrapper script using `jq` to parse JSON lines, extract text from `assistant` messages, route tool call progress to stderr, and emit plain text to stdout for signal scanning |
+| `cursor-agent` | `agent -p --force --output-format stream-json --stream-partial-output` | Raw Cursor Agent CLI; works from any CWD. Output is newline-delimited JSON. Optional wrapper script (see user docs) parses JSON and emits plain text for conventional signal scanning. |
 
-The cursor-agent case is the hardest. Unlike the other CLIs which emit plain text on stdout, cursor agent emits newline-delimited JSON with typed messages (`system`, `assistant`, `tool_call`, `result`). The text content is nested inside `message.content[0].text` fields on `assistant` type messages. Tool calls appear as separate JSON objects with nested structures (`writeToolCall`, `readToolCall`). A wrapper script must: read the prompt from stdin, pipe it to `agent`, parse each JSON line with `jq`, accumulate text deltas to stdout, route tool progress to stderr, and report final statistics. This wrapper introduces a `jq` dependency that only cursor-agent users pay.
+The cursor-agent built-in alias points at the raw `agent` command so it works from any working directory. Cursor Agent emits newline-delimited JSON with typed messages (`system`, `assistant`, `tool_call`, `result`). Users may configure signal strings to match content within JSON lines, or use an optional wrapper script (documented in user-facing docs) that invokes the same command, parses JSON with `jq`, and emits plain text to stdout for signal scanning.
 
 ## Verification
 
@@ -27,7 +27,7 @@ The cursor-agent case is the hardest. Unlike the other CLIs which emit plain tex
 - User defines a custom alias in config for a proprietary AI CLI: `my-tool: "my-ai-cli --headless --stdin"`. Ralph resolves and executes it.
 - User passes `--ai-cmd "custom-tool --flag1 --flag2"` directly on the command line, bypassing aliases entirely. Ralph parses and executes the command.
 - The AI CLI process inherits the user's environment variables (API keys, PATH) and working directory.
-- User runs with the `cursor-agent` alias. Ralph invokes the wrapper script, which parses JSON output and emits plain text. Signal scanning works on the emitted text.
+- User runs with the `cursor-agent` alias. Ralph invokes the raw agent command; output is JSON. User may use signal strings that match JSON content or the optional wrapper (user docs) for plain-text stdout.
 
 ## Non-outcomes
 
@@ -35,7 +35,7 @@ The cursor-agent case is the hardest. Unlike the other CLIs which emit plain tex
 - Ralph does not manage AI CLI authentication, API keys, or session tokens.
 - Ralph does not normalize output formats across different AI CLIs — that responsibility belongs to the alias command or wrapper script.
 - Ralph does not execute commands through a shell. Commands are parsed and exec'd directly. Users needing pipes, redirects, or shell expansion must wrap their command in a script.
-- Ralph does not provide vendor-specific adapters in core. The cursor-agent wrapper script is the model: a shim that normalizes a non-conforming CLI to stdin-text-in / stdout-text-out.
+- Ralph does not provide vendor-specific adapters in core. The cursor-agent built-in is the raw CLI; an optional wrapper script is documented as a user-facing workaround for plain-text stdout.
 
 ## Risks
 
@@ -45,10 +45,10 @@ The cursor-agent case is the hardest. Unlike the other CLIs which emit plain tex
 | Command strings require shell-style quoting (e.g., `--model "claude-3-5-sonnet"`) but Ralph doesn't use a shell | [R2 — Shell-style command parsing](R2-command-parsing.md) |
 | User wants to use an AI CLI not in the built-in alias list | [R3 — User-defined command aliases](R3-user-defined-aliases.md) |
 | AI CLI requires environment variables (API keys, config paths) to function | [R4 — Process environment inheritance](R4-environment-inheritance.md) |
-| An AI CLI emits structured output (JSON) instead of plain text | [R1 — Built-in command aliases (wrapper script)](R1-builtin-aliases.md) |
+| An AI CLI emits structured output (JSON) instead of plain text | [R1 — Built-in command aliases (raw command + optional wrapper in user docs)](R1-builtin-aliases.md) |
 | User doesn't know which aliases are available or what commands they expand to | [R5 — AI command alias resolution with clear errors](R5-alias-resolution-errors.md) |
 | Direct command string and alias are both specified, behavior is ambiguous | [R6 — Command source precedence](R6-command-source-precedence.md) |
-| Wrapper script has its own dependency (jq) that may not be installed | [R1 — Built-in command aliases (wrapper reports missing dependency)](R1-builtin-aliases.md) |
+| User uses optional wrapper; wrapper has its own dependency (jq) | Wrapper documents and reports missing dependency; user-facing docs describe the workaround. |
 
 ## Requirements
 

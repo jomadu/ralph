@@ -48,7 +48,7 @@ Lists all AI command aliases — both built-in and user-defined — with their r
 | `claude` | `claude -p --dangerously-skip-permissions` |
 | `kiro` | `kiro-cli chat --no-interactive --trust-all-tools` |
 | `copilot` | `copilot --yolo` |
-| `cursor-agent` | `cursor-agent -p -f --stream-partial-output --output-format stream-json` |
+| `cursor-agent` | `agent -p --force --output-format stream-json --stream-partial-output` |
 
 **Merge behavior:**
 
@@ -64,7 +64,7 @@ claude:
 copilot:
   command: copilot --yolo
 cursor-agent:
-  command: cursor-agent -p -f --stream-partial-output --output-format stream-json
+  command: agent -p --force --output-format stream-json --stream-partial-output
 kiro:
   command: kiro-cli chat --no-interactive --trust-all-tools
 my-tool:
@@ -147,7 +147,7 @@ claude:
 copilot:
   command: copilot --yolo
 cursor-agent:
-  command: cursor-agent -p -f --stream-partial-output --output-format stream-json
+  command: agent -p --force --output-format stream-json --stream-partial-output
 kiro:
   command: kiro-cli chat --no-interactive --trust-all-tools
 my-tool:

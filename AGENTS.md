@@ -36,11 +36,11 @@ Current state: Intent tree defined (O1–O4 and requirements). Implementation pe
 
 ## Implementation Definition
 
-Location: `scripts/`, root-level scripts (e.g. `cursor-wrapper.sh`), and (when present) any future `cmd/`, `internal/`, or equivalent.
+Location: `scripts/`, and (when present) any future `cmd/`, `internal/`, or equivalent.
 
 Patterns:
 - `scripts/*.sh` — Scripts and wrappers
-- `cursor-wrapper.sh` — Cursor integration script
+- `scripts/cursor-wrapper.sh` — Optional Cursor Agent wrapper (user-facing doc: `docs/user/cursor-agent-workaround.md`); built-in `cursor-agent` alias is the raw `agent` command
 - `testdata/` — Test fixture files (e.g. config YAMLs used only by tests). See O2-R5 for the convention; integration tests use `--config testdata/<fixture>.yml` from repo root.
 
 Excludes: `.git/`, `docs/` (specifications), `AGENTS.md`, `PLAN.md`, `TASK.md`, `building-intent.md`

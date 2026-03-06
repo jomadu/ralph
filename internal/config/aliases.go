@@ -6,7 +6,7 @@ func BuiltinAliases() map[string]string {
 		"claude":       "claude -p --dangerously-skip-permissions",
 		"kiro":         "kiro-cli chat --no-interactive --trust-all-tools",
 		"copilot":      "copilot --yolo",
-		"cursor-agent": "scripts/cursor-wrapper.sh",
+		"cursor-agent": "agent -p --force --output-format stream-json --stream-partial-output",
 	}
 }
 
