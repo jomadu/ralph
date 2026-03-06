@@ -58,20 +58,26 @@ func Loop(
 	for i := 1; i <= maxIterations; i++ {
 		result := RunIteration(i, aiCmd, promptContent, cfg, contextStrings)
 
-		// TODO: Signal scanning (ralph-3u5)
-		// TODO: Failure tracking (ralph-3u5)
-		// TODO: Exit code handling (ralph-3u5)
+		// Scan for signals after process exit
+		outcome := ScanForSignals(result.Output, cfg.Loop.SignalSuccess.Value, cfg.Loop.SignalFailure.Value)
 
-		if result.Error != nil {
-			// Process crash - for now, just return the error
-			// TODO: Proper crash handling per O1/R1
-			return result.Error
+		// Handle iteration outcome
+		switch outcome {
+		case OutcomeSuccess:
+			// Success signal found - exit loop with success
+			return nil
+		case OutcomeFailure:
+			// Failure signal found - for now, continue loop
+			// TODO: Consecutive failure tracking (ralph-wnp)
+			continue
+		case OutcomeNoSignal:
+			// No signal found - continue to next iteration
+			// TODO: Reset failure counter (ralph-wnp)
+			continue
 		}
-
-		// For now, just run one iteration and return
-		// Full loop logic will be implemented when signal scanning is added
-		break
 	}
 
+	// Max iterations exhausted
+	// TODO: Exit code 2 (ralph-qim)
 	return nil
 }
