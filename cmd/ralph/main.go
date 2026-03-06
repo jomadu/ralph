@@ -80,6 +80,9 @@ var runCmd = &cobra.Command{
 		if cmd.Flags().Changed("max-output-buffer") {
 			cliFlags.MaxOutputBuffer = &maxOutputBufferFlag
 		}
+		if cmd.Flags().Changed("ai-cmd") {
+			cliFlags.AICmd = &aiCmdFlag
+		}
 		if cmd.Flags().Changed("ai-cmd-alias") {
 			cliFlags.AICmdAlias = &aiCmdAliasFlag
 		}
@@ -130,31 +133,15 @@ var runCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		// Resolve AI command from alias or direct command
-		var aiCmdString string
-		if aiCmdFlag != "" {
-			aiCmdString = aiCmdFlag
-		} else {
-			// Use alias (from flag or config default)
-			aliasToUse := cfg.Loop.AICmdAlias.Value
-			// Build Config from ConfigWithProvenance for MergedAliases
-			plainCfg := config.Config{
-				AICmdAliases: make(map[string]string),
-			}
-			for k, v := range cfg.AICmdAliases {
-				plainCfg.AICmdAliases[k] = v.Value
-			}
-			aliases := config.MergedAliases(plainCfg)
-			resolved, ok := aliases[aliasToUse]
-			if !ok {
-				fmt.Fprintf(os.Stderr, "error: unknown AI command alias: %s\n", aliasToUse)
-				os.Exit(1)
-			}
-			aiCmdString = resolved
+		// Resolve AI command (alias or direct command)
+		resolution, err := config.ResolveAICommand(cfg)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
 		}
 
 		// Parse AI command string into argv
-		aiCmd, err := cmdparse.Parse(aiCmdString)
+		aiCmd, err := cmdparse.Parse(resolution.Command)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: failed to parse AI command: %v\n", err)
 			os.Exit(1)

@@ -36,12 +36,21 @@ func ResolveAICommand(cfg ConfigWithProvenance) (CommandResolution, error) {
 			}, nil
 		}
 		
-		// Alias not found - this should be caught by validation
-		return CommandResolution{}, fmt.Errorf("unknown AI command alias %q", aliasName)
+		// Alias not found - build error with available aliases
+		plainCfg := Config{AICmdAliases: make(map[string]string)}
+		for k, v := range cfg.AICmdAliases {
+			plainCfg.AICmdAliases[k] = v.Value
+		}
+		merged := MergedAliases(plainCfg)
+		var available []string
+		for k := range merged {
+			available = append(available, k)
+		}
+		return CommandResolution{}, fmt.Errorf("unknown AI command alias %q; available aliases: %v", aliasName, available)
 	}
 
 	// Step 3: No command configured
-	return CommandResolution{}, fmt.Errorf("no AI command configured: set ai_cmd or ai_cmd_alias via config, environment, or CLI flags")
+	return CommandResolution{}, fmt.Errorf("no AI command configured: set loop.ai_cmd or loop.ai_cmd_alias via config, RALPH_LOOP_AI_CMD or RALPH_LOOP_AI_CMD_ALIAS via environment, or --ai-cmd or --ai-cmd-alias via CLI")
 }
 
 
