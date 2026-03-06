@@ -2,7 +2,7 @@
 
 ## Statement
 
-Ralph prompts can be reviewed for quality and structure before or without running the loop, with actionable feedback, an optional suggested revision of the entire prompt, and a machine-readable result.
+Ralph prompts can be reviewed for quality and structure before or without running the loop, with actionable feedback, an optional suggested revision of the entire prompt, and a machine-readable result; the user may apply the revision to the prompt file with confirmation or non-interactive `--apply -y`.
 
 ## Why it matters
 
@@ -10,7 +10,7 @@ Without a reviewer, users discover prompt problems only when they run the loop: 
 
 ## Verification
 
-- User runs `ralph review <alias>`. Ralph loads the prompt for that alias, runs the reviewer (one-shot AI evaluation), and prints a report to stdout; exit code 0 (no errors), 1 (errors), or 2 (review failed to run).
+- User runs `ralph review <alias>`. Ralph loads the prompt for that alias, runs the reviewer (one-shot AI evaluation), and prints a report to stdout; exit code 0 (no errors), 1 (errors), or 2 (review failed to run or apply invalid).
 - User runs `ralph review -f ./prompts/my-prompt.md`. Ralph reads the file, runs the reviewer, and prints the report; exit code reflects result.
 - User pipes a prompt: `cat prompt.md | ralph review`. Ralph reads stdin, runs the reviewer, and prints the report; exit code reflects result.
 - User runs `ralph review build --output report.txt`. The report is written to the file; stdout is silent; exit code still reflects result.
