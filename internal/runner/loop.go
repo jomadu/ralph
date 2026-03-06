@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/maxdunn/ralph/internal/config"
 )
@@ -26,6 +27,7 @@ type IterationResult struct {
 	ExitCode    int
 	Error       error
 	Interrupted bool
+	Duration    time.Duration
 }
 
 // RunIteration executes a single iteration: assemble prompt, spawn process, capture output.
@@ -38,6 +40,8 @@ func RunIteration(
 	contextStrings []string,
 	verbose bool,
 ) IterationResult {
+	start := time.Now()
+	
 	// Generate preamble
 	preamble := GeneratePreamble(PreambleConfig{
 		Enabled:        cfg.Loop.Preamble.Value,
@@ -67,6 +71,7 @@ func RunIteration(
 	stdin := bytes.NewReader(assembled)
 	exitCode, err := SpawnAIWithContext(ctx, aiCmd, stdin, stdout, stderr)
 
+	duration := time.Since(start)
 	interrupted := exitCode == 130
 
 	return IterationResult{
@@ -74,6 +79,7 @@ func RunIteration(
 		ExitCode:    exitCode,
 		Error:       err,
 		Interrupted: interrupted,
+		Duration:    duration,
 	}
 }
 
@@ -89,6 +95,9 @@ func Loop(
 	failureThreshold := cfg.Loop.FailureThreshold.Value
 	consecutiveFailures := 0
 	verbose := cfg.Loop.ShowAIOutput.Value
+	
+	// Initialize statistics tracker (O4/R2)
+	stats := NewIterationStats()
 
 	// Setup signal handling for SIGINT/SIGTERM (O1/R7)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -107,6 +116,7 @@ func Loop(
 		// Check for interruption between iterations (O1/R7)
 		select {
 		case <-ctx.Done():
+			// Interrupted - do not report statistics (O4/R2)
 			return ExitCodeInterrupted
 		default:
 		}
@@ -114,6 +124,8 @@ func Loop(
 		// Check iteration limit before executing iteration (O1/R4)
 		if iterationMode == "max-iterations" && i > maxIterations {
 			// Max iterations exhausted without success signal
+			// Report statistics before exit (O4/R2)
+			log.Println(stats.Report())
 			return ExitCodeExhausted
 		}
 
@@ -127,9 +139,13 @@ func Loop(
 		result := RunIteration(ctx, i, aiCmd, promptContent, cfg, contextStrings, verbose)
 
 		// If interrupted, discard output and exit 130 (O1/R7)
+		// Do not report statistics on interruption (O4/R2)
 		if result.Interrupted {
 			return ExitCodeInterrupted
 		}
+		
+		// Record iteration duration (O4/R2)
+		stats.Add(result.Duration)
 
 		// Log crashes (non-zero exit) at warn level (O1/R1)
 		if result.ExitCode != 0 {
@@ -142,13 +158,15 @@ func Loop(
 		// Handle iteration outcome (O1/R5)
 		switch outcome {
 		case OutcomeSuccess:
-			// Success signal found - exit loop with success
+			// Success signal found - report statistics and exit with success (O4/R2)
+			log.Println(stats.Report())
 			return nil
 		case OutcomeFailure:
 			// Failure signal found - increment consecutive failure counter
 			consecutiveFailures++
 			if consecutiveFailures >= failureThreshold {
-				// Failure threshold reached - abort loop
+				// Failure threshold reached - report statistics and abort loop (O4/R2)
+				log.Println(stats.Report())
 				return ExitCodeFailureThreshold
 			}
 			// Continue to next iteration
