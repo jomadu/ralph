@@ -12,6 +12,10 @@ var rootCmd = &cobra.Command{
 	Short: "Ralph - a dumb loop that pipes prompts to AI CLIs",
 }
 
+var (
+	configFlag string
+)
+
 var runCmd = &cobra.Command{
 	Use:   "run [alias]",
 	Short: "Run the loop with a prompt",
@@ -50,6 +54,7 @@ var versionCmd = &cobra.Command{
 }
 
 func init() {
+	runCmd.Flags().StringVar(&configFlag, "config", "", "Explicit config file path")
 	listCmd.AddCommand(listPromptsCmd)
 	listCmd.AddCommand(listAliasesCmd)
 	rootCmd.AddCommand(runCmd)
