@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"log"
 
 	"github.com/maxdunn123/ralph/internal/config"
 )
@@ -15,8 +16,9 @@ var (
 
 // IterationResult captures the outcome of a single iteration.
 type IterationResult struct {
-	Output []byte
-	Error  error
+	Output   []byte
+	ExitCode int
+	Error    error
 }
 
 // RunIteration executes a single iteration: assemble prompt, spawn process, capture output.
@@ -44,11 +46,12 @@ func RunIteration(
 
 	// Spawn AI process with assembled prompt as stdin
 	stdin := bytes.NewReader(assembled)
-	err := SpawnAI(aiCmd, stdin, buffer, buffer)
+	exitCode, err := SpawnAI(aiCmd, stdin, buffer, buffer)
 
 	return IterationResult{
-		Output: buffer.Bytes(),
-		Error:  err,
+		Output:   buffer.Bytes(),
+		ExitCode: exitCode,
+		Error:    err,
 	}
 }
 
@@ -70,6 +73,11 @@ func Loop(
 		}
 
 		result := RunIteration(i, aiCmd, promptContent, cfg, contextStrings)
+
+		// Log crashes (non-zero exit) at warn level (O1/R1)
+		if result.ExitCode != 0 {
+			log.Printf("WARN: AI process exited with code %d (crash)", result.ExitCode)
+		}
 
 		// Scan for signals after process exit
 		outcome := ScanForSignals(result.Output, cfg.Loop.SignalSuccess.Value, cfg.Loop.SignalFailure.Value)

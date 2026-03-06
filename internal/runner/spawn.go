@@ -8,9 +8,10 @@ import (
 
 // SpawnAI spawns the AI CLI process with inherited environment and working directory.
 // Per O3/R4: no filtering of env, cwd is Ralph's cwd.
-func SpawnAI(argv []string, stdin io.Reader, stdout, stderr io.Writer) error {
+// Returns exit code (0 for success, non-zero for crash/error) and error.
+func SpawnAI(argv []string, stdin io.Reader, stdout, stderr io.Writer) (int, error) {
 	if len(argv) == 0 {
-		return nil
+		return 0, nil
 	}
 
 	cmd := exec.Command(argv[0], argv[1:]...)
@@ -20,5 +21,15 @@ func SpawnAI(argv []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 
-	return cmd.Run()
+	err := cmd.Run()
+	exitCode := 0
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			exitCode = exitErr.ExitCode()
+		} else {
+			exitCode = 1
+		}
+	}
+
+	return exitCode, err
 }
