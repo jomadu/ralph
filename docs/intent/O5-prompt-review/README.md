@@ -25,3 +25,31 @@ Without a reviewer, users discover prompt problems only when they run the loop: 
 - The reviewer does not enforce a single prompt style or template. It evaluates qualities that support Ralph's execution model (signals, state, iteration awareness, scope, convergence), not a fixed format.
 - The reviewer does not replace human judgment on content or correctness. It checks structure and discipline relevant to loop behavior.
 - The reviewer is not a general-purpose markdown or prose linter. Evaluation is tuned for Ralph prompts and Ralph's execution model (fresh process per iteration, filesystem state, preamble, signal scanning).
+
+## Risks
+
+| Risk | Mitigating Requirement |
+|------|------------------------|
+| User cannot supply the prompt from alias, file, or stdin in a consistent way | [R1 — Prompt input modes for review](R1-prompt-input-modes.md) |
+| Review does not run (config invalid, prompt load failure, AI command missing or spawn fails) | [R9 — Review failure handling](R9-review-failure-handling.md) |
+| AI output has no parseable summary line so exit code cannot be set correctly | [R4 — Review report content and parseable format](R4-report-content-format.md), [R5 — Machine-readable exit code](R5-machine-readable-exit-code.md) |
+| Suggested revision cannot be extracted from output for apply or display | [R4 — Review report content and parseable format](R4-report-content-format.md) |
+| User applies suggested revision by accident (no chance to decline) | [R7 — Apply confirmation](R7-apply-confirmation.md) |
+| User expects --apply to work when prompt was piped from stdin | [R8 — Apply invalid for stdin](R8-apply-invalid-stdin.md) |
+| Wrong file overwritten when applying (e.g. alias resolves elsewhere) | [R6 — Apply suggested revision to file](R6-apply-revision.md) |
+| Report lacks narrative feedback or suggested revision in a usable form | [R4 — Review report content and parseable format](R4-report-content-format.md) |
+| No AI command or config available for review subcommand | [R3 — Config and AI backend for review](R3-config-ai-backend.md) |
+
+## Requirements
+
+| ID | Requirement | Status |
+|----|-------------|--------|
+| [R1](R1-prompt-input-modes.md) | Prompt input modes for review | draft |
+| [R2](R2-one-shot-execution.md) | One-shot review execution | draft |
+| [R3](R3-config-ai-backend.md) | Config and AI backend for review | draft |
+| [R4](R4-report-content-format.md) | Review report content and parseable format | draft |
+| [R5](R5-machine-readable-exit-code.md) | Machine-readable exit code | draft |
+| [R6](R6-apply-revision.md) | Apply suggested revision to file | draft |
+| [R7](R7-apply-confirmation.md) | Apply confirmation | draft |
+| [R8](R8-apply-invalid-stdin.md) | Apply invalid for stdin | draft |
+| [R9](R9-review-failure-handling.md) | Review failure handling | draft |
