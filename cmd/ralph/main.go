@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -395,9 +396,37 @@ var reviewCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "Report will be written to: %s\n", reportPath)
 		}
 
-		_ = src
-		_ = reportPath // T3 will interpolate into prompt; R9 will verify file at this path
-		fmt.Fprintf(os.Stderr, "review: loaded %d bytes (stub; full review not yet implemented)\n", len(src.Content))
+		// R2: Compose review prompt (embedded instructions + path directive + user prompt)
+		composed, err := review.ComposeReviewPrompt(reportPath, src.Content)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(2)
+		}
+
+		// Resolve and parse AI command (same mechanism as runner)
+		resolution, err := config.ResolveAICommand(cfg)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(2)
+		}
+		aiArgv, err := cmdparse.Parse(resolution.Command)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: failed to parse AI command: %v\n", err)
+			os.Exit(2)
+		}
+
+		// Single AI invocation; report is file at reportPath (R2), not parsed from stdout
+		exitCode, err := runner.SpawnAI(aiArgv, bytes.NewReader(composed), os.Stdout, os.Stderr)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: AI spawn failed: %v\n", err)
+			os.Exit(2)
+		}
+		if exitCode != 0 {
+			fmt.Fprintf(os.Stderr, "error: AI process exited with code %d\n", exitCode)
+			os.Exit(2)
+		}
+
+		// T5/R9 will verify report file exists; T6 will derive exit 0/1 from content. For T3, exit 0.
 		os.Exit(0)
 	},
 }
