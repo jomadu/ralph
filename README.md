@@ -31,6 +31,43 @@ ralph run -f ./prompts/fix-tests.md
 cat prompts/build.md | ralph run
 ```
 
+## Install and Uninstall
+
+Ralph can be installed with the provided script so the `ralph` binary is on your PATH. Uninstall removes only the binary and install state; your config (e.g. `~/.config/ralph/ralph-config.yml`) is not removed.
+
+**Prerequisites:** Go (to build from source), or a pre-built binary. The install script is tested on **macOS and Linux** (amd64/arm64). Windows is not yet supported.
+
+**Install:**
+
+1. From the Ralph repo root (with Go and `cmd/ralph`), run:
+   ```bash
+   ./scripts/install.sh
+   ```
+   The script builds the binary (if needed), installs it to `~/bin` by default, and records the install location for uninstall.
+2. Optional: use a different directory with `RALPH_INSTALL_DIR` or `--dir`:
+   ```bash
+   RALPH_INSTALL_DIR=/usr/local/bin ./scripts/install.sh
+   # or
+   ./scripts/install.sh --dir /usr/local/bin
+   ```
+   If the directory is not writable (e.g. `/usr/local/bin`), run with `sudo` or choose a user directory like `~/bin`.
+3. Ensure the install directory is on your PATH (e.g. add it to your shell profile, or use `~/bin` if it is already on PATH).
+4. Open a new terminal and verify:
+   ```bash
+   ralph version
+   ```
+   You should see version output and exit 0.
+
+**Uninstall:**
+
+Run from anywhere (the script reads the install location from `~/.config/ralph/install-state`):
+
+```bash
+./scripts/uninstall.sh
+```
+
+This removes the `ralph` binary from the directory where it was installed and removes the install state file. User config in `~/.config/ralph/` (e.g. `ralph-config.yml`) is **not** removed. No PATH or symlink changes are made by the install script, so uninstall does not leave broken references.
+
 ## Documentation
 
 User documentation (how-tos, workarounds, and examples) is in **[User docs](docs/user/)**. The [user docs index](docs/user/README.md) lists all topics.
