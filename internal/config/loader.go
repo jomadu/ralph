@@ -62,6 +62,11 @@ func LoadConfigWithProvenance() (ConfigWithProvenance, error) {
 		return cfg, err
 	}
 
+	// Validate resolved configuration
+	if err := Validate(cfg); err != nil {
+		return cfg, err
+	}
+
 	return cfg, nil
 }
 
@@ -88,6 +93,12 @@ func LoadConfigFromFileWithProvenance(path string) (ConfigWithProvenance, error)
 	if err := overlayFileWithProvenance(path, &cfg, ProvenanceFile, false); err != nil {
 		return cfg, err
 	}
+
+	// Validate resolved configuration
+	if err := Validate(cfg); err != nil {
+		return cfg, err
+	}
+
 	return cfg, nil
 }
 
@@ -116,8 +127,16 @@ func overlayFileWithProvenance(path string, cfg *ConfigWithProvenance, prov Prov
 		return fmt.Errorf("failed to parse config %s: %w", path, err)
 	}
 
-	// Overlay loop config
-	overlayLoopConfig(&cfg.Loop, &raw.Loop, prov)
+	// Parse into map to detect explicitly set fields
+	var rawMap map[string]interface{}
+	if err := yaml.Unmarshal(data, &rawMap); err != nil {
+		return fmt.Errorf("failed to parse config %s: %w", path, err)
+	}
+
+	// Overlay loop config with explicit field detection
+	if loopMap, ok := rawMap["loop"].(map[string]interface{}); ok {
+		overlayLoopConfigWithMap(&cfg.Loop, &raw.Loop, loopMap, prov)
+	}
 
 	// Overlay prompts (no provenance for prompts yet)
 	for k, v := range raw.Prompts {
@@ -130,6 +149,36 @@ func overlayFileWithProvenance(path string, cfg *ConfigWithProvenance, prov Prov
 	}
 
 	return nil
+}
+
+// overlayLoopConfigWithMap overlays loop config values with provenance, using a map to detect explicit fields.
+func overlayLoopConfigWithMap(dst *LoopConfigWithProvenance, src *LoopConfig, rawMap map[string]interface{}, prov Provenance) {
+	if _, ok := rawMap["default_max_iterations"]; ok {
+		dst.DefaultMaxIterations = ValueWithProvenance[int]{Value: src.DefaultMaxIterations, Provenance: prov}
+	}
+	if _, ok := rawMap["failure_threshold"]; ok {
+		dst.FailureThreshold = ValueWithProvenance[int]{Value: src.FailureThreshold, Provenance: prov}
+	}
+	if _, ok := rawMap["iteration_timeout"]; ok {
+		dst.IterationTimeout = ValueWithProvenance[int]{Value: src.IterationTimeout, Provenance: prov}
+	}
+	if _, ok := rawMap["max_output_buffer"]; ok {
+		dst.MaxOutputBuffer = ValueWithProvenance[int]{Value: src.MaxOutputBuffer, Provenance: prov}
+	}
+	if _, ok := rawMap["show_ai_output"]; ok {
+		dst.ShowAIOutput = ValueWithProvenance[bool]{Value: src.ShowAIOutput, Provenance: prov}
+	}
+	if _, ok := rawMap["ai_cmd_alias"]; ok {
+		dst.AICmdAlias = ValueWithProvenance[string]{Value: src.AICmdAlias, Provenance: prov}
+	}
+	if signalsMap, ok := rawMap["signals"].(map[string]interface{}); ok {
+		if _, ok := signalsMap["success"]; ok {
+			dst.SignalSuccess = ValueWithProvenance[string]{Value: src.Signals.Success, Provenance: prov}
+		}
+		if _, ok := signalsMap["failure"]; ok {
+			dst.SignalFailure = ValueWithProvenance[string]{Value: src.Signals.Failure, Provenance: prov}
+		}
+	}
 }
 
 // overlayLoopConfig overlays loop config values with provenance.
