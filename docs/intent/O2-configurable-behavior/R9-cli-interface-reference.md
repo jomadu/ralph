@@ -66,9 +66,10 @@ All flags are optional. Precedence: CLI flags override environment variables and
 
 | Flag | Short | Type | Effect | Specified in |
 |------|-------|------|--------|--------------|
-| `--verbose` | `-v` | — | Stream AI CLI output to terminal (overrides config/env) | O4/R3 |
-| `--quiet` | `-q` | — | Suppress non-error output (sets log level to error) | O4/R5 |
+| `--verbose` | `-v` | — | Verbose: log level debug, stream AI output unless `--no-ai-cmd-output` | O4/R3, O4/R5 |
+| `--quiet` | `-q` | — | Quiet: log level error, do not stream AI command output | O4/R5, O4/R3 |
 | `--log-level` | — | string | Set `loop.log_level` (debug, info, warn, error) | O4/R5 |
+| `--no-ai-cmd-output` | — | — | Set show AI command output to false | O4/R3 |
 
 **Configuration**
 
