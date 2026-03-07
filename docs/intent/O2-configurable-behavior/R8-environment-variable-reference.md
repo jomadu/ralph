@@ -28,7 +28,7 @@ Ralph reads the following environment variables from the process environment whe
 | `RALPH_LOOP_FAILURE_THRESHOLD` | `loop.failure_threshold` | int. Positive integer; minimum 1. |
 | `RALPH_LOOP_ITERATION_TIMEOUT` | `loop.iteration_timeout` | int. Seconds; 0 means no timeout. |
 | `RALPH_LOOP_LOG_LEVEL` | `loop.log_level` | string. Enum: `debug` \| `info` \| `warn` \| `error` (see O4/R5). |
-| `RALPH_LOOP_SHOW_AI_OUTPUT` | `loop.show_ai_output` | bool. When true, stream AI CLI output to the terminal (see O4/R3). |
+| `RALPH_LOOP_SHOW_AI_OUTPUT` | `loop.show_ai_output` | bool. When true, stream AI CLI output to the terminal (see O4/R3). When **unset**, default is **true** (per O4/R3). |
 
 No other `RALPH_*` variables are defined. Future variables may be added by extending this table in a later requirement.
 
@@ -36,6 +36,7 @@ No other `RALPH_*` variables are defined. Future variables may be added by exten
 
 | Condition | Expected Behavior |
 |----------|-------------------|
+| Variable unset → default true | For `RALPH_LOOP_SHOW_AI_OUTPUT`: when unset, default is true; AI output is streamed (per O4/R3). |
 | Variable set to empty string | Treated as set; value overlay applied (R1). Validation (R3) may reject empty for required/min-length fields. |
 | Variable set to invalid value (e.g. non-numeric for an int key) | Config validation fails at load time (R3); Ralph exits with code 1 and a clear message. |
 | Variable not in this list but with `RALPH_` prefix | Ignored; no warning. No overlay. |
