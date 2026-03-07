@@ -174,6 +174,7 @@ func Loop(
 			consecutiveFailures++
 			if consecutiveFailures >= failureThreshold {
 				// Failure threshold reached - report statistics and abort loop (O4/R2)
+				logger.Info("Failure threshold (%d) reached after %d consecutive failure(s); stopping.", failureThreshold, consecutiveFailures)
 				logger.Info(stats.Report())
 				return ExitCodeFailureThreshold
 			}
