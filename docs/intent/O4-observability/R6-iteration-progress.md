@@ -17,7 +17,7 @@ At the start of each iteration — before the prompt is assembled and piped to t
 
 **Log level:** Progress messages are emitted at **info** log level (R5). They are visible when the effective log level is **info** or **debug**. They are **suppressed** when the effective log level is **warn** or **error** (e.g., when the user passes `--quiet` or `--log-level warn`).
 
-**Output destination:** Progress messages go to **stderr** so they do not interfere with stdout (e.g., dry-run output or user piping) and do not mix with the AI CLI output capture buffer. This is consistent with R2 and R5 (Ralph's operational output to stderr).
+**Output destination:** Progress messages go to **stdout** so they are part of the run log (Ralph operational messages and AI command stream in one stream). This is consistent with R2 and R5 (Ralph's operational output to stdout).
 
 **Timing:** The message is emitted once per iteration, at the start of that iteration — before the AI process is spawned. So for a run that executes 3 iterations, the user sees three progress lines (e.g., "Iteration 1/10", "Iteration 2/10", "Iteration 3/10") in order.
 
@@ -45,10 +45,10 @@ At the start of each iteration — before the prompt is assembled and piped to t
 `ralph run build` with default log level (info). Run executes 3 iterations; success on iteration 3.
 
 **Expected output:**
-At the start of each iteration, stderr contains a line like "Iteration 1/10", "Iteration 2/10", "Iteration 3/10" (or equivalent). Order and numbering match the iterations that run.
+At the start of each iteration, stdout contains a line like "Iteration 1/10", "Iteration 2/10", "Iteration 3/10" (or equivalent). Order and numbering match the iterations that run.
 
 **Verification:**
-- Three progress lines on stderr
+- Three progress lines on stdout
 - Each line indicates iteration number and limit
 - Lines appear before the AI output (or before completion) for that iteration
 
@@ -58,11 +58,11 @@ At the start of each iteration, stderr contains a line like "Iteration 1/10", "I
 `ralph run build -q`. Run executes 2 iterations; success on iteration 2.
 
 **Expected output:**
-No "Iteration N/M" lines on stderr (R5: quiet sets log level to error; progress is info). User sees only errors (if any) and exit. Completion statistics (R2) may also be suppressed if at info level.
+No "Iteration N/M" lines on stdout (R5: quiet sets log level to error; progress is info). User sees only errors (if any) and exit. Completion statistics (R2) may also be suppressed if at info level.
 
 **Verification:**
 - Exit code 0
-- stderr does not contain iteration progress lines
+- stdout does not contain iteration progress lines
 
 #### Unlimited mode
 
@@ -80,7 +80,7 @@ Progress messages show current iteration and indicate unlimited, e.g. "Iteration
 
 - [ ] At the start of each iteration, Ralph prints the iteration number and the limit (e.g., "Iteration 3/10" or "Iteration 3 (unlimited)")
 - [ ] Progress messages are emitted at info log level
-- [ ] Progress messages go to stderr so they do not interfere with AI output capture or stdout piping
+- [ ] Progress messages go to stdout so they are part of the run log (with AI output when streamed)
 - [ ] Progress messages are suppressed when log level is set above info (--quiet or --log-level warn/error)
 
 ## Dependencies

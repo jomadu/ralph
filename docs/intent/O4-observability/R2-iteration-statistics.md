@@ -8,7 +8,7 @@ The system reports iteration timing statistics at loop completion, giving the us
 
 ## Specification
 
-When the loop completes for a reason that produces exit 0, 1, or 2 (success, failure threshold, or max iterations), Ralph reports iteration timing statistics to stderr before exiting. Statistics are not reported when Ralph exits 130 (interruption per O1/R7); the iteration is discarded and no completion summary is produced.
+When the loop completes for a reason that produces exit 0, 1, or 2 (success, failure threshold, or max iterations), Ralph reports iteration timing statistics to stdout before exiting. Statistics are not reported when Ralph exits 130 (interruption per O1/R7); the iteration is discarded and no completion summary is produced.
 
 **When statistics are reported:**
 
@@ -27,7 +27,7 @@ When the loop completes for a reason that produces exit 0, 1, or 2 (success, fai
 
 **Duration definition:** Per-iteration duration is the wall-clock time from the start of piping input to the AI CLI process until the process has exited and output has been captured (i.e., the time the iteration took, not including post-scan or loop overhead). Duration is measured in seconds; implementation may use fractional seconds (e.g., milliseconds) internally and display in a human-readable form (e.g., "1.234s" or "1.23s").
 
-**Output destination:** All statistics output goes to stderr so that stdout is not polluted for users who pipe Ralph or capture stdout. This aligns with R5 (Ralph's log output to stderr) and R6 (progress to stderr).
+**Output destination:** All statistics output goes to stdout so that the run log (Ralph operational messages and AI command stream) is captured in one place. This aligns with R5 (Ralph's log output to stdout) and R6 (progress to stdout).
 
 **Log level:** The iteration statistics block is emitted at **info** log level (R5). It is therefore visible at default log level and suppressed when the effective log level is **warn** or **error** (e.g. `--quiet` or `--log-level warn`).
 
@@ -58,10 +58,10 @@ When the loop completes for a reason that produces exit 0, 1, or 2 (success, fai
 `ralph run build` with default config. Iterations 1–3 run; iteration 3 output contains success signal. Iteration durations: 12.1s, 15.3s, 10.0s.
 
 **Expected output:**
-Before exiting 0, Ralph prints to stderr something equivalent to: 3 iterations executed; min duration (e.g., 10.0s); max (e.g., 15.3s); mean (e.g., 12.47s); stddev (e.g., 2.65s or similar).
+Before exiting 0, Ralph prints to stdout something equivalent to: 3 iterations executed; min duration (e.g., 10.0s); max (e.g., 15.3s); mean (e.g., 12.47s); stddev (e.g., 2.65s or similar).
 
 **Verification:**
-- Statistics appear on stderr
+- Statistics appear on stdout
 - Iteration count is 3
 - Min ≤ mean ≤ max; stddev ≥ 0
 
@@ -83,18 +83,18 @@ Ralph reports 1 iteration; min = max = mean = 8.5s (or equivalent); standard dev
 `ralph run build`. User presses Ctrl-C during iteration 2.
 
 **Expected output:**
-Ralph exits 130. No iteration statistics block is printed to stderr.
+Ralph exits 130. No iteration statistics block is printed to stdout.
 
 **Verification:**
 - Exit code 130
-- stderr does not contain a completion statistics summary for this run
+- stdout does not contain a completion statistics summary for this run
 
 ## Acceptance criteria
 
 - [ ] After the loop completes (success, failure threshold, or max iterations), Ralph reports the total number of iterations executed
 - [ ] Min, max, and mean iteration durations are reported
 - [ ] Standard deviation of iteration durations is reported, calculated using Welford's online algorithm
-- [ ] Statistics are reported to stderr so they do not interfere with stdout piping or capture
+- [ ] Statistics are reported to stdout (run log) so they are part of the single run log stream
 - [ ] Statistics are not reported on interruption (SIGINT/SIGTERM — exit 130)
 - [ ] For single-iteration runs, standard deviation is reported as 0 or omitted
 - [ ] Statistics block is emitted at info log level and is suppressed when effective log level is warn or error (e.g. --quiet)
