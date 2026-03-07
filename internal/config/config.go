@@ -148,7 +148,7 @@ func DefaultConfig() Config {
 			FailureThreshold:     3,
 			IterationTimeout:     300,
 			MaxOutputBuffer:      10485760, // 10 MB
-			ShowAIOutput:         false,
+			ShowAIOutput:         true,
 			LogLevel:             "info",
 			Preamble:             true,
 			AICmd:                "",
@@ -175,7 +175,7 @@ func DefaultConfigWithProvenance() ConfigWithProvenance {
 			FailureThreshold:     ValueWithProvenance[int]{Value: 3, Provenance: ProvenanceDefault},
 			IterationTimeout:     ValueWithProvenance[int]{Value: 300, Provenance: ProvenanceDefault},
 			MaxOutputBuffer:      ValueWithProvenance[int]{Value: 10485760, Provenance: ProvenanceDefault},
-			ShowAIOutput:         ValueWithProvenance[bool]{Value: false, Provenance: ProvenanceDefault},
+			ShowAIOutput:         ValueWithProvenance[bool]{Value: true, Provenance: ProvenanceDefault},
 			LogLevel:             ValueWithProvenance[string]{Value: "info", Provenance: ProvenanceDefault},
 			Preamble:             ValueWithProvenance[bool]{Value: true, Provenance: ProvenanceDefault},
 			AICmd:                ValueWithProvenance[string]{Value: "", Provenance: ProvenanceDefault},

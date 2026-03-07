@@ -49,9 +49,10 @@ var (
 	contextFlags []string
 
 	// Output control
-	verboseFlag  bool
-	quietFlag    bool
-	logLevelFlag string
+	verboseFlag           bool
+	quietFlag             bool
+	logLevelFlag          string
+	noAICmdOutputFlag     bool
 
 	// Prompt input
 	fileFlag string
@@ -107,7 +108,14 @@ var runCmd = &cobra.Command{
 		if cmd.Flags().Changed("signal-failure") {
 			cliFlags.SignalFailure = &signalFailureFlag
 		}
-		if cmd.Flags().Changed("verbose") {
+		// -v: show AI output true (unless --no-ai-cmd-output); -q: show AI output false; --no-ai-cmd-output: false
+		if cmd.Flags().Changed("no-ai-cmd-output") {
+			falseVal := false
+			cliFlags.ShowAIOutput = &falseVal
+		} else if cmd.Flags().Changed("quiet") {
+			falseVal := false
+			cliFlags.ShowAIOutput = &falseVal
+		} else if cmd.Flags().Changed("verbose") {
 			cliFlags.ShowAIOutput = &verboseFlag
 		}
 		if cmd.Flags().Changed("quiet") {
@@ -151,9 +159,13 @@ var runCmd = &cobra.Command{
 		config.OverlayCLIFlags(&cfg, cliFlags)
 
 		// Initialize logger with effective log level (O4/R5)
-		// Precedence: --log-level > --quiet > --verbose > config > default (info)
+		// Precedence: --log-level else -q else -v else config/env else info
 		logLevel := cfg.Loop.LogLevel.Value
-		if cmd.Flags().Changed("verbose") && !cmd.Flags().Changed("log-level") && !cmd.Flags().Changed("quiet") {
+		if cmd.Flags().Changed("log-level") {
+			logLevel = logLevelFlag
+		} else if cmd.Flags().Changed("quiet") {
+			logLevel = "error"
+		} else if cmd.Flags().Changed("verbose") {
 			logLevel = "debug"
 		}
 		if err := logger.SetLevel(logLevel); err != nil {
@@ -534,9 +546,10 @@ func init() {
 	runCmd.Flags().StringArrayVarP(&contextFlags, "context", "c", nil, "Inject context into preamble (repeatable)")
 
 	// Output control
-	runCmd.Flags().BoolVarP(&verboseFlag, "verbose", "v", false, "Stream AI output to terminal")
-	runCmd.Flags().BoolVarP(&quietFlag, "quiet", "q", false, "Suppress non-error output")
+	runCmd.Flags().BoolVarP(&verboseFlag, "verbose", "v", false, "Verbose: log level debug, stream AI output unless --no-ai-cmd-output (O4/R3, O4/R5)")
+	runCmd.Flags().BoolVarP(&quietFlag, "quiet", "q", false, "Quiet: log level error, do not stream AI command output (O4/R5, O4/R3)")
 	runCmd.Flags().StringVar(&logLevelFlag, "log-level", "", "Set log level (debug, info, warn, error)")
+	runCmd.Flags().BoolVar(&noAICmdOutputFlag, "no-ai-cmd-output", false, "Do not stream AI command output to terminal (O4/R3)")
 
 	listCmd.AddCommand(listPromptsCmd)
 	listCmd.AddCommand(listAliasesCmd)
