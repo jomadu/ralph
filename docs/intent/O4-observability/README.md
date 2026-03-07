@@ -20,7 +20,7 @@ A loop runner that silently exits is a black box. The user re-runs the command, 
 
 ## Non-outcomes
 
-- Ralph does not provide persistent logging, log files, or structured log output (JSON lines, etc.). Output goes to stderr/stdout for the current invocation only.
+- Operational messages and the AI command stream go to **stdout** (the run's log). **stderr** is reserved for fatal/startup errors only. Ralph does not provide persistent log files.
 - Ralph does not provide per-iteration diffs or file change tracking between iterations.
 - Ralph does not integrate with external monitoring, alerting, or observability systems.
 - Ralph does not support replaying or debugging past executions.
