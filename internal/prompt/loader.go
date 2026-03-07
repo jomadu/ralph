@@ -59,8 +59,6 @@ func ResolveMode(alias string, filePath string) (Mode, error) {
 // LoadPrompt loads the prompt content based on the resolved mode.
 // Validates the source and reads the content once into memory.
 func LoadPrompt(mode Mode, alias string, filePath string, cfg *config.ConfigWithProvenance) (*Source, error) {
-	src := &Source{Mode: mode}
-
 	switch mode {
 	case ModeAlias:
 		return loadFromAlias(alias, cfg)
@@ -71,8 +69,6 @@ func LoadPrompt(mode Mode, alias string, filePath string, cfg *config.ConfigWith
 	default:
 		return nil, fmt.Errorf("unknown prompt mode: %d", mode)
 	}
-
-	return src, nil
 }
 
 // loadFromAlias loads prompt from a configured alias.

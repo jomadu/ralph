@@ -16,9 +16,9 @@ import (
 
 // Exit code errors
 var (
-	ExitCodeExhausted         = errors.New("max iterations exhausted")
-	ExitCodeFailureThreshold  = errors.New("failure threshold reached")
-	ExitCodeInterrupted       = errors.New("interrupted")
+	ExitCodeExhausted        = errors.New("max iterations exhausted")
+	ExitCodeFailureThreshold = errors.New("failure threshold reached")
+	ExitCodeInterrupted      = errors.New("interrupted")
 )
 
 // IterationResult captures the outcome of a single iteration.
@@ -41,7 +41,7 @@ func RunIteration(
 	verbose bool,
 ) IterationResult {
 	start := time.Now()
-	
+
 	// Generate preamble
 	preamble := GeneratePreamble(PreambleConfig{
 		Enabled:        cfg.Loop.Preamble.Value,
@@ -103,7 +103,7 @@ func Loop(
 	failureThreshold := cfg.Loop.FailureThreshold.Value
 	consecutiveFailures := 0
 	verbose := cfg.Loop.ShowAIOutput.Value
-	
+
 	// Initialize statistics tracker (O4/R2)
 	stats := NewIterationStats()
 
@@ -151,7 +151,7 @@ func Loop(
 		if result.Interrupted {
 			return ExitCodeInterrupted
 		}
-		
+
 		// Record iteration duration (O4/R2)
 		stats.Add(result.Duration)
 

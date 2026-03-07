@@ -14,6 +14,7 @@ This directory is the **canonical location** for user-facing documentation for R
 | [Review report summary format](review-report-format.md) | Machine-parseable summary line and exit codes for `ralph review` report output | [O5](../intent/O5-prompt-review/README.md) — Prompt review; [R6](../intent/O5-prompt-review/R6-report-format-exit-codes.md) report format |
 | [Ralph binary and build prompt](ralph-binary-and-build-prompt.md) | How to build the ralph binary, put it on PATH, and use the build procedure prompt for O5 tasks | [O5](../intent/O5-prompt-review/README.md) — Prompt review (developer workflow) |
 | [Install and uninstall](../README.md#install-and-uninstall) | How to install Ralph on your system and uninstall it cleanly | [O6](../intent/O6-install-uninstall/README.md) — Install and uninstall; [R5](../intent/O6-install-uninstall/R5-install-uninstall-documentation.md) documentation |
+| [Releases and versioning](release.md) | How versions and releases work; conventional commits and pre-release branches | — |
 
 ## Policy
 

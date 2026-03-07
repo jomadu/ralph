@@ -116,9 +116,9 @@ const (
 // ResolvePromptOutputPathResult holds the resolved prompt output path and whether it was explicitly set.
 // Used for revision-phase interpolation (R4, R5) and for writing the suggested revision when not applying.
 type ResolvePromptOutputPathResult struct {
-	Path       string // Resolved absolute path where revision is written; empty if no path needed
-	Explicit   bool   // True if user set --prompt-output
-	NeedPath   bool   // True when revision will be written (apply or non-apply with --prompt-output)
+	Path     string // Resolved absolute path where revision is written; empty if no path needed
+	Explicit bool   // True if user set --prompt-output
+	NeedPath bool   // True when revision will be written (apply or non-apply with --prompt-output)
 }
 
 // ResolvePromptOutputPath resolves where the suggested revised prompt is written (R4).

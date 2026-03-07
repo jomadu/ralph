@@ -25,8 +25,8 @@ case "$INSTALL_DIR_ABS" in
     ;;
 esac
 
-# --- Remove binary (rm -f so missing binary does not fail)
-rm -f "$INSTALL_DIR_ABS/ralph"
+# --- Remove binary/binary.exe (rm -f so missing binary does not fail)
+rm -f "$INSTALL_DIR_ABS/ralph" "$INSTALL_DIR_ABS/ralph.exe"
 
 # --- Remove state file so future install gets clean state
 rm -f "$STATE_FILE"

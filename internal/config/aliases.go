@@ -14,16 +14,16 @@ func BuiltinAliases() map[string]string {
 // User-defined aliases override built-in aliases with the same name per O3/R3.
 func MergedAliases(cfg Config) map[string]string {
 	merged := make(map[string]string)
-	
+
 	// Start with built-ins
 	for k, v := range BuiltinAliases() {
 		merged[k] = v
 	}
-	
+
 	// Overlay user-defined (overrides built-in for same key)
 	for k, v := range cfg.AICmdAliases {
 		merged[k] = v
 	}
-	
+
 	return merged
 }

@@ -27,7 +27,7 @@ func ResolveAICommand(cfg ConfigWithProvenance) (CommandResolution, error) {
 	// Step 2: Check for alias
 	if cfg.Loop.AICmdAlias.Value != "" {
 		aliasName := cfg.Loop.AICmdAlias.Value
-		
+
 		// Look up alias in merged alias map
 		if aliasValue, ok := cfg.AICmdAliases[aliasName]; ok {
 			return CommandResolution{
@@ -35,7 +35,7 @@ func ResolveAICommand(cfg ConfigWithProvenance) (CommandResolution, error) {
 				Source:  fmt.Sprintf("alias %s", aliasName),
 			}, nil
 		}
-		
+
 		// Alias not found - build error with available aliases
 		plainCfg := Config{AICmdAliases: make(map[string]string)}
 		for k, v := range cfg.AICmdAliases {
@@ -52,7 +52,6 @@ func ResolveAICommand(cfg ConfigWithProvenance) (CommandResolution, error) {
 	// Step 3: No command configured
 	return CommandResolution{}, fmt.Errorf("no AI command configured: set loop.ai_cmd or loop.ai_cmd_alias via config, RALPH_LOOP_AI_CMD or RALPH_LOOP_AI_CMD_ALIAS via environment, or --ai-cmd or --ai-cmd-alias via CLI")
 }
-
 
 // Provenance identifies the source layer of a config value.
 type Provenance string
@@ -120,16 +119,16 @@ type PromptConfigWithProvenance struct {
 	Path        ValueWithProvenance[string]
 	Name        ValueWithProvenance[string]
 	Description ValueWithProvenance[string]
-	Loop        *LoopConfig // Raw loop config from YAML
+	Loop        *LoopConfig            // Raw loop config from YAML
 	LoopRawMap  map[string]interface{} // Raw map for explicit field detection
-	Provenance  Provenance // Provenance of this prompt definition
+	Provenance  Provenance             // Provenance of this prompt definition
 }
 
 // Config is the root configuration structure.
 type Config struct {
-	Loop          LoopConfig              `yaml:"loop"`
-	Prompts       map[string]PromptConfig `yaml:"prompts"`
-	AICmdAliases  map[string]string       `yaml:"ai_cmd_aliases"`
+	Loop         LoopConfig              `yaml:"loop"`
+	Prompts      map[string]PromptConfig `yaml:"prompts"`
+	AICmdAliases map[string]string       `yaml:"ai_cmd_aliases"`
 }
 
 // ConfigWithProvenance is the resolved configuration with provenance metadata.

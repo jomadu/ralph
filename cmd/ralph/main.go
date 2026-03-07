@@ -9,14 +9,17 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/maxdunn/ralph/internal/cmdparse"
 	"github.com/maxdunn/ralph/internal/config"
 	"github.com/maxdunn/ralph/internal/logger"
 	"github.com/maxdunn/ralph/internal/prompt"
 	"github.com/maxdunn/ralph/internal/review"
 	"github.com/maxdunn/ralph/internal/runner"
+	"github.com/spf13/cobra"
 )
+
+// Version is set at build time via -ldflags (e.g. semantic-release or make build).
+var Version = "dev"
 
 var rootCmd = &cobra.Command{
 	Use:   "ralph",
@@ -28,14 +31,14 @@ var (
 	configFlag string
 
 	// Loop control
-	maxIterationsFlag   int
-	unlimitedFlag       bool
+	maxIterationsFlag    int
+	unlimitedFlag        bool
 	failureThresholdFlag int
 	iterationTimeoutFlag int
-	maxOutputBufferFlag int
-	preambleFlag        bool
-	noPreambleFlag      bool
-	dryRunFlag          bool
+	maxOutputBufferFlag  int
+	preambleFlag         bool
+	noPreambleFlag       bool
+	dryRunFlag           bool
 
 	// AI command
 	aiCmdFlag      string
@@ -49,21 +52,21 @@ var (
 	contextFlags []string
 
 	// Output control
-	verboseFlag           bool
-	quietFlag             bool
-	logLevelFlag          string
-	noAICmdOutputFlag     bool
+	verboseFlag       bool
+	quietFlag         bool
+	logLevelFlag      string
+	noAICmdOutputFlag bool
 
 	// Prompt input
 	fileFlag string
 
 	// Review-specific flags (T1; T2 adds --review-output; T7 adds --prompt-output, --apply; T8 adds -y; T9/R7 adds --quiet, --report-to-file-only)
-	reviewFileFlag           string
-	reviewOutputFlag         string
-	reviewPromptOutputFlag   string
-	reviewApplyFlag          bool
-	reviewYesFlag            bool
-	reviewQuietFlag          bool   // R7: do not stream AI output to stdout
+	reviewFileFlag             string
+	reviewOutputFlag           string
+	reviewPromptOutputFlag     string
+	reviewApplyFlag            bool
+	reviewYesFlag              bool
+	reviewQuietFlag            bool // R7: do not stream AI output to stdout
 	reviewReportToFileOnlyFlag bool // R7: do not print report content to stdout (report still written to file)
 )
 
@@ -337,12 +340,12 @@ var listAliasesCmd = &cobra.Command{
 		}
 
 		merged := config.MergedAliases(plainCfg)
-		
+
 		var keys []string
 		for k := range merged {
 			keys = append(keys, k)
 		}
-		
+
 		// Sort alphabetically
 		for i := 0; i < len(keys); i++ {
 			for j := i + 1; j < len(keys); j++ {
@@ -362,7 +365,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print version information",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("ralph 0.1.0")
+		fmt.Println("ralph", Version)
 	},
 }
 

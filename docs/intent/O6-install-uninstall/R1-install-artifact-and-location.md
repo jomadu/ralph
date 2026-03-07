@@ -12,7 +12,7 @@ Ralph's install surface is defined so that the supported install method (install
 
 **Artifact set:**
 
-- **Primary artifact:** A single executable binary named `ralph` (or platform-equivalent, e.g. `ralph.exe` on Windows). This binary is self-contained for normal operation (run, review, list, version, etc.). Optional assets (e.g. shell completions, man pages) may be included in the artifact set for a given method if documented.
+- **Primary artifact:** A single executable binary named `ralph` (or platform-equivalent, e.g. `ralph.exe` on Windows). This binary is obtained from a release (pre-built for the user's OS/arch) and is self-contained for normal operation (run, review, list, version, etc.). Optional assets (e.g. shell completions, man pages) may be included in the artifact set for a given method if documented.
 - **User-owned config:** Ralph does not install user config. User config lives in workspace or global config paths (e.g. `./ralph-config.yml`, `~/.config/ralph/ralph-config.yml`) and is created or edited by the user. These are not part of the "installed" set for uninstall (R4).
 
 **Location:**
@@ -33,21 +33,13 @@ Ralph's install surface is defined so that the supported install method (install
 
 ### Examples
 
-#### Documented artifact set for "manual binary" method
-
-**Input:** Documentation for "Install by downloading the release binary."
-
-**Expected content (conceptual):** "Place the `ralph` binary in a directory on your PATH (e.g. `~/bin` or `/usr/local/bin`). Only the binary is installed. Uninstall by deleting that binary."
-
-**Verification:** User knows exactly one file was added and where; uninstall is delete-one-file.
-
 #### Documented artifact set for install script
 
 **Input:** Documentation for "Install via the install script."
 
-**Expected content (conceptual):** "The install script places the `ralph` binary in a defined location (e.g. `~/bin` or a directory the user chooses). Only the binary is installed. Uninstall by running the uninstall script, which removes that binary (and any references the install script added)."
+**Expected content (conceptual):** "The install script downloads the `ralph` binary from a GitHub release (latest or a version you specify) and places it in a defined location (e.g. `~/bin` or a directory you choose). Only the binary is installed. Uninstall by running the uninstall script, which removes that binary and the install state."
 
-**Verification:** User knows install location and that uninstall is via the uninstall script.
+**Verification:** User knows install is from releases only, install location, and that uninstall is via the uninstall script.
 
 ## Acceptance criteria
 

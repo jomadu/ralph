@@ -35,19 +35,24 @@ cat prompts/build.md | ralph run
 
 Ralph can be installed with the provided script so the `ralph` binary is on your PATH. Uninstall removes only the binary and install state; your config (e.g. `~/.config/ralph/ralph-config.yml`) is not removed.
 
-**Prerequisites:** Go (to build from source), or a pre-built binary. The install script is tested on **macOS and Linux** (amd64/arm64). Windows is not yet supported.
+**Prerequisites:** `curl`. The install script **only** installs from release artifacts (no build from source). Supported: Linux, macOS, Windows (amd64, arm64); script runs on macOS/Linux or Windows (e.g. Git Bash).
 
 **Install:**
 
-1. From the Ralph repo root (with Go and `cmd/ralph`), run:
+1. **Latest release** (from repo or one-line):
    ```bash
    ./scripts/install.sh
+   # or
+   curl -fsSL https://raw.githubusercontent.com/maxdunn/ralph/main/scripts/install.sh | sh
    ```
-   The script builds the binary (if needed), installs it to `~/bin` by default, and records the install location for uninstall.
+   **Specific version** (e.g. `1.0.0` or `v1.0.0`):
+   ```bash
+   ./scripts/install.sh 1.0.0
+   ./scripts/install.sh v1.0.0 --dir /usr/local/bin
+   ```
+   The script installs to `~/bin` by default and records the install location for uninstall.
 2. Optional: use a different directory with `RALPH_INSTALL_DIR` or `--dir`:
    ```bash
-   RALPH_INSTALL_DIR=/usr/local/bin ./scripts/install.sh
-   # or
    ./scripts/install.sh --dir /usr/local/bin
    ```
    If the directory is not writable (e.g. `/usr/local/bin`), run with `sudo` or choose a user directory like `~/bin`.

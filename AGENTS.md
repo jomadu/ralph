@@ -16,13 +16,18 @@ This project uses **bd (beads)** for all issue tracking. Run `bd --help` for com
 
 ## Build/Test/Lint Commands
 
-Implementation not yet present (Ralph is in specification phase):
+Use the Makefile from the repository root:
 
-- **Test:** Manual verification (no automated tests yet)
-- **Build:** Not required (no build artifact yet)
-- **Lint:** Not configured
+- **Build:** `make build` — builds `bin/ralph` (override with `make build BINARY=<path>`). Optional `VERSION=<ver>` (e.g. from `git describe --tags`) sets binary version; default is `dev`.
+- **Test:** `make test` — runs `go test ./...`
+- **Lint:** `make lint` — runs `go vet ./...` and checks `gofmt -s` (fails if any file needs formatting)
+- **Format:** `make fmt` — runs `gofmt -s -w .` to fix formatting
 
-When Go or another implementation is added, document commands here and keep in sync with the repository.
+All: `make all` (default target is build). Clean: `make clean`.
+
+**Release:** Conventional commits + semantic-release. Commit messages are checked with commitlint (CI and optional local hook via husky). Branches `main` (stable), `rc`, `alpha`, `beta` (pre-releases). Run `npm run semantic-release` for a dry-run; CI runs semantic-release on push to those branches. See `docs/user/release.md`.
+
+Keep this section in sync with the Makefile.
 
 ## Specification Definition
 

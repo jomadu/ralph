@@ -6,3 +6,8 @@
 # Build artifacts
 ralph
 /ralph
+bin/
+dist/
+
+# Node (semantic-release, commitlint, husky)
+node_modules/

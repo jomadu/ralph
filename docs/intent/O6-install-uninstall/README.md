@@ -2,21 +2,22 @@
 
 ## Statement
 
-Users can install Ralph on their system so it is invocable (e.g. from a shell) and uninstall it cleanly, with no broken references or leftover artifacts.
+Users can install Ralph on their system so it is invocable (e.g. from a shell) and uninstall it cleanly, with no broken references or leftover artifacts. Install and uninstall are simple: the install script only installs from release artifacts; the uninstall script removes what was installed.
 
 ## Why it matters
 
-Without a defined install and uninstall story, users must discover how to obtain the binary, where to put it, and how to make `ralph` available. They may copy the binary by hand, guess at PATH, or rely on ad-hoc scripts that differ by platform. Uninstall is unclear — removing one file may leave config, symlinks, or PATH entries pointing at nothing. A clear install/uninstall outcome makes Ralph a normal system tool: predictable to add and remove.
+Without a defined install and uninstall story, users must discover how to obtain the binary, where to put it, and how to make `ralph` available. They may copy the binary by hand, guess at PATH, or rely on ad-hoc scripts that differ by platform. Uninstall is unclear — removing one file may leave config, symlinks, or PATH entries pointing at nothing. A clear install/uninstall outcome makes Ralph a normal system tool: predictable to add and remove. Keeping the scripts simple (release-only install, no build-from-source) reduces failure modes and keeps behavior consistent.
 
 ## Verification
 
-- User follows documented install steps (e.g. run the install script). After install, they open a new shell and run `ralph version`; it prints the version and exits 0.
+- User follows documented install steps (run the install script, optionally with a version). After install, they open a new shell and run `ralph version`; it prints the version and exits 0.
 - User runs `ralph run`, `ralph list prompts`, and other subcommands; all work without specifying a path to the binary.
 - User follows documented uninstall steps. After uninstall, `ralph` is no longer found (or the previous install path no longer contains the binary). No broken PATH entries or orphaned files that were part of the documented install scope remain.
 
 ## Non-outcomes
 
-- Ralph does not require a system-wide "installer" binary (e.g. `ralph install`) to be built. Installation can be documented steps only (download, move, PATH) or can be supported by install scripts/tools outside the Ralph repo.
+- Ralph does not require a system-wide "installer" binary (e.g. `ralph install`) to be built. Installation is supported by install/uninstall scripts that operate only on release artifacts.
+- The install script does not build from source or accept a local binary path; it only downloads a pre-built binary from a GitHub release (latest or a specified version).
 - Ralph does not manage or install the AI CLI backends (Claude, Kiro, etc.). Those remain the user's responsibility.
 - Ralph does not define a single mandatory install location. The install script (and docs) define where the binary is placed; the outcome is that the supported method works and is documented.
 - Auto-update or self-update is out of scope. Install/uninstall covers getting Ralph onto the system and removing it, not upgrading in place.

@@ -13,16 +13,18 @@ The project provides documentation that serves as the authoritative reference fo
 **Content:**
 
 - **Install:** The docs describe (for the install script, R2):
-  - Prerequisites (if any): OS, architecture, tools (e.g. curl if install script is fetched remotely).
-  - Steps to run the install script (e.g. from repo clone or via curl), and what it does (obtains/uses binary, places it, ensures PATH or documents it).
-  - Where the binary (and any optional artifacts) will be or where the user should place it (R1).
+  - Prerequisites: `curl` (required to download the release binary). The script is run from the repo or via curl; no Go or build step.
+  - That the install script **only** installs from release artifacts (downloads a pre-built binary from GitHub releases; no build from source).
+  - Optional **version** positional argument: e.g. `install.sh 1.0.0` or `install.sh v1.0.0` to install a specific version; omit for latest release.
+  - Steps to run the install script (e.g. from repo or via curl), and what it does (downloads binary for OS/arch, places it, records state for uninstall).
+  - Where the binary is placed (R1) and how to override (e.g. `--dir` or env).
   - How to ensure Ralph is invokable (R3): e.g. "place in a directory on PATH," "open a new terminal," or "add this path to PATH."
   - How to verify: e.g. run `ralph version` and expect exit 0 and version output.
 - **Uninstall:** The docs describe:
-  - Steps to remove Ralph (e.g. run the uninstall script).
-  - What is removed (binary and any optional assets per R1); what is not removed (e.g. user config unless stated otherwise).
+  - Steps to remove Ralph (run the uninstall script).
+  - What is removed (binary and install state per R1); what is not removed (e.g. user config unless stated otherwise).
   - That no broken references (e.g. PATH pointing at removed binary) should remain (R4).
-- **Platform support:** Documentation states which platforms the install script supports (e.g. macOS, Linux). Gaps can be stated (e.g. "install script not yet tested on Windows").
+- **Platform support:** Documentation states which platforms (OS/arch) the install script supports: Linux (amd64, arm64), macOS (amd64, arm64), Windows (amd64, arm64) where the script can run (e.g. Git Bash). Gaps can be stated if any.
 
 **Location:**
 
