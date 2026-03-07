@@ -35,24 +35,24 @@ func SetLevel(level string) error {
 
 func Debug(format string, args ...interface{}) {
 	if currentLevel <= LevelDebug {
-		fmt.Fprintf(os.Stderr, "DEBUG: "+format+"\n", args...)
+		fmt.Fprintf(os.Stdout, "DEBUG: "+format+"\n", args...)
 	}
 }
 
 func Info(format string, args ...interface{}) {
 	if currentLevel <= LevelInfo {
-		fmt.Fprintf(os.Stderr, "INFO: "+format+"\n", args...)
+		fmt.Fprintf(os.Stdout, "INFO: "+format+"\n", args...)
 	}
 }
 
 func Warn(format string, args ...interface{}) {
 	if currentLevel <= LevelWarn {
-		fmt.Fprintf(os.Stderr, "WARN: "+format+"\n", args...)
+		fmt.Fprintf(os.Stdout, "WARN: "+format+"\n", args...)
 	}
 }
 
 func Error(format string, args ...interface{}) {
 	if currentLevel <= LevelError {
-		fmt.Fprintf(os.Stderr, "ERROR: "+format+"\n", args...)
+		fmt.Fprintf(os.Stdout, "ERROR: "+format+"\n", args...)
 	}
 }

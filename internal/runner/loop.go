@@ -57,11 +57,11 @@ func RunIteration(
 	// Create bounded buffer for output capture
 	buffer := NewBoundedBuffer(cfg.Loop.MaxOutputBuffer.Value)
 
-	// Setup output writers: buffer always captures, optionally mirror to terminal
+	// Setup output writers: buffer always captures, optionally mirror to stdout (run log)
 	var stdout, stderr io.Writer
 	if verbose {
-		stdout = io.MultiWriter(buffer, os.Stderr)
-		stderr = io.MultiWriter(buffer, os.Stderr)
+		stdout = io.MultiWriter(buffer, os.Stdout)
+		stderr = io.MultiWriter(buffer, os.Stdout)
 	} else {
 		stdout = buffer
 		stderr = buffer
@@ -137,7 +137,7 @@ func Loop(
 			return ExitCodeExhausted
 		}
 
-		// Emit iteration progress message to stderr (O4/R6)
+		// Emit iteration progress message to stdout (O4/R6)
 		if iterationMode == "unlimited" {
 			logger.Info("Iteration %d (unlimited)", i)
 		} else {
