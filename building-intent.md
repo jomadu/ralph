@@ -1,6 +1,6 @@
 # Product and Engineering Documentation
 
-This document defines the model for product and engineering documentation. **Product** documentation describes what we're building and why — outcomes and requirements. **Engineering** documentation describes how the system is structured — component-centric architecture that references product requirements. Together they provide a complete picture: product is the source of truth for behavior; engineering is the source of truth for structure and placement.
+This document defines the model for product and engineering documentation. **Product** documentation describes who we're building for, what we're building, and why — outcomes and requirements at the level of *intent*. **Engineering** documentation describes where in the system each capability lives and how the system is built — component-centric architecture, implementation specifications (schemas, interfaces, protocols), and references to product requirements. Together they provide a complete picture: product is the source of truth for intent (who, what, why); engineering is the source of truth for implementation (where and how — structure, placement, and the hard specs implementers build from).
 
 ## Structure
 
@@ -10,29 +10,29 @@ docs/
     README.md                        # Index of all outcomes
     O<n>-<slug>/
       README.md                      # Outcome definition (risks, requirement one-liners)
-      R<n>-<slug>.md                 # Requirement — complete and buildable
+      R<n>-<slug>.md                 # Requirement — complete for intent (capability, acceptance, edge cases)
   engineering/
     README.md                        # Overview: diagram, design principles, component list with O/R assignments
     components/
-      <component>.md                 # Component as single file (responsibility, interfaces; O/R only in README)
-      <component>/                   # Or component as directory (README.md standard; + supporting docs as needed)
+      <component>.md                 # Component: responsibility, interfaces, implementation specs; O/R only in README
+      <component>/                   # Or component as directory (README + schema docs, design notes as needed)
 ```
 
-Product answers *what* and *why*. Engineering answers *where* and *how it fits*. Engineering does not re-specify behavior; it references product requirements by ID (e.g. O1/R2, O4/R1).
+Product answers *who*, *what*, and *why* at the level of intent. Engineering answers *where* and *how*: structure, placement, and the implementation specifications (e.g. config schema, APIs, protocols) that implementers build from. Engineering does not re-specify user-facing intent; it owns the hard specs for how the system is implemented and references product requirements by ID (e.g. O1/R2, O4/R1).
 
-## Product Hierarchy
+### Product Hierarchy
 
-**Outcome** — A measurable change in the world when this product exists. Outcomes are user-facing and verifiable. They answer *"what is true when we succeed?"*
+**Outcome** — A measurable change in the world when this product exists. Outcomes are user-facing and verifiable. They answer *who* we're building for, *what* is true when we succeed, and *why* it matters.
 
-**Requirement** — A capability needed to deliver an outcome. Each requirement belongs to exactly one outcome. The requirement document is **complete and accurate**: it contains everything needed to build and verify the capability — statement, acceptance criteria, edge cases, examples, and any formats or algorithms that define behavior. There is no separate "specification" section; the requirement doc is the single artifact. Requirements answer *"what must the system do?"* in enough detail that an implementer can build from it without guessing.
+**Requirement** — A capability needed to deliver an outcome. Each requirement belongs to exactly one outcome. The requirement document is **complete for intent**: it contains the capability statement, acceptance criteria, edge cases, and examples that define *what* we're committing to and how we'll verify it. Detailed implementation specifications (schemas, wire formats, algorithms, strict interfaces) may live in engineering; when they do, the requirement states the capability and may reference the engineering doc. The requirement is the single source of truth for *intent*; engineering is the source of truth for the implementation spec. Requirements elaborate the *what* from the outcome: *"what must be true?"* in enough detail that stakeholders and implementers understand the commitment; implementers use engineering docs for the buildable spec.
 
 Every requirement traces to an outcome. If a requirement has no outcome above it, it's unjustified.
 
-## Engineering Hierarchy
+### Engineering Hierarchy
 
 **Architecture** — The structure of the system: major components, their responsibilities, and how they interact. Documented in `docs/engineering/` with a component-centric layout.
 
-**Component** — A named part of the system (e.g. run-loop, config, backend, review). A component is documented either as a single file (`components/<component>.md`) or as a directory (`components/<component>/`). A component directory standardly includes a README.md as the primary doc, plus optional supporting files. Requirement assignments (which O/R IDs a component satisfies) live only in the engineering README; component docs do not duplicate that list. Each component's primary doc states what it is responsible for and its key interfaces, and references the engineering README for the authoritative list of requirements assigned to it. The product requirement is the source of truth for *what*; the engineering README is the source of truth for *which component implements which requirements*; the component doc explains *where* that behavior lives and how it connects.
+**Component** — A named part of the system (e.g. run-loop, config, backend, review). A component is documented either as a single file (`components/<component>.md`) or as a directory (`components/<component>/`). A component directory standardly includes a README.md as the primary doc, plus optional supporting files (e.g. a strict schema doc for config YAML, API contracts, state diagrams). Requirement assignments (which O/R IDs a component satisfies) live only in the engineering README; component docs do not duplicate that list. Each component's primary doc states responsibility, key interfaces, and the **implementation specifications** that implementers build from — schemas, protocols, data structures — and references the engineering README for the list of requirements it implements. Product is the source of truth for *intent* (what we're committing to); the engineering README is the source of truth for *which component implements which requirements*; the component doc is the source of truth for *how* that component is implemented (where it lives, how it connects, and the strict specs it adheres to).
 
 ## Consistency
 
@@ -52,7 +52,8 @@ Inconsistency at any layer invalidates everything below it. Catching it early is
 - Every requirement ID in the engineering README's component list must exist in the product tree (assignments live only in the README).
 - Component docs must not contradict each other (e.g. two components claiming to implement the same requirement in incompatible ways).
 - Component docs do not duplicate the O/R assignment list; the engineering README is the single place for that.
-- When product requirements change, engineering docs must be updated so component responsibilities and references remain accurate.
+- When product requirements change, engineering docs (including implementation specs) must be updated so component responsibilities and references remain accurate.
+- When an engineering implementation spec changes in a way that affects user-facing contract, the product requirement must be updated.
 
 ## Phased Development
 
@@ -68,21 +69,23 @@ Write the root `docs/product/README.md`. One table — each outcome as a one-lin
 
 **Review:**
 - Each outcome is a present-tense assertion about the world, not a feature description
+- Each outcome is clear about *who* it is for (users, roles, or personas) and *why* it matters
 - Outcomes don't overlap — if two outcomes could share a requirement, they may be the same outcome
 - Verification criteria are observable by a user, not by a test suite
-- The set of outcomes is complete — together they describe the whole product
+- The set of outcomes is complete — together they describe the whole product (who, what, why)
 - The set is minimal — removing any outcome would leave a gap
 
 Lock the index before expanding.
 
 #### P2: Outcome Detail
 
-Expand each outcome into its own directory and README. Statement, why it matters, full verification, non-outcomes. These files define the problem space. They do not reference requirements or risks — those come later.
+Expand each outcome into its own directory and README. Who it's for, statement, why it matters, full verification, non-outcomes. These files define the problem space (who, what, why). They do not reference requirements or risks — those come later.
 
 **Review:**
 - Each outcome detail is consistent with its one-liner in the index — if they diverge, fix the index first
+- Each outcome explicitly states *who* it is for and *why* it matters
 - Non-outcomes are clear enough that someone could push back on scope and point to this list
-- Read all outcome files as a set: no two outcomes make contradictory claims, imply overlapping scope, or assume incompatible models of the user, the system, or the domain
+- Read all outcome files as a set: no two outcomes make contradictory claims, imply overlapping scope, or assume incompatible models of who we're building for, the system, or the domain
 
 Lock outcome detail before proceeding. Changes after this point ripple through everything below.
 
@@ -108,13 +111,13 @@ This is the compressed form of the requirements layer. All requirement one-liner
 
 Lock requirement one-liners before expanding.
 
-#### P4: Requirement Detail (Complete)
+#### P4: Requirement Detail (Complete for Intent)
 
-Expand each requirement into its own file within its outcome directory. The requirement document is **complete**: it contains the capability statement and everything needed to build and verify it — acceptance criteria, edge cases, examples, and any schemas, formats, or algorithms that define behavior. There is no separate "specification" section; the requirement doc is the single source of truth for that capability.
+Expand each requirement into its own file within its outcome directory. The requirement document is **complete for intent**: it contains the capability statement, acceptance criteria, edge cases, and examples that define what we're committing to and how we'll verify it. Implementation specifications (e.g. a strict config schema, wire format, algorithm) may live in engineering; when they do, the requirement states the capability and may reference the engineering doc. The requirement is the single source of truth for *intent* for that capability; engineering holds the single source of truth for the implementation spec.
 
 **Review:**
 - Each requirement document is consistent with its one-liner in the outcome README — if they diverge, fix the one-liner first
-- The requirement is complete — an engineer or AI agent can build from it without asking clarifying questions
+- The requirement is complete for intent — clear what we're committing to; acceptance criteria are testable; implementers use product for intent and engineering for implementation specs to build
 - Edge cases are enumerated where relevant; examples are concrete (input, expected output, verification)
 - The requirement doesn't exceed what the outcome justifies (no gold-plating)
 - Read all requirement documents across all outcomes as a single set: no two requirements prescribe contradictory behaviors, make incompatible assumptions, or define the same concept differently
@@ -145,28 +148,29 @@ Use the product requirement set (and outcome index) to derive the component set.
 
 Lock the engineering README before expanding.
 
-#### E2: Component Detail
+#### E2: Component Detail and Implementation Specs
 
-Flesh out each component as a file (`components/<component>.md`) or directory (`components/<component>/` with README.md standard). Responsibility and interfaces only; do not duplicate the O/R assignment list (that stays in the engineering README). Do not re-specify behavior; reference product requirements by following the assignments in the README.
+Flesh out each component as a file (`components/<component>.md`) or directory (`components/<component>/` with README.md standard). Include responsibility, interfaces, and the **implementation specifications** that implementers build from — e.g. the canonical config YAML schema, API contracts, state machines, protocols. Do not duplicate the O/R assignment list (that stays in the engineering README). Reference product requirements by following the assignments in the README for intent; the component doc is the authoritative spec for *how* this component is implemented.
 
 **Review:**
 - Each component doc matches its one-liner in the engineering README — if they diverge, fix the README first
 - Component docs do not list O/R IDs; the engineering README is the single place for assignments
+- Implementation specs (schemas, interfaces) are complete enough that an implementer can build from them
 - Interfaces are consistent across components (what one component produces, another consumes as documented)
 
-Lock component docs before treating the architecture as stable. Engineering docs are updated as the system evolves (new requirements, code structure changes); when updating, keep the E1 → E2 hierarchy consistent.
+Lock component docs before treating the architecture as stable. Engineering docs are updated as the system evolves (new requirements, code structure changes); when updating, keep the E1 → E2 hierarchy consistent. When an implementation spec change affects user-facing contract, update the product requirement.
 
 ### Working Sessions
 
-This document is a methodology for generating and reviewing the product and engineering trees. It is not a dependency for working within them once they exist. The product documents are self-describing; the engineering documents point at them.
+This document is a methodology for generating and reviewing the product and engineering trees. It is not a dependency for working within them once they exist. The product documents are self-describing for intent; the engineering documents hold implementation specs and point at product.
 
 **Product:** Chunk by outcome. A session writing or reviewing requirements should load: (1) the outcome index, (2) the single outcome README being worked on, (3) the requirement files under that outcome only. One session per outcome, then a final session for cross-outcome consistency review.
 
-**Engineering:** Chunk by component or by flow. Load the engineering README plus the component doc(s) being written or updated. Cross-component consistency: ensure every referenced O/R exists in product and no two components claim incompatible responsibility for the same requirement.
+**Engineering:** Chunk by component or by flow. Load the engineering README plus the component doc(s) being written or updated. Cross-component consistency: ensure every referenced O/R exists in product and no two components claim incompatible responsibility for the same requirement. Implementers read product first for intent and acceptance, then engineering for the buildable spec (schemas, interfaces, protocols).
 
 #### Context by Step (Product)
 
-**P1 — Outcome Index:** This methodology document; the repository's main README (product context).
+**P1 — Outcome Index:** This methodology document; the repository's main README (product context: who we're building for, high-level what and why).
 
 **P2 — Outcome Detail:** This methodology document; the locked outcome index (`docs/product/README.md`); all outcome READMEs written so far (for horizontal consistency).
 
@@ -180,7 +184,7 @@ This document is a methodology for generating and reviewing the product and engi
 
 **E1 — Overview:** This methodology document; the product outcome index and requirement index (outcome READMEs with requirement one-liners and IDs). Derive components, one-liners, and O/R assignments; write the engineering README. Run a consistency session: every O/R assigned, no component empty, boundaries clear, every O/R exists in product.
 
-**E2 — Component Detail:** The locked engineering README (E1); the product requirement docs for the requirements assigned to the component being written. Work one component per session. For cross-component consistency, ensure interfaces align.
+**E2 — Component Detail:** The locked engineering README (E1); the product requirement docs for the requirements assigned to the component being written. Write the implementation spec (e.g. config schema, APIs) that implements those requirements. Work one component per session. For cross-component consistency, ensure interfaces align.
 
 ### Why This Order Matters
 
@@ -192,7 +196,7 @@ This document is a methodology for generating and reviewing the product and engi
 
 ### Index — `docs/product/README.md`
 
-Link each outcome ID to that outcome's README. From the index, use `./O<n>-<slug>/README.md`.
+Link each outcome ID to that outcome's README. From the index, use `./O<n>-<slug>/README.md`. Each outcome one-liner should be clear on *who* it is for, *what* is true when achieved, and *why* it matters.
 
 ```markdown
 # Product
@@ -209,10 +213,14 @@ Link each outcome ID to that outcome's README. From the index, use `./O<n>-<slug
 
 Each outcome directory has a README that fully defines the outcome. Link to requirement docs with `R<n>-<slug>.md`.
 
-**Fields:** Statement, Why it matters, Verification, Non-outcomes, Risks (table), Requirements (table). Risks and requirements tables are appended in P3. During P1 and P2, the outcome README ends after non-outcomes.
+**Fields:** Who (users/roles/personas), Statement, Why it matters, Verification, Non-outcomes, Risks (table), Requirements (table). Risks and requirements tables are appended in P3. During P1 and P2, the outcome README ends after non-outcomes.
 
 ```markdown
 # O<n>: <Title>
+
+## Who
+
+<Who this outcome is for: users, roles, or personas.>
 
 ## Statement
 
@@ -248,13 +256,13 @@ Each outcome directory has a README that fully defines the outcome. Link to requ
 
 ### Requirement — `R<n>-<slug>.md`
 
-Each requirement file is **complete**: it contains the requirement statement and all detail needed to build and verify the capability. No separate "Specification" section; use whatever structure makes the requirement unambiguous (e.g. Detail, Edge cases, Examples, plus Acceptance criteria and Dependencies).
+Each requirement file is **complete for intent**: it contains the requirement statement and all detail needed to define what we're committing to and how we'll verify it. No separate "Specification" section; use whatever structure makes the requirement unambiguous (e.g. Detail, Edge cases, Examples, plus Acceptance criteria and Dependencies). Where implementation specifications (schemas, formats, algorithms) live in engineering, the requirement states the capability and may reference the engineering doc.
 
 **Fields:**
 
 - **Outcome** — Which outcome this requirement serves (traceability upward).
 - **Requirement** — What the system must do. Written as a capability statement.
-- **Detail** — Whatever is needed to make the requirement complete and buildable: algorithms, formats, schemas, edge cases table, examples. Use subsections (e.g. Edge cases, Examples) as needed. An engineer or AI agent reads this and implements from it.
+- **Detail** — Whatever is needed to make the requirement complete for intent: edge cases table, examples, behavioral rules. Use subsections (e.g. Edge cases, Examples) as needed. Where the authoritative implementation spec (e.g. config schema, API) lives in engineering, reference it here. Implementers use this doc for intent and the engineering doc for the buildable spec.
 - **Acceptance criteria** — Concrete conditions that must be true for this requirement to be considered met.
 - **Dependencies** *(optional)* — Other requirements or system capabilities that must exist first. Omit if self-contained.
 
@@ -274,7 +282,7 @@ Each requirement file is **complete**: it contains the requirement statement and
 
 ## Detail
 
-<Buildable detail. Algorithms, formats, edge cases, etc. Use subsections as needed.>
+<Detail needed for intent: edge cases, examples, behavioral rules. Use subsections as needed. If the implementation spec (e.g. schema, API) lives in engineering, add: "See [engineering doc](link) for the authoritative schema/interface.">
 
 ### Edge cases
 
@@ -308,9 +316,9 @@ Each requirement file is **complete**: it contains the requirement statement and
 
 The single engineering index. It holds everything that would have been a separate "component index": overview plus component list with requirement assignments.
 
-- Purpose of engineering docs (structure and placement; behavior lives in product).
+- Purpose of engineering docs (structure, placement, and implementation specs; product holds who, what, and why at the level of intent).
 - High-level diagram or description of the system (e.g. CLI → config → run path / review path; run loop, backend, etc.).
-- Component list: for each component, one-line description and assigned requirement IDs (O/R). Links to component docs (files or directories under `components/`).
+- Component list: for each component, one-line description and assigned requirement IDs (O/R). Links to component docs (files or directories under `components/`). Component docs hold the implementation specifications (e.g. config schema, APIs) that implementers build from.
 
 ### Component — `docs/engineering/components/<component>.md` or `docs/engineering/components/<component>/`
 
@@ -318,15 +326,16 @@ A component may be a single file (e.g. `run-loop.md`) or a directory (e.g. `run-
 
 **When using a single file:** the file contains responsibility and interfaces (below). Do not list O/R IDs; those live only in the engineering README.
 
-**When using a directory:** the component has its own folder. Standard practice is to include a README.md as the primary entry, with the same content as below. Additional files in the directory may cover sub-components, data flow, or design notes.
+**When using a directory:** the component has its own folder. Standard practice is to include a README.md as the primary entry, with the same content as below. Additional files in the directory may cover **implementation specifications** (e.g. a strict config YAML schema doc, API contract), sub-components, data flow, or design notes.
 
 **Fields (in the component's primary doc):**
 
 - **Responsibility** — What this component does in one or a few sentences.
 - **Requirements** — Do not duplicate the O/R list. The engineering README is the single source of truth for which requirements are assigned to this component. The component doc may include a one-line reference (e.g. "Implements the requirements assigned to this component in the [engineering README](../README.md).").
 - **Interfaces** — Key boundaries: what this component consumes (e.g. config, prompt buffer) and produces (e.g. exit code, iteration outcome), and which other components it calls or is called by.
+- **Implementation spec** *(or linked doc)* — The authoritative spec implementers build from: e.g. the canonical config YAML schema (all keys, types, nesting, validation), API contracts, state machines, protocols. This is where the "hard" specification lives; product requirements state intent and may reference this doc.
 
-Optional: data flow, invariants, or notes that help implementers place code correctly. Keep behavior in product.
+Optional: data flow, invariants, or notes that help implementers place code correctly. Intent (who, what, why) stays in product; implementation specs stay in engineering.
 
 ## Rules
 
@@ -337,24 +346,24 @@ Optional: data flow, invariants, or notes that help implementers place code corr
 
 ### Traceability
 
-- **Product:** Every requirement declares its parent outcome. Every outcome README lists its requirements. The product index lists all outcomes.
-- **Engineering:** Requirement assignments (component → O/R IDs) live only in the engineering README. Component docs reference that README and do not duplicate the list. Product requirements are the single source of truth for behavior; the engineering README is the single source of truth for which component implements which requirements.
+- **Product:** Every requirement declares its parent outcome. Every outcome README lists its requirements. The product index lists all outcomes. Product is the single source of truth for intent (who, what, why).
+- **Engineering:** Requirement assignments (component → O/R IDs) live only in the engineering README. Component docs reference that README and do not duplicate the list. Engineering is the single source of truth for implementation (which component implements which requirements, and the implementation specs — schemas, interfaces, protocols — that each component adheres to). When an implementation spec changes in a way that affects user-facing contract, the product requirement is updated.
 
 ### Lifecycle (Product)
 
-- New outcomes are added when a new user-facing problem is identified.
+- New outcomes are added when a new problem is identified for a user segment (new who/what/why).
 - New requirements are added under existing outcomes when a new capability is needed.
 - Requirements without outcomes are removed or reassigned.
 - Outcomes without requirements are aspirational — they need decomposition before they can be built.
 - Status in the outcome README's requirement table:
   - **draft** — requirement identified, detail incomplete
-  - **ready** — requirement complete, can be built from
+  - **ready** — requirement complete for intent; implementation spec (if any) lives in engineering
   - **built** — implemented, not yet verified
   - **verified** — acceptance criteria confirmed to pass
 
 ### Lifecycle (Engineering)
 
-- Add a component when the product has new requirements or an area that doesn't fit existing components; update the engineering README (names, one-liners, O/R assignments) and add the component doc or directory.
-- Change or merge components when product or code structure warrants it; update the README and any affected component docs so assignments and interfaces stay consistent.
-- Requirement assignments live only in the engineering README; when requirements or component boundaries change, update the README first, then component docs.
-- No separate status for components; a component is "done" when its doc exists and matches the README.
+- Add a component when the product has new requirements or an area that doesn't fit existing components; update the engineering README (names, one-liners, O/R assignments) and add the component doc or directory, including implementation specs (e.g. schema doc) as needed.
+- Change or merge components when product or code structure warrants it; update the README and any affected component docs so assignments, interfaces, and implementation specs stay consistent.
+- Requirement assignments live only in the engineering README; when requirements or component boundaries change, update the README first, then component docs and any schema/interface specs.
+- No separate status for components; a component is "done" when its doc (and any implementation spec docs) exists and matches the README.
