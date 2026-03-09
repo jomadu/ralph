@@ -73,10 +73,6 @@ Run from anywhere (the script reads the install location from `~/.config/ralph/i
 
 This removes the `ralph` binary from the directory where it was installed and removes the install state file. User config in `~/.config/ralph/` (e.g. `ralph-config.yml`) is **not** removed. No PATH or symlink changes are made by the install script, so uninstall does not leave broken references.
 
-## Documentation
-
-User documentation (how-tos, workarounds, and examples) is in **[User docs](docs/user/)**. The [user docs index](docs/user/README.md) lists all topics.
-
 ## How It Works
 
 Each iteration:
