@@ -17,7 +17,6 @@ Releases and changelogs are created automatically on GitHub when commits are pus
 - **Commit messages** must follow the [Conventional Commits](https://www.conventionalcommits.org/) format (e.g. `feat: add X`, `fix: Y`, `docs: Z`). CI and an optional local git hook (husky + commitlint) enforce this.
 - **Release flow:** Push to `main` (or `rc`/`alpha`/`beta`) with conventional commits. CI runs [semantic-release](https://github.com/semantic-release/semantic-release), which:
   - Determines the next version from commit types
-  - Updates `CHANGELOG.md`
-  - Creates a git tag and GitHub release
+  - Creates a git tag and [GitHub release](https://github.com/jomadu/ralph/releases) (release notes are generated there; no in-repo changelog file is updated)
   - Builds binaries for Linux (amd64, arm64), macOS (amd64, arm64), and Windows (amd64, arm64) and attaches them to the release (asset names: `ralph-<version>-<os>-<arch>` or `ralph-<version>-windows-<arch>.exe`)
 - **Local checks:** Run `npm ci` then `npx commitlint --from main --to HEAD` to validate commits before pushing. For a dry-run of the next release: `npx semantic-release --no-ci`.
