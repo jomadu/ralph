@@ -351,3 +351,10 @@ Optional: data flow, invariants, or notes that help implementers place code corr
   - **ready** — requirement complete, can be built from
   - **built** — implemented, not yet verified
   - **verified** — acceptance criteria confirmed to pass
+
+### Lifecycle (Engineering)
+
+- Add a component when the product has new requirements or an area that doesn't fit existing components; update the engineering README (names, one-liners, O/R assignments) and add the component doc or directory.
+- Change or merge components when product or code structure warrants it; update the README and any affected component docs so assignments and interfaces stay consistent.
+- Requirement assignments live only in the engineering README; when requirements or component boundaries change, update the README first, then component docs.
+- No separate status for components; a component is "done" when its doc exists and matches the README.
