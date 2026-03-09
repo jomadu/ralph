@@ -12,7 +12,7 @@ You are reviewing a prompt that will be used with Ralph: a loop runner that pipe
 
 2. **Produce** a single report file containing:
    - **Narrative feedback** (what works, what to improve, risks).
-   - **Machine-parseable summary**: Include exactly one line of the form `ralph-review: status=ok`, `ralph-review: status=errors`, or `ralph-review: status=warnings`, optionally followed by `errors=N` and/or `warnings=N` (e.g. `ralph-review: status=errors errors=2`). Ralph and CI use this line to set exit code 0 (no errors) or 1 (errors in prompt). See docs/user/review-report-format.md.
+   - **Machine-parseable summary**: Include exactly one line of the form `ralph-review: status=ok`, `ralph-review: status=errors`, or `ralph-review: status=warnings`, optionally followed by `errors=N` and/or `warnings=N` (e.g. `ralph-review: status=errors errors=2`). Ralph and CI use this line to set exit code 0 (no errors) or 1 (errors in prompt). Format is specified in docs/intent/O5-prompt-review/R6-report-format-exit-codes.md.
    - **Full suggested revision**: The complete revised prompt text (so the user or an apply step can use it).
 
 You must write the entire report to the exact path you are given below. Do not write it to stdout only; Ralph reads the report from that file.

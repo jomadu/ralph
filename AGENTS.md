@@ -25,7 +25,7 @@ Use the Makefile from the repository root:
 
 All: `make all` (default target is build). Clean: `make clean`.
 
-**Release:** Conventional commits + semantic-release. Commit messages are checked with commitlint (CI and optional local hook via husky). Branches `main` (stable), `rc`, `alpha`, `beta` (pre-releases). Run `npm run semantic-release` for a dry-run; CI runs semantic-release on push to those branches. See `docs/user/release.md`.
+**Release:** Conventional commits + semantic-release. Commit messages are checked with commitlint (CI and optional local hook via husky). Branches `main` (stable), `rc`, `alpha`, `beta` (pre-releases). Run `npm run semantic-release` for a dry-run; CI runs semantic-release on push to those branches. Release process: conventional commits and semantic-release on push to main/rc/alpha/beta.
 
 Keep this section in sync with the Makefile.
 
@@ -45,9 +45,9 @@ Location: `scripts/`, and (when present) any future `cmd/`, `internal/`, or equi
 
 Patterns:
 - `scripts/*.sh` — Scripts and wrappers
-- `scripts/cursor-wrapper.sh` — Optional Cursor Agent wrapper (user-facing doc: `docs/user/cursor-agent-workaround.md`); built-in `cursor-agent` alias is the raw `agent` command
+- `scripts/cursor-wrapper.sh` — Optional Cursor Agent wrapper; built-in `cursor-agent` alias is the raw `agent` command
 - `testdata/` — Test fixture files (e.g. config YAMLs used only by tests). See O2-R5 for the convention; integration tests use `--config testdata/<fixture>.yml` from repo root.
-- **Review report summary (O5 R6):** Machine-parseable line format and exit code derivation are documented in `docs/user/review-report-format.md`; parser in `internal/review/summary.go`.
+- **Review report summary (O5 R6):** Machine-parseable line format and exit code derivation are specified in `docs/intent/O5-prompt-review/R6-report-format-exit-codes.md`; parser in `internal/review/summary.go`.
 
 Excludes: `.git/`, `docs/` (specifications), `AGENTS.md`, `PLAN.md`, `TASK.md`, `building-intent.md`
 
