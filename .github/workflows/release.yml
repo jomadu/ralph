@@ -33,6 +33,26 @@ jobs:
       - name: Validate commit messages
         run: npx commitlint --from ${{ steps.base.outputs.sha }} --to ${{ github.event.pull_request.head.sha || github.sha }}
 
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: make test
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: make lint
+
   release:
     name: Semantic Release
     runs-on: ubuntu-latest
