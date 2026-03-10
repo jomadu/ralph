@@ -24,3 +24,21 @@ If the value proposition and first-run path are unclear, potential users leave b
 - Discoverability does not require interactive onboarding, videos, or in-app wizards. The outcome is that the product and docs make the first run achievable.
 - Ralph does not ship with pre-loaded prompts or mandatory samples; the user may use a minimal prompt or one they already have, as long as the path to a first successful run is clear.
 - Marketing or positioning copy is out of scope; the outcome is technical discoverability (what it is, how to run it once).
+
+## Risks
+
+| Risk | Mitigating Requirement |
+|------|------------------------|
+| User does not understand what Ralph is or why it exists | [R001 — What and why](R001-what-and-why.md) |
+| User cannot find how to install or run a first command | [R002 — Install and first command](R002-install-and-first-command.md) |
+| User does not know which prompts or subcommands to run | [R003 — List and help](R003-list-and-help.md) |
+| Path from "have Ralph" to first successful run is unclear | [R004 — Path to first run](R004-path-to-first-run.md) |
+
+## Requirements
+
+| ID | Requirement | Status |
+|----|-------------|--------|
+| [R001](R001-what-and-why.md) | User can find a short description of what Ralph is and why it exists | draft |
+| [R002](R002-install-and-first-command.md) | User can find install steps and a first command that completes successfully | draft |
+| [R003](R003-list-and-help.md) | List or help commands expose available prompts and subcommands | draft |
+| [R004](R004-path-to-first-run.md) | Path from having Ralph to a first successful run is documented and achievable | draft |

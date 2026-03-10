@@ -29,3 +29,18 @@ The AI CLI landscape is fragmented. Teams use different tools and switch between
 - Ralph does not write or provide wrappers that adapt structured output (e.g. JSON) to plain text. The user is responsible for writing such wrappers and for creating AI command aliases that call them if they want plain-text signal scanning. Otherwise Ralph would have to create and maintain adapters for how each built-in agent structures its output.
 - Ralph does not execute commands through a shell. Commands are parsed and exec'd directly. Users needing pipes, redirects, or shell expansion must wrap their command in a script.
 - Ralph does not provide vendor-specific adapters in core beyond built-in aliases (which invoke the raw CLI); adapting structured output is the user's responsibility.
+
+## Risks
+
+| Risk | Mitigating Requirement |
+|------|------------------------|
+| AI CLI invoked with wrong environment or working directory | [R002 — Inherit env and cwd](R002-inherit-env-and-cwd.md) |
+| Structured or non–plain-text CLI output not detectable by the loop | [R003 — Structured output via signals or wrapper](R003-structured-output-via-signals-or-wrapper.md) |
+
+## Requirements
+
+| ID | Requirement | Status |
+|----|-------------|--------|
+| [R001](R001-invoke-ai-cli-stdin-capture-stdout.md) | The system invokes the user-chosen AI command (alias or direct) with the assembled prompt on stdin and captures stdout. | draft |
+| [R002](R002-inherit-env-and-cwd.md) | The system inherits the user's environment and working directory when invoking the AI CLI. | draft |
+| [R003](R003-structured-output-via-signals-or-wrapper.md) | The system works with AI CLIs that produce structured or non–plain-text output when the user configures signals or uses a wrapper. | draft |

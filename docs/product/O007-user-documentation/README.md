@@ -24,3 +24,21 @@ Without clear documentation, users guess at subcommands, config format, and beha
 - Documentation does not replace implementation specs; engineering holds schemas and protocols. User docs explain how to use the product, not how to build it.
 - Ralph does not require a specific doc format or hosting (e.g. a dedicated docs site). The outcome is that usable documentation exists and is referenced from the product (e.g. README, release notes).
 - Ralph does not embed interactive tutorials or in-app help beyond what is needed to run and configure it; the outcome is written documentation.
+
+## Risks
+
+| Risk | Mitigating Requirement |
+|------|------------------------|
+| Key topics (install, config, run, etc.) missing from docs | [R001 — Doc coverage](R001-doc-coverage.md) |
+| User cannot find CLI, flags, or config reference in one place | [R002 — Doc discoverability](R002-doc-discoverability.md) |
+| Documentation does not match actual behavior | [R003 — Doc accuracy](R003-doc-accuracy.md) |
+| User stuck on common problems with no guidance | [R004 — Troubleshooting](R004-troubleshooting.md) |
+
+## Requirements
+
+| ID | Requirement | Status |
+|----|-------------|--------|
+| [R001](R001-doc-coverage.md) | Documentation covers install, configuration, run, review, update, upgrade, uninstall, and exit codes | draft |
+| [R002](R002-doc-discoverability.md) | User can look up CLI, flags, config, and environment variables in one place or a clearly linked set | draft |
+| [R003](R003-doc-accuracy.md) | Documentation matches actual product behavior | draft |
+| [R004](R004-troubleshooting.md) | User can resolve common problems using documented troubleshooting guidance | draft |

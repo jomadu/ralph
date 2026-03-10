@@ -6,7 +6,7 @@ Users who want to check prompt quality and structure before or without running t
 
 ## Statement
 
-Prompts can be reviewed for quality and structure before or without running the loop; the user gets a report and an optional suggested revision, and can request that the revision be written to a file (with confirmation when appropriate).
+Prompts can be reviewed for quality and structure before or without running the loop; the user gets a report and a suggested revision (both required outputs), and can request that the revision be written to a file (with confirmation when appropriate).
 
 ## Why it matters
 
@@ -14,7 +14,7 @@ Without a reviewer, problems show up only when the loop runs: the AI never emits
 
 ## Verification
 
-- User runs the review command with the prompt supplied by alias, file path, or stdin; receives a report that includes a suggested revision. The user can request that the revision be written to a file; when doing so, the user confirms (or uses a non-interactive option where supported). Exit codes distinguish: review completed with no errors, review completed but the prompt has errors, or review or apply did not complete successfully.
+- User runs the review command with the prompt supplied by alias, file path, or stdin; receives a report and a suggested revision (both always produced). The user can request that the revision be written to a file; when doing so, the user confirms (or uses a non-interactive option where supported). Exit codes distinguish: review completed with no errors, review completed but the prompt has errors, or review or apply did not complete successfully.
 - The report is always saved to a file. The user can choose where the report is written or accept a default (e.g. a temporary location). The user can direct the revised prompt to a chosen path.
 - When the prompt was supplied via stdin and the user requests that the revision be written, the user must specify where to write it (there is no source file to overwrite); if they do not, the system reports an error and does not apply.
 - The report includes narrative feedback and a machine-parseable summary so scripts or CI can gate on the result.
@@ -31,3 +31,26 @@ Without a reviewer, problems show up only when the loop runs: the AI never emits
 - The reviewer does not modify any file unless the user explicitly requests that the revision be applied and confirms (or uses a non-interactive option). Without that request, the reviewer only reports.
 - The reviewer does not enforce a single prompt style or template. It evaluates qualities that support Ralph's execution model (signals, state, iteration awareness, scope, convergence), not a fixed format.
 - The reviewer is not a general-purpose markdown or prose linter. Evaluation is tuned for Ralph prompts and Ralph's execution model.
+
+## Risks
+
+| Risk | Mitigating Requirement |
+|------|------------------------|
+| Review produces no useful or actionable feedback | [R007 — Evaluation dimensions](R007-evaluation-dimensions.md) |
+| User overwrites prompt file without intent | [R004 — Apply with confirmation](R004-apply-with-confirmation.md) |
+| stdin + apply writes to wrong place or fails silently | [R006 — Revision output path](R006-revision-output-path.md) |
+| Report not usable by CI or scripts | [R002 — Report content and format](R002-report-content-and-format.md) |
+| Exit codes unclear for scripting or gating | [R008 — Exit codes](R008-exit-codes.md) |
+
+## Requirements
+
+| ID | Requirement | Status |
+|----|-------------|--------|
+| [R001](R001-review-invocation-inputs.md) | User can invoke review with prompt from alias, file path, or stdin | draft |
+| [R002](R002-report-content-and-format.md) | System produces a report with narrative feedback and machine-parseable summary | draft |
+| [R003](R003-suggested-revision.md) | The system produces a suggested revision of the prompt as part of every review output. | draft |
+| [R004](R004-apply-with-confirmation.md) | User can request that the revision be written to a file, with confirmation or non-interactive option | draft |
+| [R005](R005-report-to-file.md) | Report is written to a file (user-chosen or default location) | draft |
+| [R006](R006-revision-output-path.md) | Revised prompt can be written to a user-chosen path; stdin + apply requires path and errors if missing | draft |
+| [R007](R007-evaluation-dimensions.md) | Review evaluates prompt on signal/state, iteration awareness, scope/convergence, and subjective completion criteria | draft |
+| [R008](R008-exit-codes.md) | Exit codes distinguish success, prompt errors, and review/apply failure | draft |

@@ -34,6 +34,7 @@ Two separate controls govern what the user sees:
 - User runs dry-run and sees the fully assembled prompt (preamble + prompt) printed without spawning an AI process.
 - After a multi-iteration run, Ralph reports iteration statistics (e.g. min/max/mean duration).
 - For review: exit code and report make it clear whether the review completed, the prompt had errors, or the run failed; the user can see what to do next.
+- When AI-interpreted signal precedence is used and both signals appear in an iteration, the user can see (e.g. via logs or summary) that an interpretation run occurred and what outcome was used (success, failure, or fallback applied), so they can diagnose why the loop treated that iteration as it did.
 
 ## Non-outcomes
 
@@ -41,3 +42,27 @@ Two separate controls govern what the user sees:
 - Ralph does not provide per-iteration diffs or file change tracking between iterations.
 - Ralph does not integrate with external monitoring, alerting, or observability systems.
 - Ralph does not support replaying or debugging past executions.
+
+## Risks
+
+| Risk | Mitigating Requirement |
+|------|------------------------|
+| User does not know why the command stopped | [R002 — Success report and exit zero](R002-success-report-and-exit-zero.md), [R003 — Failure threshold report and exit code](R003-failure-threshold-report-and-exit-code.md), [R004 — Max iterations report and exit code](R004-max-iterations-report-and-exit-code.md), [R005 — Distinct exit code on interrupt](R005-distinct-exit-code-on-interrupt.md) |
+| User cannot see how the run performed | [R002 — Success report and exit zero](R002-success-report-and-exit-zero.md), [R008 — Iteration statistics](R008-iteration-statistics.md) |
+| User cannot control verbosity or AI output visibility | [R006 — Log level and show AI output](R006-log-level-and-show-ai-output.md) |
+| Review outcome (completed vs errors vs run failed) is ambiguous | [R009 — Review exit code and report](R009-review-exit-code-and-report.md) |
+| AI command missing or invalid reported obscurely | [R001 — Clear error missing AI command](R001-clear-error-missing-ai-command.md) |
+
+## Requirements
+
+| ID | Requirement | Status |
+|----|-------------|--------|
+| [R001](R001-clear-error-missing-ai-command.md) | The system reports a clear, user-facing error when the AI command or alias is missing or invalid before run or review. | draft |
+| [R002](R002-success-report-and-exit-zero.md) | The system reports a completion message, iteration count, and timing on success and exits 0. | draft |
+| [R003](R003-failure-threshold-report-and-exit-code.md) | The system reports the failure threshold and consecutive failure count when exiting due to failure threshold and uses a distinct exit code. | draft |
+| [R004](R004-max-iterations-report-and-exit-code.md) | The system reports iteration count and limit when max iterations are exhausted and uses a distinct exit code. | draft |
+| [R005](R005-distinct-exit-code-on-interrupt.md) | The system exits with a distinct code on user interrupt (e.g. SIGINT/SIGTERM). | draft |
+| [R006](R006-log-level-and-show-ai-output.md) | The system respects configured log level and show-AI-output setting for what is emitted to the user. | draft |
+| [R007](R007-dry-run-shows-assembled-prompt.md) | The system supports a dry-run mode that prints the assembled prompt without invoking the AI. | draft |
+| [R008](R008-iteration-statistics.md) | The system reports iteration statistics after a multi-iteration run. | draft |
+| [R009](R009-review-exit-code-and-report.md) | The system makes review outcome clear via exit code and report (completed, prompt errors, run failed). | draft |

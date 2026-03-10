@@ -32,7 +32,7 @@ Configuration is merged from multiple layers. Later layers override earlier ones
 
 ## Configuration scope
 
-**Loop behavior** — Maximum iterations, iteration mode (bounded vs unlimited), consecutive failure threshold, per-iteration timeout, output limits, success and failure signal strings, whether to inject a preamble, which AI command or AI command alias to use, whether to stream AI output to the terminal, and log level. Configurable at the root (default for all prompts), per prompt in config files, and overridable by environment variables and CLI for a run.
+**Loop behavior** — Maximum iterations, iteration mode (bounded vs unlimited), consecutive failure threshold, per-iteration timeout, output limits, success and failure signal strings, signal precedence mode (static default vs optional AI-interpreted when both signals appear), whether to inject a preamble, which AI command or AI command alias to use, whether to stream AI output to the terminal, and log level. Configurable at the root (default for all prompts), per prompt in config files, and overridable by environment variables and CLI for a run.
 
 **Prompts** — The user defines named prompts in config files: a name used when running or listing, the path to the prompt file, optional display name and description for listing, and optional loop overrides so one prompt can have different limits or signals than another. Prompt definitions and their overrides live only in config files; they are not overridable by environment or CLI (the run still uses the chosen prompt’s resolved settings, which may then be overridden by env/CLI for loop-wide settings).
 
@@ -47,6 +47,7 @@ Configuration is merged from multiple layers. Later layers override earlier ones
 - User sets environment variables. Ralph applies them without any config file change; environment overrides file-based config.
 - User points Ralph at a specific config file. Only that file is used; global and workspace config are not loaded. If the file is missing, Ralph reports an error.
 - User runs listing commands and sees available prompts and AI commands with names and descriptions.
+- User enables AI-interpreted signal precedence (e.g. via config or CLI). When both success and failure signals appear in an iteration, the loop uses that mode according to the resolved setting.
 
 ## Non-outcomes
 
@@ -54,3 +55,22 @@ Configuration is merged from multiple layers. Later layers override earlier ones
 - Ralph does not support runtime config changes during loop execution. Config is resolved once at startup.
 - Ralph does not validate prompt file content — only that the file exists and is readable.
 - Ralph does not support config inheritance between prompts. Each prompt independently overrides the root loop section where applicable.
+
+## Risks
+
+| Risk | Mitigating Requirement |
+|------|------------------------|
+| Unclear which config value applies for a setting | [R001 — Config layer resolution](R001-config-layer-resolution.md) |
+| Explicit config file missing when specified | [R005 — Explicit config file only](R005-explicit-config-file-only.md) |
+| Per-prompt overrides not applied when running that prompt | [R003 — Named prompts with overrides](R003-named-prompts-with-overrides.md) |
+
+## Requirements
+
+| ID | Requirement | Status |
+|----|-------------|--------|
+| [R001](R001-config-layer-resolution.md) | The system resolves configuration from defined layers (defaults, global file, workspace file, explicit file, environment, prompt-level overrides, CLI flags) with a defined override order. | draft |
+| [R002](R002-loop-behavior-configurable.md) | The system allows loop behavior (iterations, failure threshold, timeout, signals, signal precedence mode, preamble, AI command, streaming, log level) to be configured at root and per prompt. | draft |
+| [R003](R003-named-prompts-with-overrides.md) | The system supports named prompts in config with path and optional loop overrides. | draft |
+| [R004](R004-ai-command-aliases-configurable.md) | The system supports configurable AI command aliases. | draft |
+| [R005](R005-explicit-config-file-only.md) | When the user specifies an explicit config file, the system uses only that file and reports an error if it is missing. | draft |
+| [R006](R006-list-prompts-and-commands.md) | The system provides listing commands that show available prompts and AI commands. | draft |

@@ -24,3 +24,21 @@ Ralph is not only for interactive use. Scripts and CI need to invoke the loop or
 - Ralph does not provide a dedicated "CI mode" or separate binary; the same product is scriptable when used with the documented options and config.
 - Ralph does not guarantee compatibility with every CI platform's quirks; the outcome is that the contract (exit codes, non-interactive behavior, parseable output where documented) supports scripting and CI.
 - Optional interactive flows (e.g. apply with confirmation) remain available; automation uses the non-interactive variants where documented.
+
+## Risks
+
+| Risk | Mitigating Requirement |
+|------|------------------------|
+| Command blocks waiting for interactive input in script or CI | [R001 — Non-interactive completion](R001-non-interactive-completion.md) |
+| Exit codes are unclear or change between releases, breaking scripts | [R002 — Documented stable exit codes](R002-documented-stable-exit-codes.md) |
+| CI cannot consume review outcome programmatically | [R003 — Machine-parseable review summary](R003-machine-parseable-review-summary.md) |
+| Behavior cannot be fully configured without interactive setup | [R004 — Full non-interactive config](R004-full-non-interactive-config.md) |
+
+## Requirements
+
+| ID | Requirement | Status |
+|----|-------------|--------|
+| [R001](R001-non-interactive-completion.md) | Ralph completes loop and reviewer runs without requiring interactive input when invoked with documented non-interactive options or config, and exits with a documented exit code. | draft |
+| [R002](R002-documented-stable-exit-codes.md) | Ralph documents and maintains stable exit codes for success, failure (e.g. threshold, prompt errors), exhaustion or review/apply failure, and interruption, consistent within the compatibility contract. | draft |
+| [R003](R003-machine-parseable-review-summary.md) | Ralph provides a machine-parseable review summary (or equivalent) so CI and scripts can gate on review outcome without scraping free text. | draft |
+| [R004](R004-full-non-interactive-config.md) | Ralph allows full non-interactive configuration of behavior (e.g. timeouts, iteration limits, prompts, AI commands) via config and environment variables so headless and scripted use require no interactive setup. | draft |

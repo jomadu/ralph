@@ -24,3 +24,20 @@ Unexpected edits to prompt files, config, or other user content cause loss of tr
 - Ralph may write to paths the user explicitly specifies for report or revised prompt output when the user has chosen those paths; the outcome is that the user's source prompt and config are not changed without explicit request.
 - Ralph does not guarantee that third-party tools (e.g. the AI CLI) do not modify files; the outcome is about Ralph's own behavior.
 - Creating or updating Ralph's own state (e.g. caches) in documented locations is out of scope of this outcome; the focus is user-owned content (prompts, config).
+
+## Risks
+
+| Risk | Mitigating Requirement |
+|------|------------------------|
+| Ralph writes to user files when the user did not request apply | [R001 — Explicit apply for writes](R001-explicit-apply-for-writes.md) |
+| Config is rewritten or migrated without user opt-in | [R002 — Config read-only unless opt-in](R002-config-read-only-unless-opt-in.md) |
+| In-memory or composed prompt is written back to source file without explicit apply | [R001 — Explicit apply for writes](R001-explicit-apply-for-writes.md) |
+| User believes they are only reviewing but a revision is applied (ambiguous UX) | [R003 — Review–apply separation and confirmation](R003-review-apply-separation-and-confirmation.md) |
+
+## Requirements
+
+| ID | Requirement | Status |
+|----|-------------|--------|
+| [R001](R001-explicit-apply-for-writes.md) | Ralph writes to user prompt content (files or user-specified output paths) only when the user has explicitly requested that a revision be applied and has confirmed or used a documented non-interactive apply option. | draft |
+| [R002](R002-config-read-only-unless-opt-in.md) | Ralph reads user config but does not rewrite or migrate it unless the user invokes a documented opt-in flow that is described as modifying config. | draft |
+| [R003](R003-review-apply-separation-and-confirmation.md) | Ralph separates review (report and suggestions only, no writes) from apply (write revision) and requires confirmation for apply in interactive use unless a non-interactive option is used. | draft |
