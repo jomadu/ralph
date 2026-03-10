@@ -8,9 +8,9 @@ This document defines the model for product and engineering documentation. **Pro
 docs/
   product/
     README.md                        # Index of all outcomes
-    O<n>-<slug>/
+    O001-<slug>/                     # Outcome dirs use three-digit zero-padded IDs
       README.md                      # Outcome definition (risks, requirement one-liners)
-      R<n>-<slug>.md                 # Requirement — complete for intent (capability, acceptance, edge cases)
+      R001-<slug>.md                 # Requirement — complete for intent (IDs zero-padded to three digits)
   engineering/
     README.md                        # Overview: diagram, design principles, component list with O/R assignments
     components/
@@ -18,7 +18,7 @@ docs/
       <component>/                   # Or component as directory (README + schema docs, design notes as needed)
 ```
 
-Product answers *who*, *what*, and *why* at the level of intent. Engineering answers *where* and *how*: structure, placement, and the implementation specifications (e.g. config schema, APIs, protocols) that implementers build from. Engineering does not re-specify user-facing intent; it owns the hard specs for how the system is implemented and references product requirements by ID (e.g. O1/R2, O4/R1).
+Product answers *who*, *what*, and *why* at the level of intent. Engineering answers *where* and *how*: structure, placement, and the implementation specifications (e.g. config schema, APIs, protocols) that implementers build from. Engineering does not re-specify user-facing intent; it owns the hard specs for how the system is implemented and references product requirements by ID (e.g. O001/R002, O004/R001).
 
 ### Product Hierarchy
 
@@ -65,13 +65,12 @@ Build the product tree in four steps. Each step produces artifacts, reviews them
 
 #### P1: Outcome Index
 
-Write the root `docs/product/README.md`. One table — each outcome as a one-line statement with its verification criteria. No directories, no detail. This is the product on a single page.
+Write the root `docs/product/README.md`. One table — each outcome as a one-line statement. No directories, no detail. This is the product on a single page. Verification criteria are *not* in the index; they are defined in each outcome's README (P2). Keeping verification in the outcome document avoids one-line compression and drift between index and detail.
 
 **Review:**
 - Each outcome is a present-tense assertion about the world, not a feature description
 - Each outcome is clear about *who* it is for (users, roles, or personas) and *why* it matters
 - Outcomes don't overlap — if two outcomes could share a requirement, they may be the same outcome
-- Verification criteria are observable by a user, not by a test suite
 - The set of outcomes is complete — together they describe the whole product (who, what, why)
 - The set is minimal — removing any outcome would leave a gap
 
@@ -84,6 +83,7 @@ Expand each outcome into its own directory and README. Who it's for, statement, 
 **Review:**
 - Each outcome detail is consistent with its one-liner in the index — if they diverge, fix the index first
 - Each outcome explicitly states *who* it is for and *why* it matters
+- Verification criteria are defined here (in the outcome README) and are observable by a user, not by a test suite
 - Non-outcomes are clear enough that someone could push back on scope and point to this list
 - Read all outcome files as a set: no two outcomes make contradictory claims, imply overlapping scope, or assume incompatible models of who we're building for, the system, or the domain
 
@@ -135,7 +135,7 @@ Write `docs/engineering/README.md`. Architecture on one page: purpose of enginee
 
 **Decomposition**
 
-Use the product requirement set (and outcome index) to derive the component set. Cluster requirements that hang together — by flow (e.g. everything in the run path), by concern (e.g. config resolution, backend invocation), or by user-facing boundary (e.g. review vs. run). For each cluster, name a component and write a one-liner (what this part of the system is responsible for). Ask *"What part of the system is responsible for this requirement?"* to assign each requirement to a component. Refine until the set is distinct, covers the product, and has no overlapping responsibilities. Record the result in the engineering README: component list with one-liners and O/R assignments (e.g. `run-loop — Runs the iteration loop; decides continue/exit — O1/R2, O1/R4, O1/R5, O4/R1`).
+Use the product requirement set (and outcome index) to derive the component set. Cluster requirements that hang together — by flow (e.g. everything in the run path), by concern (e.g. config resolution, backend invocation), or by user-facing boundary (e.g. review vs. run). For each cluster, name a component and write a one-liner (what this part of the system is responsible for). Ask *"What part of the system is responsible for this requirement?"* to assign each requirement to a component. Refine until the set is distinct, covers the product, and has no overlapping responsibilities. Record the result in the engineering README: component list with one-liners and O/R assignments (e.g. `run-loop — Runs the iteration loop; decides continue/exit — O001/R002, O001/R004, O001/R005, O004/R001`).
 
 **Review:**
 - Components are distinct; no two components have the same responsibility
@@ -196,27 +196,31 @@ This document is a methodology for generating and reviewing the product and engi
 
 ### Index — `docs/product/README.md`
 
-Link each outcome ID to that outcome's README. From the index, use `./O<n>-<slug>/README.md`. Each outcome one-liner should be clear on *who* it is for, *what* is true when achieved, and *why* it matters.
+Open with a short **product summary**: a statement that describes the product itself — who it is for, what it is, and what it does — and that the outcomes below are the measurable results of that product. Avoid meta-description of the documentation (e.g. "this index is…"); the README should read as a statement about the product. Then the outcomes table.
+
+Link each outcome ID to that outcome's README. From the index, use `./O001-<slug>/README.md` (three-digit zero-padded IDs). Each outcome one-liner should be clear on *who* it is for, *what* is true when achieved, and *why* it matters. Verification is defined in each outcome's README, not in the index.
 
 ```markdown
 # Product
 
+<Short product summary: who the product is for, what it is, and what it does. This product produces the outcomes below.>
+
 ## Outcomes
 
-| ID | Outcome | Verification |
-|----|---------|--------------|
-| [O1](./O1-<slug>/README.md) | Statement of what is true when this outcome is achieved | How a user proves it |
-| [O2](./O2-<slug>/README.md) | ... | ... |
+| ID | Outcome |
+|----|---------|
+| [O001](./O001-<slug>/README.md) | Statement of what is true when this outcome is achieved |
+| [O002](./O002-<slug>/README.md) | ... |
 ```
 
-### Outcome — `O<n>-<slug>/README.md`
+### Outcome — `O001-<slug>/README.md`
 
-Each outcome directory has a README that fully defines the outcome. Link to requirement docs with `R<n>-<slug>.md`.
+Each outcome directory has a README that fully defines the outcome. Link to requirement docs with `R001-<slug>.md` (three-digit zero-padded IDs).
 
 **Fields:** Who (users/roles/personas), Statement, Why it matters, Verification, Non-outcomes, Risks (table), Requirements (table). Risks and requirements tables are appended in P3. During P1 and P2, the outcome README ends after non-outcomes.
 
 ```markdown
-# O<n>: <Title>
+# O001: <Title>
 
 ## Who
 
@@ -243,18 +247,18 @@ Each outcome directory has a README that fully defines the outcome. Link to requ
 
 | Risk | Mitigating Requirement |
 |------|----------------------|
-| What could prevent this outcome | [R<n> — <Title>](R<n>-<slug>.md) |
+| What could prevent this outcome | [R001 — <Title>](R001-<slug>.md) |
 | ... | ... |
 
 ## Requirements
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| [R1](R1-<slug>.md) | One-line summary | draft / ready / built / verified |
-| [R2](R2-<slug>.md) | ... | ... |
+| [R001](R001-<slug>.md) | One-line summary | draft / ready / built / verified |
+| [R002](R002-<slug>.md) | ... | ... |
 ```
 
-### Requirement — `R<n>-<slug>.md`
+### Requirement — `R001-<slug>.md`
 
 Each requirement file is **complete for intent**: it contains the requirement statement and all detail needed to define what we're committing to and how we'll verify it. No separate "Specification" section; use whatever structure makes the requirement unambiguous (e.g. Detail, Edge cases, Examples, plus Acceptance criteria and Dependencies). Where implementation specifications (schemas, formats, algorithms) live in engineering, the requirement states the capability and may reference the engineering doc.
 
@@ -272,9 +276,9 @@ Each requirement file is **complete for intent**: it contains the requirement st
 - **Examples** — Concrete scenarios: Input, Expected output, Verification.
 
 ```markdown
-# R<n>: <Title>
+# R001: <Title>
 
-**Outcome:** O<n> — <Outcome title>
+**Outcome:** O001 — <Outcome title>
 
 ## Requirement
 
@@ -307,7 +311,7 @@ Each requirement file is **complete for intent**: it contains the requirement st
 
 ## Dependencies
 
-- <O<n>/R<n> — Requirement that must exist first>
+- <O001/R001 — Requirement that must exist first>
 ```
 
 ## Engineering Templates
@@ -341,8 +345,8 @@ Optional: data flow, invariants, or notes that help implementers place code corr
 
 ### Naming
 
-- **Product:** Outcomes `O<n>-<slug>/`; requirements `R<n>-<slug>.md` within their outcome. Numbered for stable reference, slug for readability. `R1` in O1 and `R1` in O2 are different requirements.
-- **Engineering:** Component names are lowercase, hyphenated if multi-word (e.g. `run-loop.md`, `config.md`). Slugs may change; product IDs (O1, R2) are stable.
+- **Product:** Outcomes `O<n>-<slug>/`; requirements `R<n>-<slug>.md` within their outcome. The numeric part `<n>` is **zero-padded to three digits** (e.g. `O001`, `O002`, `R001`, `R002`) so that directories and files sort correctly in the filesystem. Numbered for stable reference, slug for readability. `R001` in O001 and `R001` in O002 are different requirements.
+- **Engineering:** Component names are lowercase, hyphenated if multi-word (e.g. `run-loop.md`, `config.md`). Slugs may change; product IDs (O001, R002) are stable.
 
 ### Traceability
 
