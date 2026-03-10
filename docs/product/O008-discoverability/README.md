@@ -40,5 +40,5 @@ If the value proposition and first-run path are unclear, potential users leave b
 |----|-------------|--------|
 | [R001](R001-what-and-why.md) | User can find a short description of what Ralph is and why it exists | draft |
 | [R002](R002-install-and-first-command.md) | User can find install steps and a first command that completes successfully | draft |
-| [R003](R003-list-and-help.md) | List or help commands expose available prompts and subcommands | draft |
+| [R003](R003-list-and-help.md) | User can discover available prompts and subcommands via list or help commands so they can see what to run | draft |
 | [R004](R004-path-to-first-run.md) | Path from having Ralph to a first successful run is documented and achievable | draft |

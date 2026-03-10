@@ -65,4 +65,4 @@ Two separate controls govern what the user sees:
 | [R006](R006-log-level-and-show-ai-output.md) | The system respects configured log level and show-AI-output setting for what is emitted to the user. | draft |
 | [R007](R007-dry-run-shows-assembled-prompt.md) | The system supports a dry-run mode that prints the assembled prompt without invoking the AI. | draft |
 | [R008](R008-iteration-statistics.md) | The system reports iteration statistics after a multi-iteration run. | draft |
-| [R009](R009-review-exit-code-and-report.md) | The system makes review outcome clear via exit code and report (completed, prompt errors, run failed). | draft |
+| [R009](R009-review-exit-code-and-report.md) | The system makes review outcome clear via report and presentation so the user understands whether the review completed, the prompt had errors, or the run failed; exit code semantics follow the review command contract (see prompt review outcome). | draft |
