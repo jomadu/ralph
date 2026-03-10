@@ -16,4 +16,4 @@ Ralph is a loop runner for AI-driven tasks. The user supplies a prompt and choos
 | [O008](./O008-discoverability/README.md) | A new user can discover what Ralph does and get to a first successful run |
 | [O009](./O009-predictability/README.md) | Ralph only changes user content when the user explicitly requests it (e.g. `--apply`) |
 | [O010](./O010-automation/README.md) | Users can run Ralph from scripts and CI |
-| [O011](./O011-upgrade-path/README.md) | Users can upgrade Ralph without breaking existing config or workflows |
+| [O011](./O011-update-upgrade/README.md) | Users can upgrade to a chosen version or update within a non-breaking version, without breaking existing config or workflows |
