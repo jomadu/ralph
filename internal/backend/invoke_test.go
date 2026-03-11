@@ -88,3 +88,54 @@ func TestInvoke_Cwd(t *testing.T) {
 		t.Skip("pwd not available")
 	}
 }
+
+// TestInvoke_CwdInherit verifies that when cwd is empty, the child inherits the parent's working directory (O003/R002).
+func TestInvoke_CwdInherit(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("cwd test uses pwd (Unix)")
+	}
+	if path, _ := exec.LookPath("pwd"); path == "" {
+		t.Skip("pwd not available")
+	}
+	want, _ := os.Getwd()
+	stdout, code, err := Invoke("pwd", nil, "", nil)
+	if err != nil {
+		t.Fatalf("Invoke: %v", err)
+	}
+	if code != 0 {
+		t.Errorf("exitCode = %d, want 0", code)
+	}
+	got := string(bytes.TrimSpace(stdout))
+	absWant, _ := filepath.Abs(want)
+	if got != absWant && got != want {
+		t.Errorf("cwd inherit: got %q, want %q or %q", got, want, absWant)
+	}
+}
+
+// TestInvoke_EnvInherit verifies that when env is nil, the child inherits the parent's environment (O003/R002).
+func TestInvoke_EnvInherit(t *testing.T) {
+	const testVar = "RALPH_TEST_ENV_INHERIT"
+	const testVal = "inherited"
+	t.Setenv(testVar, testVal)
+	// printenv VAR prints the value and exits 0; not on Windows, so skip there.
+	var cmd string
+	if runtime.GOOS != "windows" {
+		if path, _ := exec.LookPath("printenv"); path != "" {
+			cmd = "printenv " + testVar
+		}
+	}
+	if cmd == "" {
+		t.Skip("printenv not available (Unix only)")
+	}
+	stdout, code, err := Invoke(cmd, nil, "", nil)
+	if err != nil {
+		t.Fatalf("Invoke: %v", err)
+	}
+	if code != 0 {
+		t.Errorf("exitCode = %d, want 0", code)
+	}
+	got := string(bytes.TrimSpace(stdout))
+	if got != testVal {
+		t.Errorf("env inherit: got %q, want %q", got, testVal)
+	}
+}

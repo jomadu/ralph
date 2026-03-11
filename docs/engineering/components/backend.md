@@ -48,7 +48,7 @@ The backend receives the **resolved** command string (after alias expansion by t
 - **Stdin** — The assembled prompt is written to the child process's stdin. The stream is closed after write so the AI receives EOF when it has consumed the prompt.
 - **Stdout** — Captured in full and returned to the caller. Stderr may be captured, passed through to the user's terminal, or merged per configuration; exact behavior is implementation-defined and documented (e.g. for streaming mode).
 - **No shell** — The AI command is invoked without a shell. Users who need shell features (pipes, redirects, expansion) must use a wrapper script or binary as the command.
-- **Environment and cwd** — By default the child process inherits the parent's environment and current working directory. Overrides (if any) are config-defined and documented.
+- **Environment and cwd** — The caller passes `cwd` and `env` into the backend. When `cwd` is empty, the backend does not set the child's working directory, so the child inherits the parent's current working directory. When `env` is nil or empty, the backend uses the parent's environment (e.g. `os.Environ()`), so the child sees the same environment as Ralph. When the caller passes a non-empty `cwd` or non-empty `env`, that overrides inheritance; such overrides are supplied by the config layer when configured (no default overrides in the initial implementation).
 
 ### Validation
 

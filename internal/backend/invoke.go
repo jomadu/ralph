@@ -33,6 +33,7 @@ func Invoke(command string, promptBytes []byte, cwd string, env []string) (stdou
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	// Stderr left nil so it inherits (implementation-defined per backend.md)
+	// Environment and cwd: empty cwd = inherit parent cwd; nil/empty env = inherit parent env (O003/R002).
 	if cwd != "" {
 		cmd.Dir = cwd
 	}
