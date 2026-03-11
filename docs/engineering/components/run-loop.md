@@ -43,7 +43,7 @@ The run-loop is the authority for run exit codes. User and automation documentat
 | **Success** | 0 | Success signal detected; completion message, iteration count, timing. |
 | **Error (pre-loop)** | 2 | Invalid or missing AI command, invalid config, or prompt source error; clear error message before loop starts (O001/R001, O004/R001). |
 | **Failure threshold** | 4 | Consecutive failures reached; report and exit (O001/R005, O004/R003). |
-| **Max iterations** | (TBD) | Iteration limit reached without success; report and exit. |
+| **Max iterations** | 3 | Iteration limit reached without success; report count and limit, then exit (O001/R007, O004/R004). |
 | **Interrupt** | (TBD) | User interrupted (e.g. SIGINT); distinct code. |
 
 ### Signal detection

@@ -91,7 +91,7 @@ func TestRun_MaxIterationsWithoutSuccess(t *testing.T) {
 	if code != ExitMaxIterations {
 		t.Errorf("exit code = %d, want %d (ExitMaxIterations)", code, ExitMaxIterations)
 	}
-	if !strings.Contains(reported, "Stopped after 2 iteration(s)") {
+	if !strings.Contains(reported, "Stopped after 2 iteration(s)") || !strings.Contains(reported, "max: 2") {
 		t.Errorf("reported = %q", reported)
 	}
 }

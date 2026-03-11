@@ -39,8 +39,8 @@ func (f invokerAdapter) Invoke(command string, promptBytes []byte, cwd string, e
 // reached without success, returns ExitMaxIterations. Static precedence
 // (T3.6, O001/R006): success is checked before failure; when both signals
 // appear in the same output, the iteration is treated as success.
-// Implements T3.4, T3.5, T3.6, T3.8, O001/R004, O001/R005, O001/R006, O001/R009,
-// O004/R002, O004/R003.
+// Implements T3.4, T3.5, T3.6, T3.7, T3.8, O001/R004, O001/R005, O001/R006, O001/R007,
+// O001/R009, O004/R002, O004/R003, O004/R004.
 func Run(opts RunOptions) (exitCode int, err error) {
 	if opts.Invoker == nil {
 		opts.Invoker = invokerAdapter(backend.Invoke)
@@ -89,7 +89,7 @@ func Run(opts RunOptions) (exitCode int, err error) {
 			return ExitFailureThreshold, nil
 		}
 	}
-	report(fmt.Sprintf("Stopped after %d iteration(s) without success signal.", opts.Loop.MaxIterations))
+	report(fmt.Sprintf("Stopped after %d iteration(s) without success signal (max: %d).", opts.Loop.MaxIterations, opts.Loop.MaxIterations))
 	return ExitMaxIterations, nil
 }
 
