@@ -128,6 +128,11 @@ func reviewCmd() *cobra.Command {
 				if err := scanner.Err(); err != nil {
 					return err
 				}
+				// Stdin + apply requires revision output path (cli.md, review error handling).
+				if apply && promptOutput == "" {
+					fmt.Fprintln(os.Stderr, "ralph review: --apply requires --prompt-output when prompt is from stdin")
+					os.Exit(2)
+				}
 			}
 
 			content, err := review.ResolvePromptSource(provider, cwd, opts)
