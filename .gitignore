@@ -3,8 +3,7 @@
 .dolt/
 *.db
 
-# Build artifacts
-ralph
+# Build artifacts (do not ignore cmd/ralph source)
 /ralph
 bin/
 dist/
