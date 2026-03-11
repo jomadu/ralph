@@ -294,7 +294,7 @@ Exit codes for `ralph run` and `ralph review` are stable for scripts and CI. Ful
 ## Where to look (CLI, config, env, exit codes)
 
 - **CLI and flags** — Full command and flag spec: [docs/engineering/components/cli.md](docs/engineering/components/cli.md). User-facing summary is in this README (Subcommands, Configuration, Environment variables, Exit Codes).
-- **Config file and layers** — Schema, layer order, and env overlay: [docs/engineering/components/config.md](docs/engineering/components/config.md). README summarizes in Configuration and Example.
+- **Config file and layers** — Schema, layer order, and env overlay: [docs/engineering/components/config.md](docs/engineering/components/config.md). Loop behavior (iterations, signals, timeout, preamble, streaming, log level) is configured there and summarized in README (Configuration, Signals, How It Works). README summarizes in Configuration and Example.
 - **Environment variables** — `RALPH_CONFIG_HOME` and `RALPH_LOOP_*` are listed in [docs/engineering/components/config.md](docs/engineering/components/config.md) (Environment variables). README lists them in Environment variables.
 - **Exit codes** — Stable contract for run and review: [docs/exit-codes.md](docs/exit-codes.md). README summarizes in Exit Codes.
 - **Release notes and stable contract** — Where to find release notes and what scripts/CI can rely on: [docs/release-notes.md](docs/release-notes.md). Upgrade and backward-compatibility procedure is in this README (Install and Uninstall → Upgrade); see [Release notes and stable contract](#release-notes-and-stable-contract) above.
