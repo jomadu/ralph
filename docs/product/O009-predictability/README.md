@@ -38,6 +38,6 @@ Unexpected edits to prompt files, config, or other user content cause loss of tr
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| [R001](R001-explicit-apply-for-writes.md) | Ralph writes to user prompt content (files or user-specified output paths) only when the user has explicitly requested that a revision be applied and has confirmed or used a documented non-interactive apply option. | draft |
-| [R002](R002-config-read-only-unless-opt-in.md) | Ralph reads user config but does not rewrite or migrate it unless the user invokes a documented opt-in flow that is described as modifying config. | draft |
-| [R003](R003-review-apply-separation-and-confirmation.md) | Ralph separates review (report and suggestions only, no writes) from apply (write revision) and requires confirmation for apply in interactive use unless a non-interactive option is used. | draft |
+| [R001](R001-explicit-apply-for-writes.md) | Ralph writes to user prompt content (files or user-specified output paths) only when the user has explicitly requested that a revision be applied and has confirmed or used a documented non-interactive apply option. | ready |
+| [R002](R002-config-read-only-unless-opt-in.md) | Ralph reads user config but does not rewrite or migrate it unless the user invokes a documented opt-in flow that is described as modifying config. | ready |
+| [R003](R003-review-apply-separation-and-confirmation.md) | Ralph separates review (report and suggestions only, no writes) from apply (write revision) and requires confirmation for apply in interactive use unless a non-interactive option is used. | ready |

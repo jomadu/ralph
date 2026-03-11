@@ -57,12 +57,12 @@ Two separate controls govern what the user sees:
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| [R001](R001-clear-error-missing-ai-command.md) | The system reports a clear, user-facing error when the AI command or alias is missing or invalid before run or review. | draft |
-| [R002](R002-success-report-and-exit-zero.md) | The system reports a completion message, iteration count, and timing on success and exits 0. | draft |
-| [R003](R003-failure-threshold-report-and-exit-code.md) | The system reports the failure threshold and consecutive failure count when exiting due to failure threshold and uses a distinct exit code. | draft |
-| [R004](R004-max-iterations-report-and-exit-code.md) | The system reports iteration count and limit when max iterations are exhausted and uses a distinct exit code. | draft |
-| [R005](R005-distinct-exit-code-on-interrupt.md) | The system exits with a distinct code on user interrupt (e.g. SIGINT/SIGTERM). | draft |
-| [R006](R006-log-level-and-show-ai-output.md) | The system respects configured log level and show-AI-output setting for what is emitted to the user. | draft |
-| [R007](R007-dry-run-shows-assembled-prompt.md) | The system supports a dry-run mode that prints the assembled prompt without invoking the AI. | draft |
-| [R008](R008-iteration-statistics.md) | The system reports iteration statistics after a multi-iteration run. | draft |
-| [R009](R009-review-exit-code-and-report.md) | The system makes review outcome clear via report and presentation so the user understands whether the review completed, the prompt had errors, or the run failed; exit code semantics follow the review command contract (see prompt review outcome). | draft |
+| [R001](R001-clear-error-missing-ai-command.md) | The system reports a clear, user-facing error when the AI command or alias is missing or invalid before run or review. | ready |
+| [R002](R002-success-report-and-exit-zero.md) | The system reports a completion message, iteration count, and timing on success and exits 0. | ready |
+| [R003](R003-failure-threshold-report-and-exit-code.md) | The system reports the failure threshold and consecutive failure count when exiting due to failure threshold and uses a distinct exit code. | ready |
+| [R004](R004-max-iterations-report-and-exit-code.md) | The system reports iteration count and limit when max iterations are exhausted and uses a distinct exit code. | ready |
+| [R005](R005-distinct-exit-code-on-interrupt.md) | The system exits with a distinct code on user interrupt (e.g. SIGINT/SIGTERM). | ready |
+| [R006](R006-log-level-and-show-ai-output.md) | The system respects configured log level and show-AI-output setting for what is emitted to the user. | ready |
+| [R007](R007-dry-run-shows-assembled-prompt.md) | The system supports a dry-run mode that prints the assembled prompt without invoking the AI. | ready |
+| [R008](R008-iteration-statistics.md) | The system reports iteration statistics after a multi-iteration run. | ready |
+| [R009](R009-review-exit-code-and-report.md) | The system makes review outcome clear via report and presentation so the user understands whether the review completed, the prompt had errors, or the run failed; exit code semantics follow the review command contract (see prompt review outcome). | ready |

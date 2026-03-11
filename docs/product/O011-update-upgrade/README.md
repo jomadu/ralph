@@ -40,7 +40,7 @@ Without a supported way to upgrade or update, users are stuck on an old version 
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| [R001](R001-documented-upgrade-process.md) | Ralph documents how to upgrade to a chosen version and how to update within a non-breaking version (e.g. patch or minor on the same major). | draft |
-| [R002](R002-backward-compatibility-within-non-breaking.md) | Within a non-breaking version range (e.g. same major), existing config and prompts continue to work without required migration; Ralph does not automatically rewrite user config. | draft |
-| [R003](R003-stable-contract-or-documented-migration.md) | Documented commands, options, and exit codes remain valid across non-breaking upgrades, or changes are documented in release notes with migration guidance. | draft |
-| [R004](R004-release-notes-for-changes.md) | Ralph provides release notes (or equivalent) for each release describing intentional behavior changes and deprecations so users can adjust config or scripts. | draft |
+| [R001](R001-documented-upgrade-process.md) | Ralph documents how to upgrade to a chosen version and how to update within a non-breaking version (e.g. patch or minor on the same major). | ready |
+| [R002](R002-backward-compatibility-within-non-breaking.md) | Within a non-breaking version range (e.g. same major), existing config and prompts continue to work without required migration; Ralph does not automatically rewrite user config. | ready |
+| [R003](R003-stable-contract-or-documented-migration.md) | Documented commands, options, and exit codes remain valid across non-breaking upgrades, or changes are documented in release notes with migration guidance. | ready |
+| [R004](R004-release-notes-for-changes.md) | Ralph provides release notes (or equivalent) for each release describing intentional behavior changes and deprecations so users can adjust config or scripts. | ready |

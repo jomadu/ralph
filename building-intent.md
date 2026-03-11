@@ -217,7 +217,7 @@ Link each outcome ID to that outcome's README. From the index, use `./O001-<slug
 
 Each outcome directory has a README that fully defines the outcome. Link to requirement docs with `R001-<slug>.md` (three-digit zero-padded IDs).
 
-**Fields:** Who (users/roles/personas), Statement, Why it matters, Verification, Non-outcomes, Risks (table), Requirements (table). Risks and requirements tables are appended in P3. During P1 and P2, the outcome README ends after non-outcomes.
+**Fields:** Who (users/roles/personas), Statement, Why it matters, Verification, Non-outcomes, Risks (table), Requirements (table). Risks and requirements tables are appended in P3. During P1 and P2, the outcome README ends after non-outcomes. Verification here is outcome-level (user-observable evidence); requirement-level testability is captured in each requirement's Acceptance criteria.
 
 ```markdown
 # O001: <Title>

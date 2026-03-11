@@ -46,11 +46,11 @@ Without a reviewer, problems show up only when the loop runs: the AI never emits
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| [R001](R001-review-invocation-inputs.md) | User can invoke review with prompt from alias, file path, or stdin | draft |
-| [R002](R002-report-content-and-format.md) | System produces a report with narrative feedback and machine-parseable summary | draft |
-| [R003](R003-suggested-revision.md) | The system produces a suggested revision of the prompt as part of every review output. | draft |
-| [R004](R004-apply-with-confirmation.md) | User can request that the revision be written to a file, with confirmation or non-interactive option | draft |
-| [R005](R005-report-to-file.md) | Report is written to a file (user-chosen or default location) | draft |
-| [R006](R006-revision-output-path.md) | Revised prompt can be written to a user-chosen path; stdin + apply requires path and errors if missing | draft |
-| [R007](R007-evaluation-dimensions.md) | Review evaluates prompt on signal/state, iteration awareness, scope/convergence, and subjective completion criteria | draft |
-| [R008](R008-exit-codes.md) | Exit codes distinguish success, prompt errors, and review/apply failure | draft |
+| [R001](R001-review-invocation-inputs.md) | User can invoke review with prompt from alias, file path, or stdin | ready |
+| [R002](R002-report-content-and-format.md) | System produces a report with narrative feedback and machine-parseable summary | ready |
+| [R003](R003-suggested-revision.md) | System produces a suggested revision of the prompt as part of every review output | ready |
+| [R004](R004-apply-with-confirmation.md) | User can request that the revision be written to a file, with confirmation or non-interactive option | ready |
+| [R005](R005-report-to-file.md) | Report is written to a file (user-chosen or default location) | ready |
+| [R006](R006-revision-output-path.md) | Revised prompt can be written to a user-chosen path; stdin + apply requires path and errors if missing | ready |
+| [R007](R007-evaluation-dimensions.md) | Review evaluates prompt on signal/state, iteration awareness, scope/convergence, and subjective completion criteria | ready |
+| [R008](R008-exit-codes.md) | Exit codes distinguish success, prompt errors, and review/apply failure | ready |

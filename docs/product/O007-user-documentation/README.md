@@ -38,7 +38,7 @@ Without clear documentation, users guess at subcommands, config format, and beha
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| [R001](R001-doc-coverage.md) | Documentation covers install, configuration, run, review, update, upgrade, uninstall, and exit codes | draft |
-| [R002](R002-doc-discoverability.md) | User can look up CLI, flags, config, and environment variables in one place or a clearly linked set | draft |
-| [R003](R003-doc-accuracy.md) | Documentation matches actual product behavior | draft |
-| [R004](R004-troubleshooting.md) | User can resolve common problems using documented troubleshooting guidance | draft |
+| [R001](R001-doc-coverage.md) | Documentation covers install, configuration, run, review, update, upgrade, uninstall, and exit codes | ready |
+| [R002](R002-doc-discoverability.md) | User can look up CLI, flags, config, and environment variables in one place or a clearly linked set | ready |
+| [R003](R003-doc-accuracy.md) | Documentation matches actual product behavior | ready |
+| [R004](R004-troubleshooting.md) | User can resolve common problems using documented troubleshooting guidance | ready |

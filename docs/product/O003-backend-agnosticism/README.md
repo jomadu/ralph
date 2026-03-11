@@ -41,6 +41,6 @@ The AI CLI landscape is fragmented. Teams use different tools and switch between
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| [R001](R001-invoke-ai-cli-stdin-capture-stdout.md) | The system invokes the user-chosen AI command (alias or direct) with the assembled prompt on stdin and captures stdout. | draft |
-| [R002](R002-inherit-env-and-cwd.md) | The system inherits the user's environment and working directory when invoking the AI CLI. | draft |
-| [R003](R003-structured-output-via-signals-or-wrapper.md) | The system works with AI CLIs that produce structured or non–plain-text output when the user configures signals or uses a wrapper. | draft |
+| [R001](R001-invoke-ai-cli-stdin-capture-stdout.md) | The system supplies the assembled prompt as input to the user-chosen AI command (alias or direct) and captures that command's output. | ready |
+| [R002](R002-inherit-env-and-cwd.md) | The system uses the user's environment and working directory when invoking the AI command. | ready |
+| [R003](R003-structured-output-via-signals-or-wrapper.md) | The system works with AI CLIs that produce structured or non–plain-text output when the user configures signals or uses a wrapper. | ready |

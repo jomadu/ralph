@@ -48,12 +48,12 @@ Without a loop runner, the user manually invokes the AI CLI, reads its output, d
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| [R001](R001-validate-ai-command-before-loop.md) | The system validates that the chosen AI command or alias is available before starting the loop. | draft |
-| [R002](R002-load-prompt-once-and-buffer.md) | The system loads the prompt once from the chosen source (file or stdin) and buffers it for all iterations, or fails before the loop with a clear message if the source is unavailable. | draft |
-| [R003](R003-run-via-alias-file-or-stdin.md) | The system supports running the loop by alias, by prompt file path, or by reading the prompt from stdin. | draft |
-| [R004](R004-detect-success-signal-exit-zero.md) | The system detects the configured success signal in AI output and exits with code 0. | draft |
-| [R005](R005-detect-failure-signal-continue-or-exit.md) | The system detects the configured failure signal, increments the consecutive-failure count, and either starts a new iteration or exits based on the failure threshold. | draft |
-| [R006](R006-signal-precedence.md) | The system applies a defined precedence when both success and failure signals are present in the same output (default behavior). | draft |
-| [R007](R007-exit-on-max-iterations.md) | The system exits when the maximum iteration count is reached. | draft |
-| [R008](R008-ai-interpreted-signal-precedence.md) | The system may optionally resolve signal precedence by invoking the AI once with a built-in Ralph prompt that asks the AI to interpret the iteration output and decide success or failure; if the interpretation run does not yield a clear answer, the system applies a defined fallback (e.g. treat as failure or use static precedence). | draft |
-| [R009](R009-process-exit-without-signal.md) | When the AI process exits without emitting the configured success or failure signal (e.g. crash, kill, abnormal exit), the system treats the iteration as a failure, increments the consecutive-failure count, and continues or exits according to the failure threshold; the user can distinguish this condition from signal-based failure where documented. | draft |
+| [R001](R001-validate-ai-command-before-loop.md) | The system validates that the chosen AI command or alias is available before starting the loop. | ready |
+| [R002](R002-load-prompt-once-and-buffer.md) | The system loads the prompt once from the chosen source (file or stdin) and buffers it for all iterations, or fails before the loop with a clear message if the source is unavailable. | ready |
+| [R003](R003-run-via-alias-file-or-stdin.md) | The system supports running the loop by alias, by prompt file path, or by reading the prompt from stdin. | ready |
+| [R004](R004-detect-success-signal-exit-zero.md) | The system detects the configured success signal in AI output and exits with code 0. | ready |
+| [R005](R005-detect-failure-signal-continue-or-exit.md) | The system detects the configured failure signal, increments the consecutive-failure count, and either starts a new iteration or exits based on the failure threshold. | ready |
+| [R006](R006-signal-precedence.md) | The system applies a defined precedence when both success and failure signals are present in the same output (default behavior). | ready |
+| [R007](R007-exit-on-max-iterations.md) | The system exits when the maximum iteration count is reached. | ready |
+| [R008](R008-ai-interpreted-signal-precedence.md) | The system may optionally resolve signal precedence by invoking the AI once with a built-in Ralph prompt that asks the AI to interpret the iteration output and decide success or failure; if the interpretation run does not yield a clear answer, the system applies a defined fallback (e.g. treat as failure or use static precedence). | ready |
+| [R009](R009-process-exit-without-signal.md) | When the AI process exits without emitting the configured success or failure signal (e.g. crash, kill, abnormal exit), the system treats the iteration as a failure, increments the consecutive-failure count, and continues or exits according to the failure threshold; the user can distinguish this condition from signal-based failure where documented. | ready |

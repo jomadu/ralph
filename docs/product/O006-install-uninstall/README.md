@@ -39,7 +39,7 @@ Without a defined install and uninstall story, users must discover how to obtain
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| [R001](R001-documented-install.md) | Documented install steps result in Ralph being invocable from a shell | draft |
-| [R002](R002-invocable-after-install.md) | After install, user can run Ralph commands without specifying the binary path | draft |
-| [R003](R003-documented-uninstall.md) | Documented uninstall steps remove Ralph with no broken PATH or orphaned install artifacts | draft |
-| [R004](R004-clean-uninstall.md) | After uninstall, Ralph is not invocable and no leftover binary remains in the documented install scope | draft |
+| [R001](R001-documented-install.md) | Documented install steps result in Ralph being invocable from a shell | ready |
+| [R002](R002-invocable-after-install.md) | After install, user can run Ralph commands without specifying the binary path | ready |
+| [R003](R003-documented-uninstall.md) | Documented uninstall steps remove Ralph with no broken PATH or orphaned install artifacts | ready |
+| [R004](R004-clean-uninstall.md) | After uninstall, Ralph is not invocable and no leftover binary remains in the documented install scope | ready |

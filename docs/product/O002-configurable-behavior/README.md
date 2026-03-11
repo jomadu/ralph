@@ -68,9 +68,9 @@ Configuration is merged from multiple layers. Later layers override earlier ones
 
 | ID | Requirement | Status |
 |----|-------------|--------|
-| [R001](R001-config-layer-resolution.md) | The system resolves configuration from defined layers (defaults, global file, workspace file, explicit file, environment, prompt-level overrides, CLI flags) with a defined override order. | draft |
-| [R002](R002-loop-behavior-configurable.md) | The system allows loop behavior (iterations, failure threshold, timeout, signals, signal precedence mode, preamble, AI command, streaming, log level) to be configured at root and per prompt. | draft |
-| [R003](R003-named-prompts-with-overrides.md) | The system supports named prompts in config with path and optional loop overrides. | draft |
-| [R004](R004-ai-command-aliases-configurable.md) | The system supports configurable AI command aliases. | draft |
-| [R005](R005-explicit-config-file-only.md) | When the user specifies an explicit config file, the system uses only that file and reports an error if it is missing. | draft |
-| [R006](R006-list-prompts-and-commands.md) | The system provides listing commands that show available prompts and AI commands. | draft |
+| [R001](R001-config-layer-resolution.md) | The system resolves configuration from defined layers (defaults, global file, workspace file, explicit file, environment, prompt-level overrides, CLI flags) with a defined override order. | ready |
+| [R002](R002-loop-behavior-configurable.md) | The system allows loop behavior (iterations, failure threshold, timeout, signals, signal precedence mode, preamble, AI command, streaming, log level) to be configured at root and per prompt. | ready |
+| [R003](R003-named-prompts-with-overrides.md) | The system supports named prompts in config with path, optional display name and description, and optional loop overrides. | ready |
+| [R004](R004-ai-command-aliases-configurable.md) | The system supports configurable AI command aliases. | ready |
+| [R005](R005-explicit-config-file-only.md) | When the user specifies an explicit config file, the system uses only that file and reports an error if it is missing. | ready |
+| [R006](R006-list-prompts-and-commands.md) | The system provides listing commands that show available prompts and AI commands. | ready |
