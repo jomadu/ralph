@@ -33,7 +33,7 @@ Documentation must cover at least:
 - Prompt sources: alias, file path, stdin; how to specify them for run and review.
 - Loop behavior: iterations, failure threshold, timeout, signals, precedence, preamble, AI command/alias, streaming, log level.
 - Review: invocation (alias, file, stdin); report content and location; machine-parseable summary format and how to parse it for CI; apply and confirmation; revision output path requirement when prompt is from stdin.
-- Exit codes: run (success, failure threshold, max iterations, interrupt, error) and review (0, 1, 2) with exact values and semantics so automation can gate reliably.
+- Exit codes: run (success, failure threshold, max iterations, interrupt, error) and review (0, 1, 2) with exact values and semantics so automation can gate reliably. The canonical user and automation doc is [docs/exit-codes.md](../../exit-codes.md); README summarizes and links to it.
 - Non-interactive use: flags and environment so CI/scripts can run without prompts; behavior when confirmation would be required in non-interactive mode.
 
 ### Procedures (install, uninstall, upgrade)

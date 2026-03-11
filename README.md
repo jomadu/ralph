@@ -83,8 +83,8 @@ Each iteration:
 4. Capture output, scan for success/failure signals
 5. On success signal → exit 0
 6. On failure signal → increment consecutive failure counter
-7. On consecutive failure threshold → abort (exit 1)
-8. On max iterations reached → exit 2
+7. On consecutive failure threshold → exit 4
+8. On max iterations reached → exit 3
 9. Otherwise → next iteration
 
 Fresh process per iteration. No conversation history carried between runs. State continuity comes from the filesystem — the AI reads and writes files, and the next iteration's AI sees those changes.
@@ -187,6 +187,10 @@ The prompt is read once at loop start and reused for every iteration. When no al
 
 ## Exit Codes
 
+Exit codes for `ralph run` and `ralph review` are stable for scripts and CI. Full semantics and automation guidance: [docs/exit-codes.md](docs/exit-codes.md).
+
+**ralph run**
+
 | Code | Meaning |
 |------|---------|
 | 0 | Success signal received |
@@ -194,6 +198,14 @@ The prompt is read once at loop start and reused for every iteration. When no al
 | 3 | Max iterations exhausted |
 | 4 | Failure threshold reached |
 | 130 | Interrupted (SIGINT/SIGTERM) |
+
+**ralph review**
+
+| Code | Meaning |
+|------|---------|
+| 0 | Review completed, no prompt errors |
+| 1 | Review completed, prompt has errors |
+| 2 | Review or apply did not complete |
 
 ## License
 
