@@ -101,20 +101,28 @@ Five layers, highest precedence first:
 | Global config | `~/.config/ralph/ralph-config.yml` |
 | Built-in defaults | Compiled into the binary |
 
+### Config file schema
+
+Config files are YAML. The canonical structure (see `docs/engineering/components/config.md`) is:
+
+- **loop** (optional) — Root loop behavior: `max_iterations`, `failure_threshold`, `timeout_seconds`, `success_signal`, `failure_signal`, `signal_precedence`, `preamble`, `streaming`, `log_level`. Per-prompt overrides go under each prompt’s `loop`.
+- **prompts** (optional) — Map of prompt name to definition: `path` or `content`; optional `display_name`, `description`, and `loop` overrides.
+- **aliases** (optional) — Map of alias name to AI command string (or `{ command: "..." }`). Built-in aliases (e.g. `claude`, `cursor-agent`) are merged; user aliases override built-ins for the same name.
+
+The default AI command for `ralph run` is chosen by: `--ai-cmd` or `--ai-cmd-alias` (or env `RALPH_LOOP_AI_CMD` / `RALPH_LOOP_AI_CMD_ALIAS`); if none is set, Ralph uses the `cursor-agent` alias. There is no `loop.ai_cmd_alias` in the file schema; use CLI or env to select an alias.
+
 ### Example `ralph-config.yml`
 
 ```yaml
 loop:
-  default_max_iterations: 5
+  max_iterations: 5
   failure_threshold: 3
-  iteration_timeout: 300
-  show_ai_output: false
-  ai_cmd_alias: claude
-  signals:
-    success: "<promise>SUCCESS</promise>"
-    failure: "<promise>FAILURE</promise>"
+  timeout_seconds: 300
+  streaming: false
+  success_signal: "<promise>SUCCESS</promise>"
+  failure_signal: "<promise>FAILURE</promise>"
 
-ai_cmd_aliases:
+aliases:
   claude: "claude -p --dangerously-skip-permissions"
   kiro: "kiro-cli chat --no-interactive --trust-all-tools"
   copilot: "copilot --yolo"
@@ -123,22 +131,22 @@ ai_cmd_aliases:
 prompts:
   build:
     path: "./prompts/build.md"
-    name: "Build"
+    display_name: "Build"
     description: "Run the main build loop"
     loop:
-      default_max_iterations: 10
+      max_iterations: 10
       failure_threshold: 5
 
   bootstrap:
     path: "./prompts/bootstrap.md"
-    name: "Bootstrap"
+    display_name: "Bootstrap"
     description: "One-shot project setup"
     loop:
-      default_max_iterations: 1
+      max_iterations: 1
       preamble: false
 ```
 
-Each prompt alias maps a name to a file and can override any loop setting.
+Each prompt entry maps a name to a file (or `content`) and can override any loop setting under its `loop` key.
 
 ## Signals
 
@@ -151,39 +159,70 @@ Ralph scans AI CLI output for configurable signal strings to determine iteration
 
 Your prompt tells the AI what to emit. Ralph's signal config tells the scanner what to look for — use whatever strings your prompt expects.
 
-If both signals appear in the same output, failure wins.
+With default `signal_precedence: static`, if both signals appear in the same output, success is checked first — success wins. See `docs/engineering/components/run-loop.md` for `ai_interpreted` precedence.
 
-## CLI
+## Subcommands
+
+Ralph has five top-level commands: **run**, **review**, **list**, **show**, **version**. Install, uninstall, and upgrade are documented procedures (scripts or package manager), not subcommands.
+
+### ralph run
+
+Run the iteration loop. Prompt source: exactly one of alias, `--file`/`-f` &lt;path&gt;, or stdin. The prompt is read once at loop start and reused for every iteration.
 
 ```
-ralph run <alias> [flags]          Run a prompt by config alias
-ralph run -f <path> [flags]        Run a prompt from a file path
-cat prompt.md | ralph run [flags]  Run a prompt piped via stdin
-ralph list prompts                 List available prompt aliases
-ralph list aliases                 List available AI command aliases
-ralph version                      Show version info
-
-Flags:
-  -f, --file path                 Read prompt from file (no alias required)
-  -n, --max-iterations int        Override max iterations
-  -u, --unlimited                 Run until signal or failure threshold
-      --failure-threshold int     Consecutive failures before abort
-      --iteration-timeout int     Per-iteration timeout in seconds (0 = no timeout)
-      --max-output-buffer int     Max output buffer in bytes
-      --no-preamble               Disable preamble injection
-  -d, --dry-run                   Validate and show assembled prompt
-      --ai-cmd string             Direct AI command string
-      --ai-cmd-alias string       AI command alias
-      --signal-success string     Success signal string
-      --signal-failure string     Failure signal string
-  -c, --context string            Inject context into preamble (repeatable)
-  -v, --verbose                   Stream AI output to terminal
-  -q, --quiet                     Suppress non-error output
-      --log-level string          debug, info, warn, error
-      --config path               Alternate config file path
+ralph run [alias] [flags]          Prompt from config alias
+ralph run -f <path> [flags]        Prompt from file
+cat prompt.md | ralph run [flags]  Prompt from stdin
 ```
 
-The prompt is read once at loop start and reused for every iteration. When no alias or `-f` flag is provided, Ralph reads from stdin.
+Flags (all optional): `-f, --file`, `-n, --max-iterations`, `-u, --unlimited`, `--failure-threshold`, `--iteration-timeout`, `--max-output-buffer`, `--no-preamble`, `-d, --dry-run`, `--ai-cmd`, `--ai-cmd-alias`, `--signal-success`, `--signal-failure`, `--signal-precedence`, `-c, --context` (repeatable), `-v, --verbose`, `-q, --quiet`, `--log-level`, `--stream`, `--no-stream`, `--config`. Use `ralph run --help` for full list.
+
+### ralph review
+
+Review a prompt (alias, file, or stdin). Produces a report (narrative + machine-parseable summary) and a suggested revision; optionally apply the revision with confirmation (or `--yes` in non-interactive mode).
+
+```
+ralph review [alias] [flags]
+ralph review -f <path> [flags]
+cat prompt.md | ralph review [flags]
+```
+
+Flags: `-f, --file`, `--report` (report output path; default `./ralph-review-report.txt`), `--prompt-output` (required when using `--apply` with stdin), `--apply`, `--yes`/`-y` (non-interactive apply), `-v, -q, --quiet`, `--log-level`, `--config`. For CI: use exit code 0/1/2 to gate; or parse the report for a line `ralph-review: status=ok|errors|warnings` (see [docs/exit-codes.md](docs/exit-codes.md) and `docs/engineering/components/review.md`).
+
+### ralph list
+
+List prompts and/or AI command aliases from resolved config. Same config resolution as run (global, workspace, or `--config`).
+
+```
+ralph list [prompts|aliases]       List all, or only prompts or only aliases
+```
+
+### ralph show
+
+Show effective config or detail for a prompt or alias. Same config resolution as run.
+
+```
+ralph show config [flags]          Effective (resolved) config
+ralph show prompt <name>           Detail for prompt <name>
+ralph show alias <name>            Detail for alias <name>
+```
+
+Name is required for `show prompt` and `show alias`. Use `--provenance` with `show config` to see which layer supplied each value.
+
+### ralph version
+
+Print version string to stdout and exit 0. No arguments required.
+
+## Environment variables
+
+- **RALPH_CONFIG_HOME** — Directory for the global config file; actual file is `$RALPH_CONFIG_HOME/ralph-config.yml`. Does not set the explicit config file for the current run; use `--config <path>` for that.
+- **RALPH_LOOP_*** — Override loop settings: `RALPH_LOOP_AI_CMD`, `RALPH_LOOP_AI_CMD_ALIAS`, `RALPH_LOOP_DEFAULT_MAX_ITERATIONS`, `RALPH_LOOP_FAILURE_THRESHOLD`, `RALPH_LOOP_ITERATION_TIMEOUT`, `RALPH_LOOP_LOG_LEVEL`, `RALPH_LOOP_STREAMING`, `RALPH_LOOP_PREAMBLE`, etc. See `docs/engineering/components/config.md` for the full set so that full non-interactive config is possible (e.g. in CI).
+
+## Non-interactive use (scripts and CI)
+
+- **run:** No confirmation prompts; use `--config`, env vars, and flags to drive behavior. Exit codes are stable (see Exit Codes and [docs/exit-codes.md](docs/exit-codes.md)).
+- **review:** Use `--yes` when applying in non-interactive mode so Ralph does not block on confirmation; without `--yes`, Ralph exits 2 with a clear message. For stdin + apply, you must pass `--prompt-output` or Ralph exits 2.
+- Detection of non-interactive context (e.g. no TTY or `CI=true`) is implementation-defined; `--yes` always suppresses confirmation for `--apply`.
 
 ## Exit Codes
 
