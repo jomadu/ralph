@@ -381,9 +381,11 @@ func showCmd() *cobra.Command {
 }
 
 func showConfigCmd() *cobra.Command {
-	return &cobra.Command{
+	var provenance bool
+	c := &cobra.Command{
 		Use:   "config",
 		Short: "Output the effective config for the current context",
+		Long:  "Same config resolution as run. Use --provenance to show which layer supplied each loop value (default, global, workspace, explicit, env).",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
 				return fmt.Errorf("ralph show config: unexpected argument %q", args[0])
@@ -397,10 +399,24 @@ func showConfigCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("config: %w", err)
 			}
-			// Simple YAML-like output for effective config (loop + prompts + aliases).
-			fmt.Printf("loop:\n  max_iterations: %d\n  failure_threshold: %d\n  timeout_seconds: %d\n  success_signal: %q\n  failure_signal: %q\n  log_level: %q\n",
-				eff.Loop.MaxIterations, eff.Loop.FailureThreshold, eff.Loop.TimeoutSeconds,
-				eff.Loop.SuccessSignal, eff.Loop.FailureSignal, eff.Loop.LogLevel)
+			loop := eff.Loop
+			if provenance {
+				rootLoop, prov, err := config.RootLoopWithProvenance(os.Getenv, cwd, configPath)
+				if err != nil {
+					return fmt.Errorf("config: %w", err)
+				}
+				loop = rootLoop
+				// YAML-like output with provenance comments (which layer supplied each value).
+				fmt.Printf("loop:\n  max_iterations: %d  # %s\n  failure_threshold: %d  # %s\n  timeout_seconds: %d  # %s\n  success_signal: %q  # %s\n  failure_signal: %q  # %s\n  signal_precedence: %q  # %s\n  preamble: %q  # %s\n  streaming: %t  # %s\n  log_level: %q  # %s\n",
+					loop.MaxIterations, prov.MaxIterations, loop.FailureThreshold, prov.FailureThreshold, loop.TimeoutSeconds, prov.TimeoutSeconds,
+					loop.SuccessSignal, prov.SuccessSignal, loop.FailureSignal, prov.FailureSignal, loop.SignalPrecedence, prov.SignalPrecedence,
+					loop.Preamble, prov.Preamble, loop.Streaming, prov.Streaming, loop.LogLevel, prov.LogLevel)
+			} else {
+				// Simple YAML-like output for effective config (loop + prompts + aliases).
+				fmt.Printf("loop:\n  max_iterations: %d\n  failure_threshold: %d\n  timeout_seconds: %d\n  success_signal: %q\n  failure_signal: %q\n  signal_precedence: %q\n  preamble: %q\n  streaming: %t\n  log_level: %q\n",
+					loop.MaxIterations, loop.FailureThreshold, loop.TimeoutSeconds,
+					loop.SuccessSignal, loop.FailureSignal, loop.SignalPrecedence, loop.Preamble, loop.Streaming, loop.LogLevel)
+			}
 			if len(eff.Prompts) > 0 {
 				fmt.Println("prompts:")
 				for name, p := range eff.Prompts {
@@ -422,6 +438,8 @@ func showConfigCmd() *cobra.Command {
 			return nil
 		},
 	}
+	c.Flags().BoolVar(&provenance, "provenance", false, "Include which layer supplied each loop value (default, global, workspace, explicit, env)")
+	return c
 }
 
 func showPromptCmd() *cobra.Command {
