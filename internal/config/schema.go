@@ -35,6 +35,12 @@ var validLogLevel = map[string]bool{
 	"error": true,
 }
 
+// ValidLogLevel reports whether s is a valid log level (empty, debug, info, warn, error).
+// Used by CLI to validate --log-level (cli.md: invalid flag values → error and exit non-zero).
+func ValidLogLevel(s string) bool {
+	return validLogLevel[s]
+}
+
 // ValidateFileLayer validates a parsed file layer against the canonical config schema.
 // Reject or error on invalid/out-of-range values (config component spec).
 // Call after ParseLayer when the layer is non-nil.

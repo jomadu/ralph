@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -88,6 +89,11 @@ func runCmd() *cobra.Command {
 		signalFailure    string
 		signalPrecedence string
 		contextStrings   []string
+		verbose          bool
+		quiet            bool
+		logLevel         string
+		stream           bool
+		noStream         bool
 	)
 	cmd := &cobra.Command{
 		Use:   "run [alias]",
@@ -115,6 +121,10 @@ func runCmd() *cobra.Command {
 			}
 			if maxOutputBuffer != -1 && maxOutputBuffer < 0 {
 				fmt.Fprintln(os.Stderr, "ralph run: --max-output-buffer must be >= 0")
+				os.Exit(1)
+			}
+			if logLevel != "" && !config.ValidLogLevel(logLevel) {
+				fmt.Fprintf(os.Stderr, "ralph run: --log-level must be debug, info, warn, or error (got %q)\n", logLevel)
 				os.Exit(1)
 			}
 			opts := review.ResolveOptions{}
@@ -191,7 +201,16 @@ func runCmd() *cobra.Command {
 				signalFailure:    signalFailure,
 				signalPrecedence: signalPrecedence,
 				context:          contextStrings,
+				verbose:          verbose,
+				quiet:            quiet,
+				logLevel:         logLevel,
+				stream:           stream,
+				noStream:         noStream,
 			})
+			streamWriter := io.Writer(io.Discard)
+			if loop.Streaming {
+				streamWriter = os.Stdout
+			}
 			runOpts := runloop.RunOptions{
 				Command:      command,
 				PromptBytes:  promptBytes,
@@ -199,7 +218,7 @@ func runCmd() *cobra.Command {
 				Cwd:          cwd,
 				Env:          os.Environ(),
 				DryRun:       dryRun,
-				StreamWriter: os.Stdout,
+				StreamWriter: streamWriter,
 			}
 			code, err := runloop.Run(runOpts)
 			if err != nil {
@@ -228,6 +247,12 @@ func runCmd() *cobra.Command {
 	cmd.Flags().StringVar(&signalPrecedence, "signal-precedence", "", "When both signals appear: static or ai_interpreted")
 	// Context / preamble
 	cmd.Flags().StringArrayVarP(&contextStrings, "context", "c", nil, "Inline context injected into preamble (repeatable)")
+	// Output and observability (cli.md ralph run)
+	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity (e.g. log level debug and enable streaming)")
+	cmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Minimal output: log level error-only; streaming disabled")
+	cmd.Flags().StringVar(&logLevel, "log-level", "", "Log level: debug, info, warn, error (overrides config and shortcuts)")
+	cmd.Flags().BoolVar(&stream, "stream", false, "Enable streaming of AI output to terminal (still captured for signal scan)")
+	cmd.Flags().BoolVar(&noStream, "no-stream", false, "Disable streaming of AI output to terminal")
 	return cmd
 }
 
@@ -243,6 +268,11 @@ type runLoopOverrides struct {
 	signalFailure    string
 	signalPrecedence string
 	context          []string
+	verbose          bool
+	quiet            bool
+	logLevel         string
+	stream           bool
+	noStream         bool
 }
 
 // applyRunLoopOverrides applies CLI overrides to the effective loop. Only non-zero or set overrides apply.
@@ -282,6 +312,25 @@ func applyRunLoopOverrides(base config.LoopSettings, o runLoopOverrides) config.
 		} else {
 			out.Preamble = contextBlock
 		}
+	}
+	// Output and observability (cli.md: --verbose/-v, --quiet/-q, --log-level, --stream, --no-stream).
+	// Quiet wins for minimal output unless log-level or stream is explicitly set (O004/R006).
+	if o.quiet {
+		out.LogLevel = "error"
+		out.Streaming = false
+	}
+	if o.verbose {
+		out.LogLevel = "debug"
+		out.Streaming = true
+	}
+	if o.logLevel != "" {
+		out.LogLevel = o.logLevel
+	}
+	if o.stream {
+		out.Streaming = true
+	}
+	if o.noStream {
+		out.Streaming = false
 	}
 	// maxOutputBuffer: parsed and validated but run-loop/backend do not yet use it; no field on LoopSettings.
 	_ = o.maxOutputBuffer
