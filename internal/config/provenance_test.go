@@ -66,3 +66,47 @@ func TestRootLoopWithProvenance_explicitFile(t *testing.T) {
 		t.Errorf("provenance = max_iterations=%q log_level=%q, want explicit, explicit", prov.MaxIterations, prov.LogLevel)
 	}
 }
+
+func TestLoopWithProvenance_cliOverlay(t *testing.T) {
+	cwd := t.TempDir()
+	getenv := func(string) string { return "" }
+	// FailureThreshold/IterationTimeout -1 = not set (don't override)
+	cli := &CLIOverlay{MaxIterations: 7, LogLevel: "warn", FailureThreshold: -1, IterationTimeout: -1}
+	loop, prov, err := LoopWithProvenance(getenv, cwd, "", "", cli)
+	if err != nil {
+		t.Fatalf("LoopWithProvenance(cli) err = %v", err)
+	}
+	if loop.MaxIterations != 7 || loop.LogLevel != "warn" {
+		t.Errorf("loop = max_iterations=%d log_level=%q, want 7, warn", loop.MaxIterations, loop.LogLevel)
+	}
+	if prov.MaxIterations != ProvenanceCLI || prov.LogLevel != ProvenanceCLI {
+		t.Errorf("provenance = max_iterations=%q log_level=%q, want cli, cli", prov.MaxIterations, prov.LogLevel)
+	}
+	if prov.FailureThreshold != ProvenanceDefault {
+		t.Errorf("provenance.FailureThreshold = %q, want default (not overridden by cli)", prov.FailureThreshold)
+	}
+}
+
+func TestLoopWithProvenance_promptOverride(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "ralph-config.yml")
+	cfg := "loop:\n  max_iterations: 5\nprompts:\n  p1:\n    path: \"x\"\n    loop:\n      max_iterations: 2\n      log_level: debug\n"
+	if err := os.WriteFile(configPath, []byte(cfg), 0644); err != nil {
+		t.Fatal(err)
+	}
+	getenv := func(string) string { return "" }
+	loop, prov, err := LoopWithProvenance(getenv, dir, configPath, "p1", nil)
+	if err != nil {
+		t.Fatalf("LoopWithProvenance(prompt p1) err = %v", err)
+	}
+	if loop.MaxIterations != 2 || loop.LogLevel != "debug" {
+		t.Errorf("loop = max_iterations=%d log_level=%q, want 2, debug (prompt overrides)", loop.MaxIterations, loop.LogLevel)
+	}
+	if prov.MaxIterations != ProvenancePrompt || prov.LogLevel != ProvenancePrompt {
+		t.Errorf("provenance = max_iterations=%q log_level=%q, want prompt, prompt", prov.MaxIterations, prov.LogLevel)
+	}
+	// Root had max_iterations 5 from explicit file; failure_threshold from default
+	if prov.FailureThreshold != ProvenanceDefault {
+		t.Errorf("provenance.FailureThreshold = %q, want default", prov.FailureThreshold)
+	}
+}

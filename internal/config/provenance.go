@@ -1,9 +1,12 @@
 // Package config: provenance for effective config (which layer supplied each value).
-// Used by ralph show config --provenance (O002/R007, T6.3).
+// Used by ralph show config --provenance (O002/R007, T6.3, T7.3). Layers: default, global, workspace, explicit, env, cli, prompt.
 
 package config
 
-import "path/filepath"
+import (
+	"path/filepath"
+	"strings"
+)
 
 // Layer names for provenance (cli.md: default, global, workspace, explicit file, env, cli, prompt).
 const (
@@ -157,4 +160,125 @@ func applyEnvOverlayWithProvenance(loop LoopSettings, overlay *EnvOverlay, prov 
 		prov.Preamble = ProvenanceEnv
 	}
 	return out, prov
+}
+
+// CLIOverlay holds optional CLI flag overrides for loop settings (T7.3, O002/R007).
+// Used by show config --provenance when run-style flags are passed; only set fields override.
+// Semantics match run: MaxIterations 0 = use config; FailureThreshold/IterationTimeout -1 = not set.
+// Unlimited sets max iterations to a large cap and provenance to cli.
+type CLIOverlay struct {
+	MaxIterations    int    // 0 = use config
+	Unlimited        bool   // overrides MaxIterations when true
+	FailureThreshold int    // -1 = not set
+	IterationTimeout int    // -1 = not set
+	NoPreamble       bool
+	SignalSuccess    string
+	SignalFailure    string
+	SignalPrecedence string
+	Context          []string
+	Verbose          bool
+	Quiet            bool
+	LogLevel         string
+	Stream           bool
+	NoStream         bool
+}
+
+// applyCLIOverlayWithProvenance applies CLI overlay and sets provenance to ProvenanceCLI for overridden fields.
+func applyCLIOverlayWithProvenance(loop LoopSettings, o *CLIOverlay, prov LoopProvenance) (LoopSettings, LoopProvenance) {
+	if o == nil {
+		return loop, prov
+	}
+	out := loop
+	if o.Unlimited {
+		const unlimitedCap = 1<<31 - 1
+		out.MaxIterations = unlimitedCap
+		prov.MaxIterations = ProvenanceCLI
+	} else if o.MaxIterations > 0 {
+		out.MaxIterations = o.MaxIterations
+		prov.MaxIterations = ProvenanceCLI
+	}
+	if o.FailureThreshold >= 0 {
+		out.FailureThreshold = o.FailureThreshold
+		prov.FailureThreshold = ProvenanceCLI
+	}
+	if o.IterationTimeout >= 0 {
+		out.TimeoutSeconds = o.IterationTimeout
+		prov.TimeoutSeconds = ProvenanceCLI
+	}
+	if o.SignalSuccess != "" {
+		out.SuccessSignal = o.SignalSuccess
+		prov.SuccessSignal = ProvenanceCLI
+	}
+	if o.SignalFailure != "" {
+		out.FailureSignal = o.SignalFailure
+		prov.FailureSignal = ProvenanceCLI
+	}
+	if o.SignalPrecedence != "" {
+		out.SignalPrecedence = o.SignalPrecedence
+		prov.SignalPrecedence = ProvenanceCLI
+	}
+	if o.NoPreamble {
+		out.Preamble = ""
+		prov.Preamble = ProvenanceCLI
+	} else if len(o.Context) > 0 {
+		contextBlock := "CONTEXT\n" + strings.Join(o.Context, "\n")
+		if out.Preamble != "" {
+			out.Preamble = out.Preamble + "\n" + contextBlock
+		} else {
+			out.Preamble = contextBlock
+		}
+		prov.Preamble = ProvenanceCLI
+	}
+	if o.Quiet && !o.Verbose {
+		out.LogLevel = "error"
+		out.Streaming = false
+		prov.LogLevel = ProvenanceCLI
+		prov.Streaming = ProvenanceCLI
+	}
+	if o.Verbose {
+		out.LogLevel = "debug"
+		out.Streaming = true
+		prov.LogLevel = ProvenanceCLI
+		prov.Streaming = ProvenanceCLI
+	}
+	if o.LogLevel != "" {
+		out.LogLevel = o.LogLevel
+		prov.LogLevel = ProvenanceCLI
+	}
+	if o.Stream {
+		out.Streaming = true
+		prov.Streaming = ProvenanceCLI
+	}
+	if o.NoStream {
+		out.Streaming = false
+		prov.Streaming = ProvenanceCLI
+	}
+	return out, prov
+}
+
+// LoopWithProvenance returns the effective loop and provenance for the given context, including
+// optional prompt overrides and CLI overlay (T7.3, O002/R007). Order: root (defaults → layers → env)
+// then prompt overrides (if promptName is set and the prompt has loop overrides), then CLI overlay.
+// When promptName is empty or the prompt has no loop section, prompt layer is skipped.
+// When cli is nil, CLI layer is skipped.
+func LoopWithProvenance(getenv func(string) string, cwd, configPath, promptName string, cli *CLIOverlay) (LoopSettings, LoopProvenance, error) {
+	rootLoop, prov, err := RootLoopWithProvenance(getenv, cwd, configPath)
+	if err != nil {
+		return LoopSettings{}, LoopProvenance{}, err
+	}
+	loop := rootLoop
+
+	if promptName != "" {
+		resolved, _, err := loadLayersAndRootLoop(getenv, cwd, configPath)
+		if err != nil {
+			return LoopSettings{}, LoopProvenance{}, err
+		}
+		prompt, ok := resolved.Prompts[promptName]
+		if ok && prompt.Loop != nil {
+			loop = applySectionWithProvenance(loop, prompt.Loop, ProvenancePrompt, &prov)
+		}
+	}
+
+	loop, prov = applyCLIOverlayWithProvenance(loop, cli, prov)
+	return loop, prov, nil
 }

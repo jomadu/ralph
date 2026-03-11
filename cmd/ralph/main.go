@@ -383,11 +383,28 @@ func showCmd() *cobra.Command {
 }
 
 func showConfigCmd() *cobra.Command {
-	var provenance bool
+	var (
+		provenance      bool
+		promptName     string
+		maxIterations  int
+		unlimited      bool
+		failureThresh  int
+		iterTimeout    int
+		noPreamble     bool
+		signalSuccess  string
+		signalFailure  string
+		signalPreced   string
+		contextStrings []string
+		verbose        bool
+		quiet          bool
+		logLevel       string
+		stream         bool
+		noStream       bool
+	)
 	c := &cobra.Command{
 		Use:   "config",
 		Short: "Output the effective config for the current context",
-		Long:  "Same config resolution as run. Use --provenance to show which layer supplied each loop value (default, global, workspace, explicit, env).",
+		Long:  "Same config resolution as run. Use --provenance to show which layer supplied each loop value (default, global, workspace, explicit, env, cli, prompt). Optional --prompt and run-style flags show effective config as for that run.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
 				return fmt.Errorf("ralph show config: unexpected argument %q", args[0])
@@ -397,24 +414,45 @@ func showConfigCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			eff, _, err := config.Resolve(os.Getenv, cwd, configPath, "")
+			eff, ok, err := config.Resolve(os.Getenv, cwd, configPath, promptName)
 			if err != nil {
 				return fmt.Errorf("config: %w", err)
 			}
+			if promptName != "" && !ok {
+				return fmt.Errorf("config: prompt %q not found", promptName)
+			}
 			loop := eff.Loop
 			if provenance {
-				rootLoop, prov, err := config.RootLoopWithProvenance(os.Getenv, cwd, configPath)
+				var cli *config.CLIOverlay
+				if maxIterations > 0 || unlimited || failureThresh >= 0 || iterTimeout >= 0 ||
+					noPreamble || signalSuccess != "" || signalFailure != "" || signalPreced != "" ||
+					len(contextStrings) > 0 || verbose || quiet || logLevel != "" || stream || noStream {
+					cli = &config.CLIOverlay{
+						MaxIterations:    maxIterations,
+						Unlimited:        unlimited,
+						FailureThreshold: failureThresh,
+						IterationTimeout: iterTimeout,
+						NoPreamble:       noPreamble,
+						SignalSuccess:    signalSuccess,
+						SignalFailure:    signalFailure,
+						SignalPrecedence: signalPreced,
+						Context:          contextStrings,
+						Verbose:          verbose,
+						Quiet:            quiet,
+						LogLevel:         logLevel,
+						Stream:           stream,
+						NoStream:         noStream,
+					}
+				}
+				loop, prov, err := config.LoopWithProvenance(os.Getenv, cwd, configPath, promptName, cli)
 				if err != nil {
 					return fmt.Errorf("config: %w", err)
 				}
-				loop = rootLoop
-				// YAML-like output with provenance comments (which layer supplied each value).
 				fmt.Printf("loop:\n  max_iterations: %d  # %s\n  failure_threshold: %d  # %s\n  timeout_seconds: %d  # %s\n  success_signal: %q  # %s\n  failure_signal: %q  # %s\n  signal_precedence: %q  # %s\n  preamble: %q  # %s\n  streaming: %t  # %s\n  log_level: %q  # %s\n",
 					loop.MaxIterations, prov.MaxIterations, loop.FailureThreshold, prov.FailureThreshold, loop.TimeoutSeconds, prov.TimeoutSeconds,
 					loop.SuccessSignal, prov.SuccessSignal, loop.FailureSignal, prov.FailureSignal, loop.SignalPrecedence, prov.SignalPrecedence,
 					loop.Preamble, prov.Preamble, loop.Streaming, prov.Streaming, loop.LogLevel, prov.LogLevel)
 			} else {
-				// Simple YAML-like output for effective config (loop + prompts + aliases).
 				fmt.Printf("loop:\n  max_iterations: %d\n  failure_threshold: %d\n  timeout_seconds: %d\n  success_signal: %q\n  failure_signal: %q\n  signal_precedence: %q\n  preamble: %q\n  streaming: %t\n  log_level: %q\n",
 					loop.MaxIterations, loop.FailureThreshold, loop.TimeoutSeconds,
 					loop.SuccessSignal, loop.FailureSignal, loop.SignalPrecedence, loop.Preamble, loop.Streaming, loop.LogLevel)
@@ -440,7 +478,22 @@ func showConfigCmd() *cobra.Command {
 			return nil
 		},
 	}
-	c.Flags().BoolVar(&provenance, "provenance", false, "Include which layer supplied each loop value (default, global, workspace, explicit, env)")
+	c.Flags().BoolVar(&provenance, "provenance", false, "Include which layer supplied each loop value (default, global, workspace, explicit, env, cli, prompt)")
+	c.Flags().StringVar(&promptName, "prompt", "", "Show effective config for this prompt (includes prompt-level loop overrides)")
+	c.Flags().IntVarP(&maxIterations, "max-iterations", "n", 0, "Override max iterations (for provenance; 0 = use config)")
+	c.Flags().BoolVarP(&unlimited, "unlimited", "u", false, "No iteration cap (for provenance)")
+	c.Flags().IntVar(&failureThresh, "failure-threshold", -1, "Consecutive failures before exit (for provenance; -1 = not set)")
+	c.Flags().IntVar(&iterTimeout, "iteration-timeout", -1, "Per-iteration timeout in seconds (for provenance; -1 = not set)")
+	c.Flags().BoolVar(&noPreamble, "no-preamble", false, "Disable preamble (for provenance)")
+	c.Flags().StringVar(&signalSuccess, "signal-success", "", "Success signal (for provenance)")
+	c.Flags().StringVar(&signalFailure, "signal-failure", "", "Failure signal (for provenance)")
+	c.Flags().StringVar(&signalPreced, "signal-precedence", "", "Signal precedence: static or ai_interpreted (for provenance)")
+	c.Flags().StringArrayVarP(&contextStrings, "context", "c", nil, "Context lines for preamble (for provenance)")
+	c.Flags().BoolVarP(&verbose, "verbose", "v", false, "Verbose / debug log level (for provenance)")
+	c.Flags().BoolVarP(&quiet, "quiet", "q", false, "Quiet / error-only log level (for provenance)")
+	c.Flags().StringVar(&logLevel, "log-level", "", "Log level (for provenance)")
+	c.Flags().BoolVar(&stream, "stream", false, "Enable streaming (for provenance)")
+	c.Flags().BoolVar(&noStream, "no-stream", false, "Disable streaming (for provenance)")
 	return c
 }
 
