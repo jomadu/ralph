@@ -68,6 +68,18 @@ Per O008, a new user can find what Ralph is, why it exists, install steps, and a
 - **First run** — README section "Path to first run" describes one path from "I have Ralph" to a first command that completes successfully: verify PATH, choose prompt source (file, stdin, or alias), run (e.g. `ralph run -f <path> -n 1` or stdin), with minimal prerequisites (AI CLI on PATH) stated.
 - **List and help** — `ralph list` and `ralph run --help` / `ralph --help` expose prompts, aliases, and subcommands; README Quick Start and Subcommands summarize and link to [cli.md](cli.md).
 
+### Troubleshooting (O007/R004)
+
+User-facing docs must help users resolve common problems. The README includes a **Troubleshooting** section that covers at least:
+
+- **Prompt not found / unknown alias** — How prompt source is resolved (alias, file, stdin); using `ralph list` to verify; effect of `--config` and config file locations.
+- **Config file not found** — Behavior when `--config` is used (no fallback); where global and workspace config are read; skipping missing files without error.
+- **Wrong or unexpected exit code** — Reference to exit code semantics (run: 0, 2, 3, 4, 130; review: 0, 1, 2) and how to interpret them; common causes for exit 2 (e.g. missing AI command, stdin + apply without `--prompt-output`).
+- **AI command not found** — AI CLI must be on PATH or specified via `--ai-cmd`; Ralph validates before the loop and exits 2 with a clear error.
+- **ralph: command not found** — PATH must include the install directory; how to verify (e.g. `ralph version`, `~/.config/ralph/install-state`).
+
+Troubleshooting content lives in the README and links to the canonical CLI, config, and exit-code docs so users can resolve issues without leaving the doc set.
+
 ### Consistency with implementation (doc accuracy)
 
 When implementation specs change in a way that affects user or automation contract (e.g. new flag, exit code, config key, or report format), the documentation component is updated so that user docs, procedures, and contract docs remain accurate. Update the engineering spec first (cli.md, config.md, run-loop.md, review.md, etc.), then README and [docs/exit-codes.md](../../exit-codes.md) as needed. Product requirements that reference "documented" behavior are satisfied by this component.

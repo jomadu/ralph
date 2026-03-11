@@ -301,6 +301,18 @@ Exit codes for `ralph run` and `ralph review` are stable for scripts and CI. Ful
 
 When implementation or contract changes (e.g. new flag, config key, or exit code), update the engineering spec and then this README (and exit-codes.md if needed) so docs stay accurate.
 
+## Troubleshooting
+
+Common problems and how to resolve them:
+
+- **Prompt not found / unknown alias** — You must supply exactly one prompt source: an alias (from config), a file path with `-f`/`--file`, or stdin. If you use an alias (e.g. `ralph run build`), that alias must be defined in your resolved config (global, workspace, or `--config`). Check with `ralph list prompts` and `ralph list aliases`; ensure the config file is where Ralph looks (see [Configuration](#configuration) and `RALPH_CONFIG_HOME`). If you pass `--config <path>`, that file must exist and be readable; Ralph does not fall back to global/workspace when `--config` is set.
+- **Config file not found** — When you pass `--config <path>`, Ralph uses only that file. If the path is wrong or the file is missing, Ralph exits with an error (exit 2). Fix the path or omit `--config` to use global/workspace config. Global config is `$RALPH_CONFIG_HOME/ralph-config.yml` (or `~/.config/ralph/ralph-config.yml` if `RALPH_CONFIG_HOME` is unset); workspace config is `./ralph-config.yml` in the current directory. Missing global or workspace files are skipped without error.
+- **Wrong or unexpected exit code** — Exit codes are stable and documented in [Exit Codes](#exit-codes) and [docs/exit-codes.md](docs/exit-codes.md). **ralph run:** 0 = success signal; 2 = error before loop (e.g. missing AI command); 3 = max iterations; 4 = failure threshold; 130 = interrupted. **ralph review:** 0 = no prompt errors; 1 = prompt has errors; 2 = invocation/apply error. If you get 2, check the error message (e.g. AI command not on PATH, invalid config, or for review: stdin + `--apply` without `--prompt-output`, or non-interactive apply without `--yes`). If you get 3 or 4 on run, the loop ended without seeing the success signal — check your prompt’s success/failure signals and that the AI actually emits them.
+- **AI command not found / exit 2 before loop** — Ralph resolves the AI command from config or `--ai-cmd`/`--ai-cmd-alias` and checks that the executable exists (e.g. on PATH) before starting the loop. Install your AI CLI (e.g. Cursor agent, Claude CLI) and ensure it is on your PATH, or set `--ai-cmd` to the full path. Use `ralph list aliases` to see resolved aliases.
+- **ralph: command not found** — The `ralph` binary is not on your PATH. After install, add the install directory (e.g. `~/bin` or the value in `~/.config/ralph/install-state`) to your PATH. Verify with `ralph version`.
+
+For more detail on config resolution, exit codes, and CLI behavior, see [Where to look (CLI, config, env, exit codes)](#where-to-look-cli-config-env-exit-codes).
+
 ## License
 
 GPL-3.0. See [LICENSE](LICENSE).
