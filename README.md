@@ -116,7 +116,7 @@ To upgrade or update an existing install:
 
 - **Backward compatibility** — Config and prompt files that worked in an older patch/minor (same major) keep working after update. Documented commands, options, and exit codes remain valid across non-breaking upgrades. Breaking contract or config changes are documented in release notes with migration steps; major version bumps may introduce breaking changes as documented.
 
-**Release notes and stable contract:** For each release, behavior changes and deprecations that affect config or scripts are described in the release notes (e.g. GitHub Releases). See [docs/exit-codes.md](docs/exit-codes.md) for the stable exit-code contract; when that contract or config schema changes, release notes explain the change and how to adapt.
+**Release notes and stable contract:** For each release, behavior changes and deprecations that affect config or scripts are described in the release notes (e.g. [GitHub Releases](https://github.com/maxdunn/ralph/releases)). See [docs/exit-codes.md](docs/exit-codes.md) for the stable exit-code contract and [docs/release-notes.md](docs/release-notes.md) for where to find release notes and what constitutes the stable contract (exit codes, review summary format, config). When that contract or config schema changes, release notes explain the change and how to adapt.
 
 ## How It Works
 
@@ -297,7 +297,7 @@ Exit codes for `ralph run` and `ralph review` are stable for scripts and CI. Ful
 - **Config file and layers** — Schema, layer order, and env overlay: [docs/engineering/components/config.md](docs/engineering/components/config.md). README summarizes in Configuration and Example.
 - **Environment variables** — `RALPH_CONFIG_HOME` and `RALPH_LOOP_*` are listed in [docs/engineering/components/config.md](docs/engineering/components/config.md) (Environment variables). README lists them in Environment variables.
 - **Exit codes** — Stable contract for run and review: [docs/exit-codes.md](docs/exit-codes.md). README summarizes in Exit Codes.
-- **Upgrade and release notes** — Upgrade and backward-compatibility procedure is in this README (Install and Uninstall → Upgrade). Release notes (e.g. GitHub Releases) describe behavior changes and deprecations; see [Release notes and stable contract](#release-notes-and-stable-contract) above.
+- **Release notes and stable contract** — Where to find release notes and what scripts/CI can rely on: [docs/release-notes.md](docs/release-notes.md). Upgrade and backward-compatibility procedure is in this README (Install and Uninstall → Upgrade); see [Release notes and stable contract](#release-notes-and-stable-contract) above.
 
 When implementation or contract changes (e.g. new flag, config key, or exit code), update the engineering spec and then this README (and exit-codes.md if needed) so docs stay accurate.
 

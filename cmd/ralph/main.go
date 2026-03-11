@@ -384,7 +384,7 @@ func showCmd() *cobra.Command {
 
 func showConfigCmd() *cobra.Command {
 	var (
-		provenance      bool
+		provenance     bool
 		promptName     string
 		maxIterations  int
 		unlimited      bool

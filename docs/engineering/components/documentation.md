@@ -38,6 +38,11 @@ Documentation must cover at least:
 - Exit codes: run (success, failure threshold, max iterations, interrupt, error) and review (0, 1, 2) with exact values and semantics so automation can gate reliably. The canonical user and automation doc is [docs/exit-codes.md](../../exit-codes.md); README summarizes and links to it.
 - Non-interactive use: flags and environment so CI/scripts can run without prompts; behavior when confirmation would be required in non-interactive mode.
 
+### Release notes and stable contract
+
+- **Release notes** — Published for each release (e.g. [GitHub Releases](https://github.com/maxdunn/ralph/releases)); semantic-release creates releases on push to main/rc/alpha/beta. Each release describes intentional behavior changes, deprecations, and changes that affect config or scripts so users can adapt. The location and expectations are documented in [docs/release-notes.md](../../release-notes.md); README links to it.
+- **Stable contract** — Documented in one place for scripts and CI: [docs/release-notes.md](../../release-notes.md) summarizes the contract (exit codes, review summary format, config, non-interactive use) and links to canonical specs ([docs/exit-codes.md](../../exit-codes.md), [review.md](review.md), [config.md](config.md)). When the contract changes, release notes for that release explain the change and migration.
+
 ### Procedures (install, uninstall, upgrade)
 
 - **Install** — Document where the binary is installed, how to add it to PATH if needed, and how to verify (`ralph version`). Any install script or package (e.g. Homebrew, npm, direct binary) must be documented so users can install and invoke Ralph. The repository provides `scripts/install.sh`: installs from GitHub release artifacts to a configurable directory (default `~/bin`), records the install path in `~/.config/ralph/install-state` for uninstall, and does not modify PATH or create symlinks; the user adds the install directory to PATH. README documents install steps, version selection, and verification.

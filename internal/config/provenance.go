@@ -167,10 +167,10 @@ func applyEnvOverlayWithProvenance(loop LoopSettings, overlay *EnvOverlay, prov 
 // Semantics match run: MaxIterations 0 = use config; FailureThreshold/IterationTimeout -1 = not set.
 // Unlimited sets max iterations to a large cap and provenance to cli.
 type CLIOverlay struct {
-	MaxIterations    int    // 0 = use config
-	Unlimited        bool   // overrides MaxIterations when true
-	FailureThreshold int    // -1 = not set
-	IterationTimeout int    // -1 = not set
+	MaxIterations    int  // 0 = use config
+	Unlimited        bool // overrides MaxIterations when true
+	FailureThreshold int  // -1 = not set
+	IterationTimeout int  // -1 = not set
 	NoPreamble       bool
 	SignalSuccess    string
 	SignalFailure    string
