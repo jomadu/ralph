@@ -612,13 +612,15 @@ func reviewCmd() *cobra.Command {
 				Quiet:            quiet,
 				LogLevel:         logLevel,
 			}
-			if err := review.Run(content, runOpts); err != nil {
+			code, err := review.Run(content, runOpts)
+			if err != nil {
 				if review.IsExit2(err) {
 					fmt.Fprintln(os.Stderr, err)
 					os.Exit(2)
 				}
 				return err
 			}
+			os.Exit(code)
 			return nil
 		},
 	}

@@ -42,35 +42,42 @@ type RunOptions struct {
 // T5.2: produces report file with narrative, machine-parseable summary line, and full suggested revision.
 // T5.3: when ReportPath is empty, writes to WorkingDir/DefaultReportFilename (or current directory if WorkingDir empty).
 // T5.4: when Apply is true, writes revision to chosen path; interactive confirm before overwrite unless --yes; non-interactive without --yes exits 2.
-// Report path must not be an existing directory (error exit 2). Callers should check review.IsExit2(err) and exit 2 when true.
-func Run(promptContent []byte, opts RunOptions) error {
+// T5.5: after report is written, parses machine-parseable summary to derive exit code 0 vs 1; returns that code on success. Report write failure or apply/precondition → error (caller exits 2).
+// Report path must not be an existing directory (error exit 2). Callers should check review.IsExit2(err) and exit 2 when true; on nil error, exit with the returned code (0 or 1).
+func Run(promptContent []byte, opts RunOptions) (exitCode int, err error) {
 	reportPath := opts.ReportPath
 	if reportPath == "" {
 		dir := opts.WorkingDir
 		if dir == "" {
-			var err error
-			dir, err = os.Getwd()
-			if err != nil {
-				return fmt.Errorf("%w: resolving working dir for default report: %v", ErrExit2, err)
+			var e error
+			dir, e = os.Getwd()
+			if e != nil {
+				return 0, fmt.Errorf("%w: resolving working dir for default report: %v", ErrExit2, e)
 			}
 		}
 		reportPath = filepath.Join(dir, DefaultReportFilename)
 	}
 	// R005: path is a directory → error
-	if fi, err := os.Stat(reportPath); err == nil && fi.IsDir() {
-		return fmt.Errorf("%w: report path is a directory: %s", ErrExit2, reportPath)
+	if fi, e := os.Stat(reportPath); e == nil && fi.IsDir() {
+		return 0, fmt.Errorf("%w: report path is a directory: %s", ErrExit2, reportPath)
 	}
 	report := GenerateReport(promptContent)
 	body := report.String()
-	if err := os.WriteFile(reportPath, []byte(body), 0644); err != nil {
-		return fmt.Errorf("%w: writing report: %v", ErrExit2, err)
+	if e := os.WriteFile(reportPath, []byte(body), 0644); e != nil {
+		return 0, fmt.Errorf("%w: writing report: %v", ErrExit2, e)
 	}
 	if opts.Apply {
-		if err := applyRevision(report.Revision, opts); err != nil {
-			return err
+		if e := applyRevision(report.Revision, opts); e != nil {
+			return 0, e
 		}
 	}
-	return nil
+	// T5.5: parse written report body to derive exit code 0 vs 1 (O005/R008, O010/R003).
+	status, errorsCount, _, ok := ParseSummaryFromReport([]byte(body))
+	if !ok {
+		// Missing or malformed summary → 1 (fail-safe for CI).
+		return 1, nil
+	}
+	return ExitCodeFromSummary(status, errorsCount), nil
 }
 
 // applyRevision writes the revision to the chosen path with confirmation when overwriting (O005/R004, O009/R001, O009/R003).

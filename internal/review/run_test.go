@@ -11,7 +11,7 @@ import (
 func TestRun_defaultReportPath(t *testing.T) {
 	dir := t.TempDir()
 	prompt := []byte("# prompt")
-	err := Run(prompt, RunOptions{WorkingDir: dir})
+	_, err := Run(prompt, RunOptions{WorkingDir: dir})
 	if err != nil {
 		t.Fatalf("Run(empty ReportPath, WorkingDir set) err = %v", err)
 	}
@@ -27,7 +27,7 @@ func TestRun_defaultReportPath(t *testing.T) {
 
 func TestRun_reportPathIsDirectory(t *testing.T) {
 	dir := t.TempDir()
-	err := Run([]byte("x"), RunOptions{ReportPath: dir})
+	_, err := Run([]byte("x"), RunOptions{ReportPath: dir})
 	if err == nil {
 		t.Fatal("Run(report path = dir) err = nil, want error")
 	}
@@ -40,7 +40,7 @@ func TestRun_writesReportFile(t *testing.T) {
 	dir := t.TempDir()
 	reportPath := filepath.Join(dir, "report.txt")
 	prompt := []byte("# My prompt\nDo the thing.")
-	err := Run(prompt, RunOptions{ReportPath: reportPath})
+	_, err := Run(prompt, RunOptions{ReportPath: reportPath})
 	if err != nil {
 		t.Fatalf("Run err = %v", err)
 	}
@@ -71,7 +71,7 @@ func TestRun_apply_writesNewFile(t *testing.T) {
 		Apply:            true,
 		Yes:              true,
 	}
-	err := Run([]byte("original"), opts)
+	_, err := Run([]byte("original"), opts)
 	if err != nil {
 		t.Fatalf("Run(apply to new file) err = %v", err)
 	}
@@ -99,7 +99,7 @@ func TestRun_apply_overwriteWithYes(t *testing.T) {
 		Apply:            true,
 		Yes:              true,
 	}
-	err := Run([]byte("new content"), opts)
+	_, err := Run([]byte("new content"), opts)
 	if err != nil {
 		t.Fatalf("Run(apply overwrite with Yes) err = %v", err)
 	}
@@ -128,7 +128,7 @@ func TestRun_apply_overwriteNonInteractiveWithoutYes_exit2(t *testing.T) {
 		Yes:              false,
 		NonInteractive:   true,
 	}
-	err := Run([]byte("new"), opts)
+	_, err := Run([]byte("new"), opts)
 	if err == nil {
 		t.Fatal("Run(apply overwrite, non-interactive, no Yes) err = nil, want ErrApplyConfirmationRequired")
 	}
@@ -150,7 +150,7 @@ func TestRun_apply_requiresPromptOutputWhenNoSource(t *testing.T) {
 		WorkingDir:       dir,
 		Apply:            true,
 	}
-	err := Run([]byte("x"), opts)
+	_, err := Run([]byte("x"), opts)
 	if err == nil {
 		t.Fatal("Run(apply, no prompt-output, no source) err = nil, want error")
 	}
