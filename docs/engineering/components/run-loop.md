@@ -38,11 +38,13 @@ Implements the requirements assigned to this component in the [engineering READM
 
 The run-loop is the authority for run exit codes. User and automation documentation must document the exact values. Semantics:
 
-- **Success** — Success signal detected; completion message, iteration count, timing; documented success code (e.g. 0).
-- **Failure threshold** — Consecutive failures reached; report and documented failure-threshold code.
-- **Max iterations** — Iteration limit reached without success; report and documented max-iterations code.
-- **Interrupt** — User interrupted (e.g. SIGINT); distinct documented code.
-- **Error (pre-loop)** — Invalid or missing AI command, invalid config, or prompt source error; clear error message and documented error code.
+| Outcome | Exit code | When |
+|---------|-----------|------|
+| **Success** | 0 | Success signal detected; completion message, iteration count, timing. |
+| **Error (pre-loop)** | 2 | Invalid or missing AI command, invalid config, or prompt source error; clear error message before loop starts (O001/R001, O004/R001). |
+| **Failure threshold** | (TBD) | Consecutive failures reached; report and exit. |
+| **Max iterations** | (TBD) | Iteration limit reached without success; report and exit. |
+| **Interrupt** | (TBD) | User interrupted (e.g. SIGINT); distinct code. |
 
 ### Signal detection
 
