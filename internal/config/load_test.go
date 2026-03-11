@@ -125,3 +125,46 @@ func TestLoadExplicit_valid(t *testing.T) {
 		t.Errorf("LoadExplicit(valid) layer = %+v", layer)
 	}
 }
+
+func TestResolveEffective_noConfig_envOverlay(t *testing.T) {
+	dir := t.TempDir()
+	getenv := func(k string) string {
+		switch k {
+		case "RALPH_CONFIG_HOME":
+			return dir
+		case "RALPH_LOOP_DEFAULT_MAX_ITERATIONS":
+			return "5"
+		case "RALPH_LOOP_LOG_LEVEL":
+			return "warn"
+		default:
+			return ""
+		}
+	}
+	eff, err := ResolveEffective(getenv, dir, "")
+	if err != nil {
+		t.Fatalf("ResolveEffective() err = %v", err)
+	}
+	if eff.Loop.MaxIterations != 5 {
+		t.Errorf("MaxIterations = %d, want 5 (from env)", eff.Loop.MaxIterations)
+	}
+	if eff.Loop.LogLevel != "warn" {
+		t.Errorf("LogLevel = %q, want warn (from env)", eff.Loop.LogLevel)
+	}
+}
+
+func TestResolveEffective_invalidEnv_clearError(t *testing.T) {
+	dir := t.TempDir()
+	getenv := func(k string) string {
+		if k == "RALPH_LOOP_DEFAULT_MAX_ITERATIONS" {
+			return "not-a-number"
+		}
+		return ""
+	}
+	_, err := ResolveEffective(getenv, dir, "")
+	if err == nil {
+		t.Fatal("ResolveEffective(invalid env) err = nil, want error")
+	}
+	if err.Error() == "" {
+		t.Error("error message should be non-empty and mention the variable")
+	}
+}

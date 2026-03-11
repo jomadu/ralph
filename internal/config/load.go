@@ -1,5 +1,7 @@
 package config
 
+import "path/filepath"
+
 // LoadGlobalAndWorkspace loads the global and workspace config file layers.
 // getenv is typically os.Getenv; cwd is the current working directory.
 // Missing files are skipped without error (returns nil for that layer).
@@ -25,4 +27,40 @@ func LoadGlobalAndWorkspace(getenv func(string) string, cwd string) (global, wor
 // relative to the current working directory or absolute.
 func LoadExplicit(path string) (*FileLayer, error) {
 	return ReadLayerRequired(path)
+}
+
+// ResolveEffective loads config (explicit path or global+workspace), applies
+// RALPH_LOOP_* environment overlay, and returns the effective config.
+// RALPH_CONFIG_HOME is used when resolving global path (see GlobalPath).
+// Invalid env values (e.g. non-integer RALPH_LOOP_DEFAULT_MAX_ITERATIONS) produce
+// a clear error (O010/R004). getenv is typically os.Getenv.
+// When configPath is non-empty, only that file is used for file-based config.
+func ResolveEffective(getenv func(string) string, cwd, configPath string) (*Effective, error) {
+	var resolved *Resolved
+	var rootLoop LoopSettings
+	if configPath != "" {
+		path := configPath
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(cwd, path)
+		}
+		layer, err := LoadExplicit(path)
+		if err != nil {
+			return nil, err
+		}
+		resolved = MergeLayers(nil, layer)
+		rootLoop = MergeRootLoop(nil, layer)
+	} else {
+		global, workspace, err := LoadGlobalAndWorkspace(getenv, cwd)
+		if err != nil {
+			return nil, err
+		}
+		resolved = MergeLayers(global, workspace)
+		rootLoop = MergeRootLoop(global, workspace)
+	}
+	overlay, err := ParseEnvOverlay(getenv)
+	if err != nil {
+		return nil, err
+	}
+	rootLoop = ApplyEnvOverlayToLoop(rootLoop, overlay)
+	return RootEffective(resolved, rootLoop), nil
 }

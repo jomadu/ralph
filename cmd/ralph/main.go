@@ -234,29 +234,19 @@ func listAliasesCmd() *cobra.Command {
 	}
 }
 
-// resolveConfigForList loads config the same way as review: --config explicit path, or global + workspace.
+// resolveConfigForList loads config (--config or global+workspace), applies
+// RALPH_LOOP_* env overlay so invalid values produce clear error (T1.5, O010/R004).
 func resolveConfigForList(cmd *cobra.Command) (*config.Resolved, error) {
 	configPath, _ := cmd.Root().PersistentFlags().GetString("config")
 	cwd, err := os.Getwd()
 	if err != nil {
 		return nil, err
 	}
-	if configPath != "" {
-		path := configPath
-		if !filepath.IsAbs(path) {
-			path = filepath.Join(cwd, path)
-		}
-		layer, err := config.LoadExplicit(path)
-		if err != nil {
-			return nil, fmt.Errorf("config: %w", err)
-		}
-		return config.MergeLayers(nil, layer), nil
-	}
-	global, workspace, err := config.LoadGlobalAndWorkspace(os.Getenv, cwd)
+	eff, err := config.ResolveEffective(os.Getenv, cwd, configPath)
 	if err != nil {
 		return nil, fmt.Errorf("config: %w", err)
 	}
-	return config.MergeLayers(global, workspace), nil
+	return config.ResolvedWithBuiltins(&config.Resolved{Prompts: eff.Prompts, Aliases: eff.Aliases}), nil
 }
 
 func printPrompts(prompts map[string]config.Prompt) {
