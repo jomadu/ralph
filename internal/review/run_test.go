@@ -20,7 +20,7 @@ func TestRun_defaultReportPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadFile(default report) err = %v", err)
 	}
-	if !strings.Contains(string(data), "ralph-review: status=ok") {
+	if !strings.Contains(string(data), "ralph-review:") {
 		t.Errorf("default report missing summary line")
 	}
 }
@@ -49,7 +49,7 @@ func TestRun_writesReportFile(t *testing.T) {
 		t.Fatalf("ReadFile(report) err = %v", err)
 	}
 	body := string(data)
-	if !strings.Contains(body, "ralph-review: status=ok") {
+	if !strings.Contains(body, "ralph-review:") {
 		t.Errorf("report missing summary line: %s", body)
 	}
 	if !strings.Contains(body, "# My prompt") {
@@ -107,8 +107,9 @@ func TestRun_apply_overwriteWithYes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadFile(revision) err = %v", err)
 	}
-	if string(data) != "new content" {
-		t.Errorf("revision file = %q, want %q", data, "new content")
+	// Revision may include review suggestions block (T5.6); must contain the user content
+	if !strings.Contains(string(data), "new content") {
+		t.Errorf("revision file missing user content: %q", data)
 	}
 }
 

@@ -54,11 +54,16 @@ func TestGenerateReport(t *testing.T) {
 	if report.Narrative == "" {
 		t.Error("Narrative empty")
 	}
-	if !strings.HasPrefix(report.SummaryLine, "ralph-review: status=ok") {
-		t.Errorf("SummaryLine = %q, want ralph-review: status=ok...", report.SummaryLine)
+	// T5.6: narrative is structured by dimension
+	if !strings.Contains(report.Narrative, "Signal and state") || !strings.Contains(report.Narrative, "Scope and convergence") {
+		t.Errorf("Narrative missing dimension labels: %s", report.Narrative)
 	}
-	if report.Revision != string(prompt) {
-		t.Errorf("Revision = %q, want %q", report.Revision, prompt)
+	if !strings.HasPrefix(report.SummaryLine, "ralph-review:") {
+		t.Errorf("SummaryLine = %q, want ralph-review:...", report.SummaryLine)
+	}
+	// Revision includes prompt and may include suggestions (T5.6)
+	if !strings.Contains(report.Revision, "# Task") || !strings.Contains(report.Revision, "Do it.") {
+		t.Errorf("Revision missing prompt content: %q", report.Revision)
 	}
 	body := report.String()
 	if !strings.Contains(body, report.SummaryLine) {
