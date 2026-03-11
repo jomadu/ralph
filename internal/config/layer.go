@@ -120,14 +120,18 @@ func ReadLayerRequired(path string) (*FileLayer, error) {
 	return ParseLayer(data)
 }
 
-// ParseLayer parses YAML bytes into a FileLayer. If data is nil or empty,
-// returns (nil, nil).
+// ParseLayer parses YAML bytes into a FileLayer and validates against the
+// canonical schema. If data is nil or empty, returns (nil, nil). Invalid or
+// out-of-range values produce a clear error (config component Config file structure).
 func ParseLayer(data []byte) (*FileLayer, error) {
 	if len(data) == 0 {
 		return nil, nil
 	}
 	var layer FileLayer
 	if err := yaml.Unmarshal(data, &layer); err != nil {
+		return nil, err
+	}
+	if err := ValidateFileLayer(&layer); err != nil {
 		return nil, err
 	}
 	return &layer, nil
