@@ -38,6 +38,24 @@ Implements the requirements assigned to this component in the [engineering READM
 6. **Prompt-level overrides** — In config files, each prompt can specify its own loop settings; those apply when running or listing that prompt and override root loop settings; env and CLI still override for that run.
 7. **Command-line options** — Override all other layers for that run.
 
+### Built-in defaults
+
+When no config file is present or a setting is omitted from all layers, the following built-in values apply so the tool works without a config file (O002/R001, R002). Implementation: `internal/config/defaults.go`.
+
+| Setting | Default |
+|--------|--------|
+| max_iterations | 10 |
+| failure_threshold | 3 |
+| timeout_seconds | 0 (no per-iteration timeout) |
+| success_signal | `<promise>SUCCESS</promise>` |
+| failure_signal | `<promise>FAILURE</promise>` |
+| signal_precedence | `static` |
+| preamble | (empty; no preamble injection) |
+| streaming | true |
+| log_level | `info` |
+
+Built-in AI command aliases (e.g. `claude`, `kiro`, `copilot`, `cursor-agent`) are defined in the config package and merged with user-defined aliases; user aliases override built-ins for the same name.
+
 ### Config file structure (canonical schema)
 
 Config files are YAML. The following structure is the authoritative shape implementers must support. Unknown keys may be ignored or rejected per implementation policy; the listed keys are required for product behavior.
@@ -45,7 +63,7 @@ Config files are YAML. The following structure is the authoritative shape implem
 **Root-level keys**
 
 - **loop** (object, optional) — Root loop behavior. All keys below can appear here and can be overridden per prompt.
-  - **max_iterations** (integer, optional) — Maximum iterations before exit. Default documented; 0 or absent may mean "use product default."
+  - **max_iterations** (integer, optional) — Maximum iterations before exit. See [Built-in defaults](#built-in-defaults); 0 or absent = use default.
   - **failure_threshold** (integer, optional) — Consecutive failures before exit.
   - **timeout_seconds** (integer, optional) — Per-iteration timeout; 0 or absent = no timeout.
   - **success_signal** (string, optional) — Substring or pattern that indicates success in AI output.
