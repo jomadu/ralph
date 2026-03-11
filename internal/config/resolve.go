@@ -138,3 +138,26 @@ func RootEffective(resolved *Resolved, rootLoop LoopSettings) *Effective {
 	}
 	return &Effective{Loop: loop, Prompts: prompts, Aliases: aliases}
 }
+
+// ResolveAICommand resolves the AI command string from effective config and optional
+// overrides. Used by run-loop and review so the backend receives the resolved command
+// (T2.3, O002/R004). Precedence: directCmd (if non-empty) > aliasName (looked up in
+// eff.Aliases). Returns the command string and true, or empty string and false if
+// alias name is missing or unknown. eff must include built-in aliases (e.g. from
+// EffectiveWithBuiltins).
+func ResolveAICommand(eff *Effective, directCmd, aliasName string) (command string, ok bool) {
+	if eff == nil {
+		return "", false
+	}
+	if directCmd != "" {
+		return directCmd, true
+	}
+	if aliasName == "" {
+		return "", false
+	}
+	a, ok := eff.Aliases[aliasName]
+	if !ok || a.Command == "" {
+		return "", false
+	}
+	return a.Command, true
+}

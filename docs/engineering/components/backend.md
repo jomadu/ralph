@@ -32,7 +32,7 @@ Implements the requirements assigned to this component in the [engineering READM
 
 ### Built-in AI command aliases
 
-Ralph ships with the following AI command aliases (see `internal/config/aliases.go`). Users can select one via config or CLI (e.g. `loop.ai_cmd_alias` or `--ai-cmd-alias`). User-defined aliases in config override a built-in alias with the same name.
+Ralph ships with the following AI command aliases (see `internal/config/resolve.go`). Users can select one via config or CLI (e.g. `loop.ai_cmd_alias` or `--ai-cmd-alias`). User-defined aliases in config override a built-in alias with the same name.
 
 | Alias | Command |
 |-------|---------|
