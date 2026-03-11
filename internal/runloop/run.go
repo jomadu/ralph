@@ -21,6 +21,9 @@ type RunOptions struct {
 	Cwd         string
 	Env         []string
 	Invoker     backend.Invoker
+	// DryRun when true: assemble prompt (with preamble if enabled), print to stdout, exit 0.
+	// No backend invocation (T3.10, O004/R007).
+	DryRun bool
 	// Reporter receives completion message on success; nil = print to os.Stdout.
 	Reporter func(msg string)
 	// InterruptContext if non-nil is used for interrupt detection (e.g. in tests);
@@ -52,12 +55,22 @@ func Run(opts RunOptions) (exitCode int, err error) {
 	if opts.Invoker == nil {
 		opts.Invoker = invokerAdapter(backend.Invoke)
 	}
-	if err := ValidateAICommand(opts.Command); err != nil {
-		return ExitErrorPreLoop, err
-	}
 	report := opts.Reporter
 	if report == nil {
 		report = func(msg string) { fmt.Fprintln(os.Stdout, msg) }
+	}
+
+	// Dry-run: assemble prompt (with preamble if enabled), print to stdout, exit 0. No backend (T3.10, O004/R007).
+	if opts.DryRun {
+		preamble := buildPreamble(opts.Loop.Preamble, 1)
+		assembled := AssemblePrompt(preamble, opts.PromptBytes)
+		os.Stdout.Write(assembled)
+		report("Dry-run: assembled prompt printed; no run was performed.")
+		return ExitSuccess, nil
+	}
+
+	if err := ValidateAICommand(opts.Command); err != nil {
+		return ExitErrorPreLoop, err
 	}
 
 	// Interrupt: use optional context (e.g. for tests) or os.Interrupt (O004/R005).

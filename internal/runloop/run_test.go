@@ -2,6 +2,8 @@ package runloop
 
 import (
 	"context"
+	"io"
+	"os"
 	"strings"
 	"testing"
 
@@ -109,6 +111,51 @@ func TestRun_InvalidCommand(t *testing.T) {
 	}
 	if code != ExitErrorPreLoop {
 		t.Errorf("exit code = %d, want %d (ExitErrorPreLoop)", code, ExitErrorPreLoop)
+	}
+}
+
+func TestRun_DryRun_PrintsAssembledPromptAndExitsZero(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.Preamble = "You are helpful."
+	callCount := 0
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+		callCount++
+		return nil, 0, nil
+	}
+	var reported string
+	// Capture stdout for dry-run output
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldStdout := os.Stdout
+	os.Stdout = w
+	defer func() { os.Stdout = oldStdout }()
+
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("actual prompt content"),
+		Loop:        loop,
+		DryRun:      true,
+		Invoker:     invokerAdapter(invoker),
+		Reporter:    func(msg string) { reported = msg },
+	})
+	w.Close()
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitSuccess {
+		t.Errorf("exit code = %d, want %d (ExitSuccess)", code, ExitSuccess)
+	}
+	if callCount != 0 {
+		t.Errorf("dry-run must not invoke backend; invoker was called %d times", callCount)
+	}
+	out, _ := io.ReadAll(r)
+	if !strings.Contains(string(out), "Iteration 1") || !strings.Contains(string(out), "You are helpful.") || !strings.Contains(string(out), "actual prompt content") {
+		t.Errorf("dry-run stdout = %q; expected preamble + prompt content", out)
+	}
+	if !strings.Contains(reported, "Dry-run") || !strings.Contains(reported, "no run was performed") {
+		t.Errorf("reported = %q", reported)
 	}
 }
 
