@@ -70,3 +70,47 @@ func ResolvedWithBuiltins(r *Resolved) *Resolved {
 	}
 	return out
 }
+
+// EffectiveForPrompt builds an Effective config for a named prompt with merge order:
+// defaults → global → workspace → explicit file → env → prompt overrides (CLI in Phase 4).
+// rootLoop must already be MergeRootLoop(global, workspace) then ApplyEnvOverlayToLoop(_, env).
+// If promptName is empty or not found, returns nil, false. Otherwise returns a copy of
+// resolved with Effective.Loop set to the prompt's effective loop (root + prompt overrides).
+func EffectiveForPrompt(resolved *Resolved, promptName string, rootLoop LoopSettings) (*Effective, bool) {
+	if resolved == nil || promptName == "" {
+		return nil, false
+	}
+	prompt, ok := resolved.Prompts[promptName]
+	if !ok {
+		return nil, false
+	}
+	loop := EffectiveLoopForPrompt(rootLoop, &prompt)
+	// Copy maps so caller cannot mutate resolved
+	prompts := make(map[string]Prompt)
+	for k, v := range resolved.Prompts {
+		prompts[k] = v
+	}
+	aliases := make(map[string]Alias)
+	for k, v := range resolved.Aliases {
+		aliases[k] = v
+	}
+	return &Effective{Loop: loop, Prompts: prompts, Aliases: aliases}, true
+}
+
+// RootEffective builds an Effective with no prompt selected: root loop (defaults → layers → env),
+// and merged prompts/aliases from resolved. rootLoop must already have env applied if desired.
+func RootEffective(resolved *Resolved, rootLoop LoopSettings) *Effective {
+	if resolved == nil {
+		return nil
+	}
+	loop := rootLoop
+	prompts := make(map[string]Prompt)
+	for k, v := range resolved.Prompts {
+		prompts[k] = v
+	}
+	aliases := make(map[string]Alias)
+	for k, v := range resolved.Aliases {
+		aliases[k] = v
+	}
+	return &Effective{Loop: loop, Prompts: prompts, Aliases: aliases}
+}
