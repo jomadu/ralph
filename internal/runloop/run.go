@@ -3,6 +3,7 @@ package runloop
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"strconv"
@@ -26,17 +27,43 @@ type RunOptions struct {
 	DryRun bool
 	// Reporter receives completion message on success; nil = print to os.Stdout.
 	Reporter func(msg string)
+	// StreamWriter when non-nil and Loop.Streaming is true, AI stdout is streamed here (O004/R006).
+	StreamWriter io.Writer
 	// InterruptContext if non-nil is used for interrupt detection (e.g. in tests);
 	// when it is cancelled, Run returns ExitInterrupt. If nil, Run uses
 	// signal.NotifyContext(background, os.Interrupt).
 	InterruptContext context.Context
 }
 
-// invokerAdapter adapts a package-level Invoke function to backend.Invoker.
-type invokerAdapter func(command string, promptBytes []byte, cwd string, env []string, timeoutSec int) (stdout []byte, exitCode int, err error)
+// invokerAdapter adapts a function with optional streamTo to backend.Invoker.
+type invokerAdapter func(command string, promptBytes []byte, cwd string, env []string, timeoutSec int, streamTo io.Writer) (stdout []byte, exitCode int, err error)
 
-func (f invokerAdapter) Invoke(command string, promptBytes []byte, cwd string, env []string, timeoutSec int) ([]byte, int, error) {
-	return f(command, promptBytes, cwd, env, timeoutSec)
+func (f invokerAdapter) Invoke(command string, promptBytes []byte, cwd string, env []string, timeoutSec int, streamTo io.Writer) ([]byte, int, error) {
+	return f(command, promptBytes, cwd, env, timeoutSec, streamTo)
+}
+
+// logLevelPriority returns a numeric priority for level comparison (higher = more verbose).
+// Empty or unknown level is treated as "info". Used for O004/R006.
+func logLevelPriority(level string) int {
+	switch level {
+	case "error":
+		return 0
+	case "warn":
+		return 1
+	case "info", "":
+		return 2
+	case "debug":
+		return 3
+	default:
+		return 2
+	}
+}
+
+// reportLevel emits msg only when messageLevel is at or above the configured log level (O004/R006).
+func reportLevel(report func(string), configuredLevel, messageLevel, msg string) {
+	if logLevelPriority(messageLevel) <= logLevelPriority(configuredLevel) {
+		report(msg)
+	}
 }
 
 // Run validates the AI command, then runs the loop: for each iteration invokes
@@ -49,8 +76,9 @@ func (f invokerAdapter) Invoke(command string, promptBytes []byte, cwd string, e
 // (T3.9, O004/R005): returns ExitInterrupt (130). Static precedence
 // (T3.6, O001/R006): success is checked before failure; when both signals
 // appear in the same output, the iteration is treated as success.
-// Implements T3.4, T3.5, T3.6, T3.7, T3.8, T3.9, O001/R004, O001/R005, O001/R006, O001/R007,
-// O001/R009, O004/R002, O004/R003, O004/R004, O004/R005.
+// Log level and show-AI-output (streaming) are respected (T3.13, O004/R006).
+// Implements T3.4, T3.5, T3.6, T3.7, T3.8, T3.9, T3.13, O001/R004, O001/R005, O001/R006, O001/R007,
+// O001/R009, O004/R002, O004/R003, O004/R004, O004/R005, O004/R006.
 func Run(opts RunOptions) (exitCode int, err error) {
 	if opts.Invoker == nil {
 		opts.Invoker = invokerAdapter(backend.Invoke)
@@ -59,13 +87,22 @@ func Run(opts RunOptions) (exitCode int, err error) {
 	if report == nil {
 		report = func(msg string) { fmt.Fprintln(os.Stdout, msg) }
 	}
+	logLevel := opts.Loop.LogLevel
+	if logLevel == "" {
+		logLevel = "info"
+	}
+	// streamTo: when Streaming and StreamWriter set, backend will tee stdout here (O004/R006).
+	var streamTo io.Writer
+	if opts.Loop.Streaming && opts.StreamWriter != nil {
+		streamTo = opts.StreamWriter
+	}
 
 	// Dry-run: assemble prompt (with preamble if enabled), print to stdout, exit 0. No backend (T3.10, O004/R007).
 	if opts.DryRun {
 		preamble := buildPreamble(opts.Loop.Preamble, 1)
 		assembled := AssemblePrompt(preamble, opts.PromptBytes)
 		os.Stdout.Write(assembled)
-		report("Dry-run: assembled prompt printed; no run was performed.")
+		reportLevel(report, logLevel, "info", "Dry-run: assembled prompt printed; no run was performed.")
 		return ExitSuccess, nil
 	}
 
@@ -97,10 +134,11 @@ func Run(opts RunOptions) (exitCode int, err error) {
 			return ExitInterrupt, nil
 		default:
 		}
+		reportLevel(report, logLevel, "debug", fmt.Sprintf("Starting iteration %d.", i))
 		preamble := buildPreamble(opts.Loop.Preamble, i)
 		assembled := AssemblePrompt(preamble, opts.PromptBytes)
 		iterStart := time.Now()
-		stdout, _, invErr := opts.Invoker.Invoke(opts.Command, assembled, opts.Cwd, opts.Env, opts.Loop.TimeoutSeconds)
+		stdout, _, invErr := opts.Invoker.Invoke(opts.Command, assembled, opts.Cwd, opts.Env, opts.Loop.TimeoutSeconds, streamTo)
 		iterationDurations = append(iterationDurations, time.Since(iterStart))
 		if ctx.Err() != nil {
 			return ExitInterrupt, nil
@@ -109,15 +147,16 @@ func Run(opts RunOptions) (exitCode int, err error) {
 		if invErr != nil {
 			consecutiveFailures++
 			if consecutiveFailures >= threshold {
-				report(fmt.Sprintf("Stopped after %d consecutive iteration(s) without success or failure signal (invocation error: %v; threshold: %d).", consecutiveFailures, invErr, opts.Loop.FailureThreshold))
+				reportLevel(report, logLevel, "error", fmt.Sprintf("Stopped after %d consecutive iteration(s) without success or failure signal (invocation error: %v; threshold: %d).", consecutiveFailures, invErr, opts.Loop.FailureThreshold))
 				return ExitFailureThreshold, nil
 			}
 			continue
 		}
 		if ContainsSuccessSignal(stdout, opts.Loop.SuccessSignal) {
 			elapsed := time.Since(start)
+			// Completion message is always shown (O004/R002, R006: "user still sees completion message" in quiet).
 			report(completionMessage(i, elapsed))
-			reportIterationStats(report, iterationDurations)
+			reportIterationStatsLevel(report, logLevel, iterationDurations)
 			return ExitSuccess, nil
 		}
 		// Failure: either failure signal present or process exited without signal (T3.8, O001/R009).
@@ -125,16 +164,16 @@ func Run(opts RunOptions) (exitCode int, err error) {
 		consecutiveFailures++
 		if consecutiveFailures >= threshold {
 			if hasFailureSignal {
-				report(fmt.Sprintf("Stopped after %d consecutive failure(s) (threshold: %d).", consecutiveFailures, opts.Loop.FailureThreshold))
+				reportLevel(report, logLevel, "error", fmt.Sprintf("Stopped after %d consecutive failure(s) (threshold: %d).", consecutiveFailures, opts.Loop.FailureThreshold))
 			} else {
-				report(fmt.Sprintf("Stopped after %d consecutive iteration(s) without success or failure signal (threshold: %d).", consecutiveFailures, opts.Loop.FailureThreshold))
+				reportLevel(report, logLevel, "error", fmt.Sprintf("Stopped after %d consecutive iteration(s) without success or failure signal (threshold: %d).", consecutiveFailures, opts.Loop.FailureThreshold))
 			}
-			reportIterationStats(report, iterationDurations)
+			reportIterationStatsLevel(report, logLevel, iterationDurations)
 			return ExitFailureThreshold, nil
 		}
 	}
-	report(fmt.Sprintf("Stopped after %d iteration(s) without success signal (max: %d).", opts.Loop.MaxIterations, opts.Loop.MaxIterations))
-	reportIterationStats(report, iterationDurations)
+	reportLevel(report, logLevel, "error", fmt.Sprintf("Stopped after %d iteration(s) without success signal (max: %d).", opts.Loop.MaxIterations, opts.Loop.MaxIterations))
+	reportIterationStatsLevel(report, logLevel, iterationDurations)
 	return ExitMaxIterations, nil
 }
 
@@ -158,6 +197,14 @@ func reportIterationStats(report func(string), durations []time.Duration) {
 	}
 	meanD := total / time.Duration(len(durations))
 	report(fmt.Sprintf("Iteration stats: min %.2fs, max %.2fs, mean %.2fs (%d iterations).", minD.Seconds(), maxD.Seconds(), meanD.Seconds(), len(durations)))
+}
+
+// reportIterationStatsLevel emits iteration stats only when log level allows info (O004/R006).
+func reportIterationStatsLevel(report func(string), logLevel string, durations []time.Duration) {
+	if logLevelPriority("info") > logLevelPriority(logLevel) {
+		return
+	}
+	reportIterationStats(report, durations)
 }
 
 func buildPreamble(preamble string, iteration int) string {

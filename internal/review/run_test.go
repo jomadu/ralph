@@ -1,6 +1,7 @@
 package review
 
 import (
+	"bytes"
 	"errors"
 	"os"
 	"path/filepath"
@@ -156,5 +157,68 @@ func TestRun_apply_requiresPromptOutputWhenNoSource(t *testing.T) {
 	}
 	if !errors.Is(err, ErrApplyPromptOutputRequired) && !IsExit2(err) {
 		t.Errorf("err = %v, want ErrApplyPromptOutputRequired or IsExit2", err)
+	}
+}
+
+// TestRun_Quiet_suppressesReportPath ensures --quiet suppresses "Report written to" (T7.2, O004/R006).
+func TestRun_Quiet_suppressesReportPath(t *testing.T) {
+	dir := t.TempDir()
+	reportPath := filepath.Join(dir, "report.txt")
+	oldStderr := os.Stderr
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stderr = w
+	defer func() { os.Stderr = oldStderr }()
+
+	_, runErr := Run([]byte("# p"), RunOptions{ReportPath: reportPath, WorkingDir: dir, Quiet: true})
+	w.Close()
+	var buf bytes.Buffer
+	_, _ = buf.ReadFrom(r)
+	serr := buf.String()
+
+	if runErr != nil {
+		t.Fatalf("Run: %v", runErr)
+	}
+	if strings.Contains(serr, "Report written to") {
+		t.Errorf("Quiet should suppress report path; stderr contained: %q", serr)
+	}
+}
+
+// TestRun_Verbose_apply_printsRevisionPath ensures --verbose with --apply prints revision path (T7.2).
+func TestRun_Verbose_apply_printsRevisionPath(t *testing.T) {
+	dir := t.TempDir()
+	reportPath := filepath.Join(dir, "report.txt")
+	applyPath := filepath.Join(dir, "rev.md")
+	oldStderr := os.Stderr
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stderr = w
+	defer func() { os.Stderr = oldStderr }()
+
+	_, runErr := Run([]byte("content"), RunOptions{
+		ReportPath:       reportPath,
+		PromptOutputPath: applyPath,
+		WorkingDir:       dir,
+		Apply:            true,
+		Yes:              true,
+		Verbose:          true,
+	})
+	w.Close()
+	var buf bytes.Buffer
+	_, _ = buf.ReadFrom(r)
+	serr := buf.String()
+
+	if runErr != nil {
+		t.Fatalf("Run: %v", runErr)
+	}
+	if !strings.Contains(serr, "Report written to") {
+		t.Errorf("expected 'Report written to' in stderr; got: %q", serr)
+	}
+	if !strings.Contains(serr, "Revision applied to") {
+		t.Errorf("Verbose+apply should print revision path; got: %q", serr)
 	}
 }

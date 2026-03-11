@@ -15,7 +15,7 @@ func TestRun_SuccessOnFirstIteration(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	loop.MaxIterations = 3
 	var reported string
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
 		return []byte("output with <promise>SUCCESS</promise> in it"), 0, nil
 	}
 
@@ -44,7 +44,7 @@ func TestRun_SuccessOnSecondIteration(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	loop.MaxIterations = 5
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		if callCount == 2 {
 			return []byte("<promise>SUCCESS</promise>"), 0, nil
@@ -77,7 +77,7 @@ func TestRun_MaxIterationsWithoutSuccess(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	loop.MaxIterations = 2
 	loop.SuccessSignal = "<promise>SUCCESS</promise>"
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
 		return []byte("no signal here"), 0, nil
 	}
 	var reported []string
@@ -100,6 +100,33 @@ func TestRun_MaxIterationsWithoutSuccess(t *testing.T) {
 	}
 }
 
+// TestRun_QuietLogLevel_stillShowsCompletionMessage ensures O004/R006: completion message is shown even when log level is error (quiet).
+func TestRun_QuietLogLevel_stillShowsCompletionMessage(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 3
+	loop.LogLevel = "error"
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+		return []byte("<promise>SUCCESS</promise>"), 0, nil
+	}
+	var reported string
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+		Reporter:    func(msg string) { reported = msg },
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitSuccess {
+		t.Errorf("exit code = %d, want ExitSuccess", code)
+	}
+	if reported == "" || !strings.Contains(reported, "Completed successfully") {
+		t.Errorf("quiet mode must still show completion message (R006); got %q", reported)
+	}
+}
+
 func TestRun_InvalidCommand(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	code, err := Run(RunOptions{
@@ -119,7 +146,7 @@ func TestRun_DryRun_PrintsAssembledPromptAndExitsZero(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	loop.Preamble = "You are helpful."
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		return nil, 0, nil
 	}
@@ -167,7 +194,7 @@ func TestRun_FailureSignalBelowThreshold_Continues(t *testing.T) {
 	loop.SuccessSignal = "<promise>SUCCESS</promise>"
 	loop.FailureSignal = "<promise>FAILURE</promise>"
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		if callCount == 1 {
 			return []byte("<promise>FAILURE</promise>"), 0, nil
@@ -205,7 +232,7 @@ func TestRun_FailureThresholdReached_ExitsWithCode(t *testing.T) {
 	loop.FailureThreshold = 2
 	loop.SuccessSignal = "<promise>SUCCESS</promise>"
 	loop.FailureSignal = "<promise>FAILURE</promise>"
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
 		return []byte("<promise>FAILURE</promise>"), 0, nil
 	}
 	var reported []string
@@ -237,7 +264,7 @@ func TestRun_StaticPrecedence_BothSignalsPresent(t *testing.T) {
 	loop.SuccessSignal = "DONE"
 	loop.FailureSignal = "FAIL"
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		// Single iteration output contains both signals; success must win.
 		return []byte("output FAIL and DONE together"), 0, nil
@@ -271,7 +298,7 @@ func TestRun_SuccessResetsConsecutiveFailures(t *testing.T) {
 	loop.SuccessSignal = "DONE"
 	loop.FailureSignal = "FAIL"
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		switch callCount {
 		case 1:
@@ -318,7 +345,7 @@ func TestRun_NoSignalTreatedAsFailure(t *testing.T) {
 	loop.SuccessSignal = "<promise>SUCCESS</promise>"
 	loop.FailureSignal = "<promise>FAILURE</promise>"
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		// Iteration 1: no signal (e.g. process exited 0 but no markers).
 		if callCount == 1 {
@@ -362,7 +389,7 @@ func TestRun_NoSignalBelowThreshold_Continues(t *testing.T) {
 	loop.SuccessSignal = "<promise>SUCCESS</promise>"
 	loop.FailureSignal = "<promise>FAILURE</promise>"
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		if callCount == 1 {
 			return []byte("no signal"), 0, nil
@@ -400,7 +427,7 @@ func TestRun_InvocationErrorTreatedAsNoSignal(t *testing.T) {
 	loop.FailureThreshold = 2
 	loop.SuccessSignal = "<promise>SUCCESS</promise>"
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		if callCount == 1 {
 			return nil, -1, backend.ErrTimeout
@@ -437,10 +464,12 @@ func TestRun_InterruptReturnsExitInterrupt(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	loop.MaxIterations = 5
 	code, err := Run(RunOptions{
-		Command:          "true",
-		PromptBytes:      []byte("p"),
-		Loop:             loop,
-		Invoker:          invokerAdapter(func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) { return []byte("x"), 0, nil }),
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker: invokerAdapter(func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+			return []byte("x"), 0, nil
+		}),
 		InterruptContext: ctx,
 	})
 	if err != nil {
@@ -457,7 +486,7 @@ func TestRun_IterationStatistics(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	loop.MaxIterations = 5
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		if callCount == 3 {
 			return []byte("<promise>SUCCESS</promise>"), 0, nil
@@ -505,7 +534,7 @@ func TestRun_IterationStatistics(t *testing.T) {
 func TestRun_SingleIteration_NoIterationStats(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	loop.MaxIterations = 3
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
 		return []byte("<promise>SUCCESS</promise>"), 0, nil
 	}
 	var reported []string
@@ -536,7 +565,7 @@ func TestRun_SingleIteration_NoIterationStats(t *testing.T) {
 func TestRun_InterruptBetweenIterations(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		if callCount == 1 {
 			return []byte("no signal yet"), 0, nil

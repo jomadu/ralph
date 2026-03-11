@@ -158,8 +158,9 @@ Precedence: CLI flags override environment and config (config component layer or
 
 | Flag | Short | Type | Effect |
 |------|-------|------|--------|
-| `--quiet` | `-q` | — | Minimize output (e.g. log level error-only). |
-| `--log-level` | — | string | Log level: `debug`, `info`, `warn`, `error`. |
+| `--verbose` | `-v` | — | Increase verbosity (e.g. log level debug). Same semantics as run. |
+| `--quiet` | `-q` | — | Minimize output (e.g. log level error-only). Same semantics as run. |
+| `--log-level` | — | string | Log level: `debug`, `info`, `warn`, `error`. Overrides shortcuts when set. |
 | `--config` | — | path | Explicit config file (global). |
 
 ### Review: error handling

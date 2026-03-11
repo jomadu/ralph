@@ -314,8 +314,9 @@ func applyRunLoopOverrides(base config.LoopSettings, o runLoopOverrides) config.
 		}
 	}
 	// Output and observability (cli.md: --verbose/-v, --quiet/-q, --log-level, --stream, --no-stream).
-	// Quiet wins for minimal output unless log-level or stream is explicitly set (O004/R006).
-	if o.quiet {
+	// Apply shortcuts first; explicit --log-level and --stream/--no-stream override (O004/R006).
+	// When both -q and -v are set, verbose wins (user opted for more output).
+	if o.quiet && !o.verbose {
 		out.LogLevel = "error"
 		out.Streaming = false
 	}
@@ -537,7 +538,7 @@ func (m *mergedPromptProvider) PromptByName(name string) (path, content string, 
 }
 
 // reviewCmd builds the ralph review subcommand (T6.1). Syntax: review [alias], review -f <path>, or stdin.
-// Flags: --file/-f, --report, --prompt-output, --apply, --yes/-y, --quiet, --log-level; --config from root.
+// Flags: --file/-f, --report, --prompt-output, --apply, --yes/-y, --verbose/-v, --quiet/-q, --log-level; --config from root.
 func reviewCmd() *cobra.Command {
 	var (
 		filePath     string
@@ -545,6 +546,7 @@ func reviewCmd() *cobra.Command {
 		promptOutput string
 		apply        bool
 		yes          bool
+		verbose      bool
 		quiet        bool
 		logLevel     string
 	)
@@ -622,6 +624,18 @@ func reviewCmd() *cobra.Command {
 			stdinStat, _ := os.Stdin.Stat()
 			nonInteractive := (stdinStat.Mode() & os.ModeCharDevice) == 0
 
+			// Resolve effective log level: same precedence as run (quiet→error, verbose→debug, explicit overrides).
+			effLogLevel := ""
+			if quiet && !verbose {
+				effLogLevel = "error"
+			}
+			if verbose {
+				effLogLevel = "debug"
+			}
+			if logLevel != "" {
+				effLogLevel = logLevel
+			}
+
 			runOpts := review.RunOptions{
 				ReportPath:       reportPath,
 				PromptOutputPath: promptOutput,
@@ -630,8 +644,9 @@ func reviewCmd() *cobra.Command {
 				Apply:            apply,
 				Yes:              yes,
 				NonInteractive:   nonInteractive,
+				Verbose:          verbose,
 				Quiet:            quiet,
-				LogLevel:         logLevel,
+				LogLevel:         effLogLevel,
 			}
 			code, err := review.Run(content, runOpts)
 			if err != nil {
@@ -650,8 +665,9 @@ func reviewCmd() *cobra.Command {
 	cmd.Flags().StringVar(&promptOutput, "prompt-output", "", "When using --apply, write revision to this path (required when prompt is from stdin)")
 	cmd.Flags().BoolVar(&apply, "apply", false, "Write suggested revision to a file")
 	cmd.Flags().BoolVarP(&yes, "yes", "y", false, "Non-interactive apply: do not prompt for confirmation")
-	cmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Minimize output")
-	cmd.Flags().StringVar(&logLevel, "log-level", "", "Log level: debug, info, warn, error")
+	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity (e.g. log level debug)")
+	cmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Minimize output (e.g. log level error-only)")
+	cmd.Flags().StringVar(&logLevel, "log-level", "", "Log level: debug, info, warn, error (overrides shortcuts)")
 	return cmd
 }
 

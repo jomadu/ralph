@@ -26,6 +26,7 @@ var ErrApplyPromptOutputRequired = fmt.Errorf("%w: --apply requires --prompt-out
 // When ReportPath is empty, report is written to WorkingDir/DefaultReportFilename (or cwd if WorkingDir is empty).
 // For apply: when prompt is from file/alias, SourcePath can default the revision path; otherwise --prompt-output is required.
 // NonInteractive is true when stdin is not a TTY (e.g. CI); when true and overwrite would need confirmation, Run returns ErrApplyConfirmationRequired unless Yes is set.
+// Quiet minimizes output (O004/R006); Verbose adds revision path when applying.
 type RunOptions struct {
 	ReportPath       string
 	PromptOutputPath string
@@ -34,6 +35,7 @@ type RunOptions struct {
 	Apply            bool
 	Yes              bool
 	NonInteractive   bool
+	Verbose          bool
 	Quiet            bool
 	LogLevel         string
 }
@@ -66,9 +68,24 @@ func Run(promptContent []byte, opts RunOptions) (exitCode int, err error) {
 	if e := os.WriteFile(reportPath, []byte(body), 0644); e != nil {
 		return 0, fmt.Errorf("%w: writing report: %v", ErrExit2, e)
 	}
+	if !opts.Quiet {
+		fmt.Fprintf(os.Stderr, "Report written to %s\n", reportPath)
+	}
 	if opts.Apply {
 		if e := applyRevision(report.Revision, opts); e != nil {
 			return 0, e
+		}
+		if opts.Verbose {
+			applyPath := opts.PromptOutputPath
+			if applyPath == "" {
+				applyPath = opts.SourcePath
+			}
+			if applyPath != "" && opts.WorkingDir != "" && !filepath.IsAbs(applyPath) {
+				applyPath = filepath.Join(opts.WorkingDir, applyPath)
+			}
+			if applyPath != "" {
+				fmt.Fprintf(os.Stderr, "Revision applied to %s\n", applyPath)
+			}
 		}
 	}
 	// T5.5: parse written report body to derive exit code 0 vs 1 (O005/R008, O010/R003).
