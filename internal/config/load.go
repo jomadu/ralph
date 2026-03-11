@@ -1,3 +1,8 @@
+// Package config resolves configuration for the current context (cwd, explicit path, env)
+// into a single effective config used by run-loop, review, list, and show (O002/R007).
+//
+// Single entrypoint: Resolve — pass getenv (e.g. os.Getenv), cwd, optional config file path,
+// and optional prompt name; get back (*Effective, ok, error) with built-in aliases included.
 package config
 
 import "path/filepath"
@@ -96,4 +101,26 @@ func ResolveEffectiveForPrompt(getenv func(string) string, cwd, configPath, prom
 		return nil, false, nil
 	}
 	return eff, true, nil
+}
+
+// Resolve is the single entrypoint to resolve effective config for the current context
+// (cwd, explicit config path, env). It returns the Effective config used by run-loop,
+// review, list, and show (O002/R007). Built-in aliases are included in the returned
+// Effective; user aliases override built-ins for the same name.
+//
+// Parameters:
+//   - getenv: typically os.Getenv; used for RALPH_CONFIG_HOME and RALPH_LOOP_*.
+//   - cwd: current working directory (global/workspace paths when configPath is empty).
+//   - configPath: explicit config file path; if non-empty, only that file is used (no global/workspace).
+//   - promptName: optional prompt name; when non-empty and the prompt exists, Effective.Loop
+//     includes that prompt's overrides; when empty, root loop is returned.
+//
+// Returns (*Effective, true, nil) on success; (nil, false, nil) when promptName is set but
+// the prompt is not found; (nil, false, err) on load or env parse error.
+func Resolve(getenv func(string) string, cwd, configPath, promptName string) (*Effective, bool, error) {
+	eff, ok, err := ResolveEffectiveForPrompt(getenv, cwd, configPath, promptName)
+	if err != nil || !ok || eff == nil {
+		return eff, ok, err
+	}
+	return EffectiveWithBuiltins(eff), true, nil
 }

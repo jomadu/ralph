@@ -223,3 +223,37 @@ prompts:
 		t.Error("ResolveEffectiveForPrompt(nonexistent) ok = true, want false")
 	}
 }
+
+// TestResolve_singleEntrypoint verifies Resolve is the single entrypoint: same behavior
+// as ResolveEffectiveForPrompt but returned Effective includes built-in aliases (T1.7, O002/R007).
+func TestResolve_singleEntrypoint(t *testing.T) {
+	dir := t.TempDir()
+	getenv := func(string) string { return "" }
+	eff, ok, err := Resolve(getenv, dir, "", "")
+	if err != nil {
+		t.Fatalf("Resolve() err = %v", err)
+	}
+	if !ok || eff == nil {
+		t.Fatalf("Resolve() = %v, %v; want effective, true", eff, ok)
+	}
+	// No config files: Effective should still include built-in aliases.
+	if _, has := eff.Aliases["cursor-agent"]; !has {
+		t.Errorf("Resolve() Effective.Aliases missing built-in cursor-agent; got keys: %v", mapKeys(eff.Aliases))
+	}
+	// Unknown prompt: (nil, false, nil).
+	_, okUnknown, err := Resolve(getenv, dir, "", "nonexistent")
+	if err != nil {
+		t.Fatalf("Resolve(nonexistent) err = %v", err)
+	}
+	if okUnknown {
+		t.Error("Resolve(nonexistent) ok = true, want false")
+	}
+}
+
+func mapKeys(m map[string]Alias) []string {
+	var keys []string
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}

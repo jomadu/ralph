@@ -71,6 +71,30 @@ func ResolvedWithBuiltins(r *Resolved) *Resolved {
 	return out
 }
 
+// EffectiveWithBuiltins returns a copy of e with built-in aliases merged into Aliases.
+// User aliases override built-ins for the same name. Use when the Effective is the
+// single resolved config for run-loop, review, list, or show (O002/R004, R007).
+func EffectiveWithBuiltins(e *Effective) *Effective {
+	if e == nil {
+		return nil
+	}
+	out := &Effective{
+		Loop:    e.Loop,
+		Prompts: make(map[string]Prompt),
+		Aliases: make(map[string]Alias),
+	}
+	for k, v := range e.Prompts {
+		out.Prompts[k] = v
+	}
+	for k, v := range BuiltinAliases() {
+		out.Aliases[k] = v
+	}
+	for k, v := range e.Aliases {
+		out.Aliases[k] = v
+	}
+	return out
+}
+
 // EffectiveForPrompt builds an Effective config for a named prompt with merge order:
 // defaults → global → workspace → explicit file → env → prompt overrides (CLI in Phase 4).
 // rootLoop must already be MergeRootLoop(global, workspace) then ApplyEnvOverlayToLoop(_, env).

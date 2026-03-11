@@ -187,13 +187,12 @@ func runListAll(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		return fmt.Errorf("ralph list: invalid subcommand %q (use 'ralph list prompts', 'ralph list aliases', or 'ralph list --help')", args[0])
 	}
-	resolved, err := resolveConfigForList(cmd)
+	eff, _, err := resolveConfigForList(cmd)
 	if err != nil {
 		return err
 	}
-	resolved = config.ResolvedWithBuiltins(resolved)
-	printPrompts(resolved.Prompts)
-	printAliases(resolved.Aliases)
+	printPrompts(eff.Prompts)
+	printAliases(eff.Aliases)
 	return nil
 }
 
@@ -205,11 +204,11 @@ func listPromptsCmd() *cobra.Command {
 			if len(args) > 0 {
 				return fmt.Errorf("ralph list prompts: no positional arguments allowed")
 			}
-			resolved, err := resolveConfigForList(cmd)
+			eff, _, err := resolveConfigForList(cmd)
 			if err != nil {
 				return err
 			}
-			printPrompts(resolved.Prompts)
+			printPrompts(eff.Prompts)
 			return nil
 		},
 	}
@@ -223,30 +222,29 @@ func listAliasesCmd() *cobra.Command {
 			if len(args) > 0 {
 				return fmt.Errorf("ralph list aliases: no positional arguments allowed")
 			}
-			resolved, err := resolveConfigForList(cmd)
+			eff, _, err := resolveConfigForList(cmd)
 			if err != nil {
 				return err
 			}
-			resolved = config.ResolvedWithBuiltins(resolved)
-			printAliases(resolved.Aliases)
+			printAliases(eff.Aliases)
 			return nil
 		},
 	}
 }
 
-// resolveConfigForList loads config (--config or global+workspace), applies
-// RALPH_LOOP_* env overlay so invalid values produce clear error (T1.5, O010/R004).
-func resolveConfigForList(cmd *cobra.Command) (*config.Resolved, error) {
+// resolveConfigForList resolves effective config via the single Resolve entrypoint
+// (cwd, --config, env; no prompt). Used by list and list prompts/aliases.
+func resolveConfigForList(cmd *cobra.Command) (*config.Effective, bool, error) {
 	configPath, _ := cmd.Root().PersistentFlags().GetString("config")
 	cwd, err := os.Getwd()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	eff, err := config.ResolveEffective(os.Getenv, cwd, configPath)
+	eff, ok, err := config.Resolve(os.Getenv, cwd, configPath, "")
 	if err != nil {
-		return nil, fmt.Errorf("config: %w", err)
+		return nil, false, fmt.Errorf("config: %w", err)
 	}
-	return config.ResolvedWithBuiltins(&config.Resolved{Prompts: eff.Prompts, Aliases: eff.Aliases}), nil
+	return eff, ok, nil
 }
 
 func printPrompts(prompts map[string]config.Prompt) {
