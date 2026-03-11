@@ -32,7 +32,7 @@ Every requirement traces to an outcome. If a requirement has no outcome above it
 
 **Architecture** — The structure of the system: major components, their responsibilities, and how they interact. Documented in `docs/engineering/` with a component-centric layout.
 
-**Component** — A named part of the system (e.g. run-loop, config, backend, review). A component is documented either as a single file (`components/<component>.md`) or as a directory (`components/<component>/`). A component directory standardly includes a README.md as the primary doc, plus optional supporting files (e.g. a strict schema doc for config YAML, API contracts, state diagrams). Requirement assignments (which O/R IDs a component satisfies) live only in the engineering README; component docs do not duplicate that list. Each component's primary doc states responsibility, key interfaces, and the **implementation specifications** that implementers build from — schemas, protocols, data structures — and references the engineering README for the list of requirements it implements. Product is the source of truth for *intent* (what we're committing to); the engineering README is the source of truth for *which component implements which requirements*; the component doc is the source of truth for *how* that component is implemented (where it lives, how it connects, and the strict specs it adheres to).
+**Component** — A named part of the system (e.g. orchestrator, config, api, reporting). A component is documented either as a single file (`components/<component>.md`) or as a directory (`components/<component>/`). A component directory standardly includes a README.md as the primary doc, plus optional supporting files (e.g. a strict schema doc for config YAML, API contracts, state diagrams). Requirement assignments (which O/R IDs a component satisfies) live only in the engineering README; component docs do not duplicate that list. Each component's primary doc states responsibility, key interfaces, and the **implementation specifications** that implementers build from — schemas, protocols, data structures — and references the engineering README for the list of requirements it implements. Product is the source of truth for *intent* (what we're committing to); the engineering README is the source of truth for *which component implements which requirements*; the component doc is the source of truth for *how* that component is implemented (where it lives, how it connects, and the strict specs it adheres to).
 
 ## Consistency
 
@@ -96,7 +96,7 @@ Outcomes don't arrive pre-decomposed. Use the following decomposition to derive 
 **Decomposition**
 
 - **Why/how/how-else chain** (from goal-oriented requirements engineering): Starting from an outcome, ask (1) *"How is this outcome achieved?"* — each distinct answer is a candidate requirement (if still abstract, decompose further; if concrete enough to build, it's a requirement). (2) *"How else?"* — ask again to avoid locking into one design and to surface gaps. (3) *"Why does this requirement exist?"* — every candidate must trace back to the outcome; if not, it's misplaced or unjustified.
-- **Risk analysis:** For each outcome, ask *"What could prevent this from being true?"* Each answer is a risk. Risks surface requirements you'd otherwise discover late. Each risk is documented in the outcome README with the requirement that mitigates it. Every risk must map to an existing requirement or surface a new one. Examples: *"The AI CLI crashes mid-execution"* → process crash recovery; *"Both success and failure signals appear"* → signal precedence rules; *"The user doesn't know which config value is active"* → provenance tracking.
+- **Risk analysis:** For each outcome, ask *"What could prevent this from being true?"* Each answer is a risk. Risks surface requirements you'd otherwise discover late. Each risk is documented in the outcome README with the requirement that mitigates it. Every risk must map to an existing requirement or surface a new one. Examples: *"The process crashes mid-execution"* → crash recovery; *"Both success and failure signals appear"* → signal precedence rules; *"The user doesn't know which config value is active"* → provenance tracking.
 - **Completeness:** An outcome is fully decomposed when every "how" has a requirement, every risk has a mitigating requirement, every requirement traces back via "why," and you can't name a realistic failure that nothing addresses. Sufficiency for building is the goal, not exhaustive enumeration.
 
 This is the compressed form of the requirements layer. All requirement one-liners and risk mappings across all outcomes should be reviewable as a set.
@@ -131,11 +131,11 @@ Engineering is developed around the product requirements: components are named a
 
 #### E1: Overview
 
-Write `docs/engineering/README.md`. Architecture on one page: purpose of engineering docs, high-level diagram or flow (e.g. CLI → config → run path / review path), a list of components with one-line descriptions, and for each component its **assigned requirement IDs** (O/R). The README is the single place for the full map: component names, one-liners, and requirement assignments. No per-component detail files yet.
+Write `docs/engineering/README.md`. Architecture on one page: purpose of engineering docs, high-level diagram or flow (e.g. entry point → config → main flow / reporting), a list of components with one-line descriptions, and for each component its **assigned requirement IDs** (O/R). The README is the single place for the full map: component names, one-liners, and requirement assignments. No per-component detail files yet.
 
 **Decomposition**
 
-Use the product requirement set (and outcome index) to derive the component set. Cluster requirements that hang together — by flow (e.g. everything in the run path), by concern (e.g. config resolution, backend invocation), or by user-facing boundary (e.g. review vs. run). For each cluster, name a component and write a one-liner (what this part of the system is responsible for). Ask *"What part of the system is responsible for this requirement?"* to assign each requirement to a component. Refine until the set is distinct, covers the product, and has no overlapping responsibilities. Record the result in the engineering README: component list with one-liners and O/R assignments (e.g. `run-loop — Runs the iteration loop; decides continue/exit — O001/R002, O001/R004, O001/R005, O004/R001`).
+Use the product requirement set (and outcome index) to derive the component set. Cluster requirements that hang together — by flow (e.g. everything in the main flow), by concern (e.g. config resolution, service invocation), or by user-facing boundary (e.g. reporting vs. execution). For each cluster, name a component and write a one-liner (what this part of the system is responsible for). Ask *"What part of the system is responsible for this requirement?"* to assign each requirement to a component. Refine until the set is distinct, covers the product, and has no overlapping responsibilities. Record the result in the engineering README: component list with one-liners and O/R assignments as links to the product requirement docs (e.g. `orchestrator — Coordinates the main workflow; decides next step — [O001/R002](../product/O001-<slug>/R002-<slug>.md), [O001/R004](../product/O001-<slug>/R004-<slug>.md), ...`).
 
 **Review:**
 - Components are distinct; no two components have the same responsibility
@@ -321,12 +321,18 @@ Each requirement file is **complete for intent**: it contains the requirement st
 The single engineering index. It holds everything that would have been a separate "component index": overview plus component list with requirement assignments.
 
 - Purpose of engineering docs (structure, placement, and implementation specs; product holds who, what, and why at the level of intent).
-- High-level diagram or description of the system (e.g. CLI → config → run path / review path; run loop, backend, etc.).
-- Component list: for each component, one-line description and assigned requirement IDs (O/R). Links to component docs (files or directories under `components/`). Component docs hold the implementation specifications (e.g. config schema, APIs) that implementers build from.
+- High-level diagram or description of the system (e.g. entry point → config → main flow / reporting; orchestrator, api, etc.).
+- Component list: for each component, one-line description and **assigned requirement IDs (O/R) as links** to the product requirement documents. Each O/R must link to the requirement file under `docs/product/` (e.g. `../product/O001-<slug>/R002-<slug>.md` from the engineering README). Links to component docs (files or directories under `components/`) point to implementation specs. Component docs hold the implementation specifications (e.g. config schema, APIs) that implementers build from.
+
+**Assigned requirements column:** Use markdown links so each requirement ID points to its product requirement doc. From `docs/engineering/README.md`, the path to a requirement is `../product/O<n>-<outcome-slug>/R<n>-<requirement-slug>.md`. Example table row:
+
+```markdown
+| [orchestrator](components/orchestrator.md) | Coordinates the main workflow; loads config, invokes services, decides next step | [O001/R001](../product/O001-<outcome-slug>/R001-<requirement-slug>.md), [O001/R002](../product/O001-<outcome-slug>/R002-<requirement-slug>.md), ... |
+```
 
 ### Component — `docs/engineering/components/<component>.md` or `docs/engineering/components/<component>/`
 
-A component may be a single file (e.g. `run-loop.md`) or a directory (e.g. `run-loop/`). Use a directory when one file is insufficient.
+A component may be a single file (e.g. `orchestrator.md`) or a directory (e.g. `orchestrator/`). Use a directory when one file is insufficient.
 
 **When using a single file:** the file contains responsibility and interfaces (below). Do not list O/R IDs; those live only in the engineering README.
 
@@ -336,7 +342,7 @@ A component may be a single file (e.g. `run-loop.md`) or a directory (e.g. `run-
 
 - **Responsibility** — What this component does in one or a few sentences.
 - **Requirements** — Do not duplicate the O/R list. The engineering README is the single source of truth for which requirements are assigned to this component. The component doc may include a one-line reference (e.g. "Implements the requirements assigned to this component in the [engineering README](../README.md).").
-- **Interfaces** — Key boundaries: what this component consumes (e.g. config, prompt buffer) and produces (e.g. exit code, iteration outcome), and which other components it calls or is called by.
+- **Interfaces** — Key boundaries: what this component consumes (e.g. config, input) and produces (e.g. exit code, result), and which other components it calls or is called by.
 - **Implementation spec** *(or linked doc)* — The authoritative spec implementers build from: e.g. the canonical config YAML schema (all keys, types, nesting, validation), API contracts, state machines, protocols. This is where the "hard" specification lives; product requirements state intent and may reference this doc.
 
 Optional: data flow, invariants, or notes that help implementers place code correctly. Intent (who, what, why) stays in product; implementation specs stay in engineering.
@@ -346,7 +352,7 @@ Optional: data flow, invariants, or notes that help implementers place code corr
 ### Naming
 
 - **Product:** Outcomes `O<n>-<slug>/`; requirements `R<n>-<slug>.md` within their outcome. The numeric part `<n>` is **zero-padded to three digits** (e.g. `O001`, `O002`, `R001`, `R002`) so that directories and files sort correctly in the filesystem. Numbered for stable reference, slug for readability. `R001` in O001 and `R001` in O002 are different requirements.
-- **Engineering:** Component names are lowercase, hyphenated if multi-word (e.g. `run-loop.md`, `config.md`). Slugs may change; product IDs (O001, R002) are stable.
+- **Engineering:** Component names are lowercase, hyphenated if multi-word (e.g. `orchestrator.md`, `config.md`). Slugs may change; product IDs (O001, R002) are stable.
 
 ### Traceability
 
