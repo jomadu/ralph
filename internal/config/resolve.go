@@ -3,6 +3,14 @@
 
 package config
 
+// Effective is the full effective config for a run: loop settings, prompts, and aliases.
+// Used by run-loop, CLI, and show config when a single merged config is needed.
+type Effective struct {
+	Loop    LoopSettings
+	Prompts map[string]Prompt
+	Aliases map[string]Alias
+}
+
 // Resolved holds merged prompts and aliases from the resolved config (one explicit layer
 // or global + workspace with workspace overriding). Used by list and show.
 type Resolved struct {
@@ -37,11 +45,13 @@ func MergeLayers(global, workspace *FileLayer) *Resolved {
 }
 
 // BuiltinAliases returns default AI command aliases (R004). Merged with user config
-// so list/show include both. Keys here are names; values are the command string.
+// so list/show include both. Commands per docs/engineering/components/backend.md.
 func BuiltinAliases() map[string]Alias {
 	return map[string]Alias{
-		"claude":       {Command: "claude --non-interactive"},
-		"cursor-agent": {Command: "cursor-agent"},
+		"claude":       {Command: "claude -p --dangerously-skip-permissions"},
+		"kiro":         {Command: "kiro-cli chat --no-interactive --trust-all-tools"},
+		"copilot":      {Command: "copilot --yolo"},
+		"cursor-agent": {Command: "agent -p --force --output-format stream-json --stream-partial-output"},
 	}
 }
 

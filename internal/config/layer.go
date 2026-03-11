@@ -37,6 +37,20 @@ type Prompt struct {
 	Loop        *LoopSection `yaml:"loop,omitempty"`
 }
 
+// LoopSettings holds effective loop behavior (concrete values). Used by run-loop
+// and resolution; built-in defaults ensure the tool works without a config file (O002/R001, R002).
+type LoopSettings struct {
+	MaxIterations    int
+	FailureThreshold int
+	TimeoutSeconds   int
+	SuccessSignal    string
+	FailureSignal    string
+	SignalPrecedence string
+	Preamble         string // empty = no preamble injection
+	Streaming        bool
+	LogLevel         string
+}
+
 // Alias holds an AI command alias. In YAML, an alias value may be a string
 // (the command) or an object with a "command" key.
 type Alias struct {
