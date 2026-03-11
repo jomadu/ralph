@@ -177,6 +177,42 @@ func TestRun_FailureThresholdReached_ExitsWithCode(t *testing.T) {
 	}
 }
 
+// TestRun_StaticPrecedence_BothSignalsPresent verifies T3.6/O001/R006: when both
+// success and failure signals appear in the same output, static precedence applies
+// (success checked first), so the iteration is treated as success.
+func TestRun_StaticPrecedence_BothSignalsPresent(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 3
+	loop.SuccessSignal = "DONE"
+	loop.FailureSignal = "FAIL"
+	callCount := 0
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+		callCount++
+		// Single iteration output contains both signals; success must win.
+		return []byte("output FAIL and DONE together"), 0, nil
+	}
+	var reported string
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+		Reporter:    func(msg string) { reported = msg },
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitSuccess {
+		t.Errorf("exit code = %d, want ExitSuccess (static precedence: success wins when both present)", code)
+	}
+	if callCount != 1 {
+		t.Errorf("invoker called %d times, want 1 (success on first iteration)", callCount)
+	}
+	if !strings.Contains(reported, "Completed successfully") || !strings.Contains(reported, "1 iteration") {
+		t.Errorf("reported = %q", reported)
+	}
+}
+
 func TestRun_SuccessResetsConsecutiveFailures(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	loop.MaxIterations = 5

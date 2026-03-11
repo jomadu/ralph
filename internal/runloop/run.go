@@ -36,8 +36,9 @@ func (f invokerAdapter) Invoke(command string, promptBytes []byte, cwd string, e
 // returns ExitSuccess. On failure signal: increments consecutive-failure count;
 // if count >= failure threshold, reports and returns ExitFailureThreshold.
 // When max iterations is reached without success, returns ExitMaxIterations.
-// Static precedence: success checked first (success wins if both present).
-// Implements T3.4, T3.5, O001/R004, O001/R005, O004/R002, O004/R003.
+// Static precedence (T3.6, O001/R006): success is checked before failure; when
+// both signals appear in the same output, the iteration is treated as success.
+// Implements T3.4, T3.5, T3.6, O001/R004, O001/R005, O001/R006, O004/R002, O004/R003.
 func Run(opts RunOptions) (exitCode int, err error) {
 	if opts.Invoker == nil {
 		opts.Invoker = invokerAdapter(backend.Invoke)

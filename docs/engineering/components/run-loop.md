@@ -49,7 +49,8 @@ The run-loop is the authority for run exit codes. User and automation documentat
 ### Signal detection
 
 - Success and failure signals are configured strings (or patterns). The run-loop scans the captured stdout for their presence.
-- When both success and failure signals appear in the same output, precedence is either **static** (e.g. first match wins, or a defined order) or **AI-interpreted** (when configured): the AI output may be interpreted to decide outcome; the exact mechanism is implementation-defined and documented.
+- **Static precedence (O001/R006):** When both success and failure signals appear in the same output, the iteration is classified by a defined rule so the outcome is never ambiguous. With `signal_precedence: static` (the default), **success is checked first** — if the success signal is present, the iteration is treated as success regardless of the failure signal; only if the success signal is absent is the failure signal considered. So with static precedence, "success wins" when both are present. This behavior is documented for users and automation.
+- **AI-interpreted precedence:** When `signal_precedence: ai_interpreted` is configured, the AI output may be interpreted to decide outcome; the exact mechanism is implementation-defined and documented. When that option is off or when interpretation does not yield a clear result, the static rule above applies.
 
 ### Dry-run
 
