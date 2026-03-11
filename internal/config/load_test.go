@@ -168,3 +168,58 @@ func TestResolveEffective_invalidEnv_clearError(t *testing.T) {
 		t.Error("error message should be non-empty and mention the variable")
 	}
 }
+
+// TestResolveEffectiveForPrompt_promptOverride verifies that when resolving for a
+// named prompt, prompt-level loop overrides are applied (T1.6: defaults → … → env → prompt overrides).
+func TestResolveEffectiveForPrompt_promptOverride(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "ralph-config.yml")
+	cfg := `
+loop:
+  max_iterations: 10
+  log_level: info
+prompts:
+  myprompt:
+    path: p.md
+    loop:
+      max_iterations: 2
+      log_level: debug
+`
+	if err := os.WriteFile(configPath, []byte(cfg), 0644); err != nil {
+		t.Fatal(err)
+	}
+	getenv := func(string) string { return "" }
+
+	// Resolve for the named prompt: effective loop must have prompt overrides (2, debug).
+	eff, ok, err := ResolveEffectiveForPrompt(getenv, dir, configPath, "myprompt")
+	if err != nil {
+		t.Fatalf("ResolveEffectiveForPrompt err = %v", err)
+	}
+	if !ok || eff == nil {
+		t.Fatalf("ResolveEffectiveForPrompt(_, _, _, %q) = %v, %v; want effective, true", "myprompt", eff, ok)
+	}
+	if eff.Loop.MaxIterations != 2 {
+		t.Errorf("Loop.MaxIterations = %d, want 2 (prompt override)", eff.Loop.MaxIterations)
+	}
+	if eff.Loop.LogLevel != "debug" {
+		t.Errorf("Loop.LogLevel = %q, want debug (prompt override)", eff.Loop.LogLevel)
+	}
+
+	// Root (no prompt name) or empty prompt name: root loop only (10, info).
+	root, okRoot, err := ResolveEffectiveForPrompt(getenv, dir, configPath, "")
+	if err != nil || !okRoot || root == nil {
+		t.Fatalf("ResolveEffectiveForPrompt(empty name) err=%v ok=%v root=%v", err, okRoot, root)
+	}
+	if root.Loop.MaxIterations != 10 || root.Loop.LogLevel != "info" {
+		t.Errorf("root Loop = max_iter=%d log_level=%q, want 10, info", root.Loop.MaxIterations, root.Loop.LogLevel)
+	}
+
+	// Unknown prompt: not found.
+	_, okUnknown, err := ResolveEffectiveForPrompt(getenv, dir, configPath, "nonexistent")
+	if err != nil {
+		t.Fatalf("ResolveEffectiveForPrompt(nonexistent) err = %v", err)
+	}
+	if okUnknown {
+		t.Error("ResolveEffectiveForPrompt(nonexistent) ok = true, want false")
+	}
+}

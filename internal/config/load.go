@@ -29,13 +29,10 @@ func LoadExplicit(path string) (*FileLayer, error) {
 	return ReadLayerRequired(path)
 }
 
-// ResolveEffective loads config (explicit path or global+workspace), applies
-// RALPH_LOOP_* environment overlay, and returns the effective config.
-// RALPH_CONFIG_HOME is used when resolving global path (see GlobalPath).
-// Invalid env values (e.g. non-integer RALPH_LOOP_DEFAULT_MAX_ITERATIONS) produce
-// a clear error (O010/R004). getenv is typically os.Getenv.
-// When configPath is non-empty, only that file is used for file-based config.
-func ResolveEffective(getenv func(string) string, cwd, configPath string) (*Effective, error) {
+// loadLayersAndRootLoop loads file layers and applies env overlay, returning
+// merged resolved config and root loop (defaults → layers → env). Used by
+// ResolveEffective and ResolveEffectiveForPrompt.
+func loadLayersAndRootLoop(getenv func(string) string, cwd, configPath string) (*Resolved, LoopSettings, error) {
 	var resolved *Resolved
 	var rootLoop LoopSettings
 	if configPath != "" {
@@ -45,22 +42,58 @@ func ResolveEffective(getenv func(string) string, cwd, configPath string) (*Effe
 		}
 		layer, err := LoadExplicit(path)
 		if err != nil {
-			return nil, err
+			return nil, LoopSettings{}, err
 		}
 		resolved = MergeLayers(nil, layer)
 		rootLoop = MergeRootLoop(nil, layer)
 	} else {
 		global, workspace, err := LoadGlobalAndWorkspace(getenv, cwd)
 		if err != nil {
-			return nil, err
+			return nil, LoopSettings{}, err
 		}
 		resolved = MergeLayers(global, workspace)
 		rootLoop = MergeRootLoop(global, workspace)
 	}
 	overlay, err := ParseEnvOverlay(getenv)
 	if err != nil {
-		return nil, err
+		return nil, LoopSettings{}, err
 	}
 	rootLoop = ApplyEnvOverlayToLoop(rootLoop, overlay)
+	return resolved, rootLoop, nil
+}
+
+// ResolveEffective loads config (explicit path or global+workspace), applies
+// RALPH_LOOP_* environment overlay, and returns the effective config (root
+// loop only; no prompt selected). RALPH_CONFIG_HOME is used when resolving
+// global path (see GlobalPath). Invalid env values produce a clear error
+// (O010/R004). getenv is typically os.Getenv. When configPath is non-empty,
+// only that file is used for file-based config.
+func ResolveEffective(getenv func(string) string, cwd, configPath string) (*Effective, error) {
+	resolved, rootLoop, err := loadLayersAndRootLoop(getenv, cwd, configPath)
+	if err != nil {
+		return nil, err
+	}
 	return RootEffective(resolved, rootLoop), nil
+}
+
+// ResolveEffectiveForPrompt resolves config for a given prompt name with merge
+// order: defaults → global → workspace → explicit file → env → prompt overrides
+// (CLI in Phase 4). When promptName is non-empty and the prompt exists, the
+// returned Effective has that prompt's loop overrides applied. When promptName
+// is empty, returns root effective (same as ResolveEffective). When promptName
+// is set but not found, returns (nil, false, nil). Errors from load or env
+// parsing are returned as (nil, false, err).
+func ResolveEffectiveForPrompt(getenv func(string) string, cwd, configPath, promptName string) (*Effective, bool, error) {
+	resolved, rootLoop, err := loadLayersAndRootLoop(getenv, cwd, configPath)
+	if err != nil {
+		return nil, false, err
+	}
+	if promptName == "" {
+		return RootEffective(resolved, rootLoop), true, nil
+	}
+	eff, ok := EffectiveForPrompt(resolved, promptName, rootLoop)
+	if !ok {
+		return nil, false, nil
+	}
+	return eff, true, nil
 }
