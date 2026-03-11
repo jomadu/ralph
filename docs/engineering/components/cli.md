@@ -204,8 +204,8 @@ Output format (e.g. table, YAML, JSON) is implementation-defined but must includ
 ### Syntax
 
 - `ralph show config [flags]` — Output the effective config for the current context (same resolution as run). Optionally include provenance (which layer supplied each value).
-- `ralph show prompt [name] [flags]` — Show detailed information for the prompt named `name`. If `name` is omitted: behavior is defined (e.g. error “name required”, or list all prompts with detail); the implementation must document and stick to one behavior.
-- `ralph show alias [name] [flags]` — Show detailed information for the alias named `name`. If `name` is omitted: behavior is defined (e.g. error “name required”, or list all aliases with detail); the implementation must document and stick to one behavior.
+- `ralph show prompt [name] [flags]` — Show detailed information for the prompt named `name`. **When `name` is omitted:** the implementation errors with "name required" and suggests `ralph show prompt <name>` or `ralph list prompts`; name is required.
+- `ralph show alias [name] [flags]` — Show detailed information for the alias named `name`. **When `name` is omitted:** the implementation errors with "name required" and suggests `ralph show alias <name>` or `ralph list aliases`; name is required.
 
 **Required:** The first argument after `show` must be one of: **config**, **prompt**, **alias**. Unknown object (e.g. `ralph show foo`) → error and non-zero exit.
 

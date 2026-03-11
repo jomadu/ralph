@@ -450,7 +450,7 @@ func showPromptCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
 				fmt.Fprintln(os.Stderr, "ralph show prompt: name required (use 'ralph show prompt <name>' or 'ralph list prompts')")
-				os.Exit(1)
+				return fmt.Errorf("ralph show prompt: name required")
 			}
 			name := args[0]
 			configPath, _ := cmd.Root().PersistentFlags().GetString("config")
@@ -465,7 +465,7 @@ func showPromptCmd() *cobra.Command {
 			p, ok := eff.Prompts[name]
 			if !ok {
 				fmt.Fprintf(os.Stderr, "ralph show prompt: unknown prompt %q\n", name)
-				os.Exit(1)
+				return fmt.Errorf("ralph show prompt: unknown prompt %q", name)
 			}
 			fmt.Printf("name: %s\n", name)
 			if p.DisplayName != "" {
@@ -493,7 +493,7 @@ func showAliasCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
 				fmt.Fprintln(os.Stderr, "ralph show alias: name required (use 'ralph show alias <name>' or 'ralph list aliases')")
-				os.Exit(1)
+				return fmt.Errorf("ralph show alias: name required")
 			}
 			name := args[0]
 			configPath, _ := cmd.Root().PersistentFlags().GetString("config")
@@ -508,7 +508,7 @@ func showAliasCmd() *cobra.Command {
 			a, ok := eff.Aliases[name]
 			if !ok {
 				fmt.Fprintf(os.Stderr, "ralph show alias: unknown alias %q\n", name)
-				os.Exit(1)
+				return fmt.Errorf("ralph show alias: unknown alias %q", name)
 			}
 			fmt.Printf("name: %s\ncommand: %q\n", name, a.Command)
 			return nil
