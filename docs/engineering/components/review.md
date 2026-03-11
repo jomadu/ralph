@@ -16,7 +16,7 @@ Implements the requirements assigned to this component in the [engineering READM
 
 **Produces**
 
-- **Report file** — Written to user-chosen path (or default). Contains narrative feedback, machine-parseable summary line, and full suggested revision (inline or by reference). Report file must exist at the expected path for exit codes 0 or 1; if report write fails, exit 2.
+- **Report file** — Written to user-chosen path (or default). Default when the user does not specify a path: current working directory, file `ralph-review-report.txt` (overwrites if present). Contains narrative feedback, machine-parseable summary line, and full suggested revision (inline or by reference). Report file must exist at the expected path for exit codes 0 or 1; if report write fails or path is a directory, exit 2.
 - **Revision file** — When apply is requested and path is valid: revision written to path, subject to confirmation when overwriting and when interactive. When prompt was from stdin and apply is requested without revision path: error, no write, exit 2.
 - **Exit code** — 0 (review completed, no prompt errors), 1 (review completed, prompt has errors), 2 (review or apply did not complete successfully). Derivation: after report file is verified to exist, parse the machine-parseable summary to choose 0 vs 1; otherwise 2.
 

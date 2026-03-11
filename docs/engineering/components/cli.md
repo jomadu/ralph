@@ -149,7 +149,7 @@ Precedence: CLI flags override environment and config (config component layer or
 
 | Flag | Short | Type | Effect |
 |------|-------|------|--------|
-| `--report` | — | path | Write report file to this path. If omitted, use documented default (e.g. temp file or cwd). Path must be writable. |
+| `--report` | — | path | Write report file to this path. If omitted, report is written to `./ralph-review-report.txt` in the current working directory. Path must be writable; if it is an existing directory, error and exit 2. |
 | `--prompt-output` | — | path | When using `--apply`, write the revision to this path. **Required** when prompt is from stdin and `--apply` is set; if missing in that case, error and exit 2. When prompt is from file/alias, may default to source file (with confirmation) or require path; behavior must be documented. |
 | `--apply` | — | — | Request that the suggested revision be written to a file. In interactive mode, confirmation is required before overwriting (unless `--yes`). In non-interactive mode, use `--yes` to apply without confirmation or error with a clear message if confirmation would be needed. |
 | `--yes` | `-y` | — | Non-interactive apply: do not prompt for confirmation; apply revision when `--apply` is set. If confirmation would be required and session is non-interactive and `--yes` is not set, exit 2 with clear message. |

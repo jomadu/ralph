@@ -1,20 +1,34 @@
 package review
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
 
-func TestRun_reportPathRequired(t *testing.T) {
-	err := Run([]byte("prompt"), RunOptions{})
-	if err == nil {
-		t.Fatal("Run(empty ReportPath) err = nil, want ErrReportPathRequired")
+func TestRun_defaultReportPath(t *testing.T) {
+	dir := t.TempDir()
+	prompt := []byte("# prompt")
+	err := Run(prompt, RunOptions{WorkingDir: dir})
+	if err != nil {
+		t.Fatalf("Run(empty ReportPath, WorkingDir set) err = %v", err)
 	}
-	if !errors.Is(err, ErrReportPathRequired) {
-		t.Errorf("err = %v, want ErrReportPathRequired", err)
+	defaultPath := filepath.Join(dir, DefaultReportFilename)
+	data, err := os.ReadFile(defaultPath)
+	if err != nil {
+		t.Fatalf("ReadFile(default report) err = %v", err)
+	}
+	if !strings.Contains(string(data), "ralph-review: status=ok") {
+		t.Errorf("default report missing summary line")
+	}
+}
+
+func TestRun_reportPathIsDirectory(t *testing.T) {
+	dir := t.TempDir()
+	err := Run([]byte("x"), RunOptions{ReportPath: dir})
+	if err == nil {
+		t.Fatal("Run(report path = dir) err = nil, want error")
 	}
 	if !IsExit2(err) {
 		t.Error("IsExit2(err) = false, want true")
