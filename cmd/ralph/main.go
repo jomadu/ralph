@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/maxdunn/ralph/internal/config"
 	"github.com/maxdunn/ralph/internal/review"
@@ -73,10 +74,20 @@ func main() {
 
 func runCmd() *cobra.Command {
 	var (
-		filePath   string
-		aiCmd      string
-		aiCmdAlias string
-		dryRun     bool
+		filePath         string
+		aiCmd            string
+		aiCmdAlias       string
+		dryRun           bool
+		maxIterations    int
+		unlimited        bool
+		failureThreshold int
+		iterationTimeout int
+		maxOutputBuffer  int
+		noPreamble       bool
+		signalSuccess    string
+		signalFailure    string
+		signalPrecedence string
+		contextStrings   []string
 	)
 	cmd := &cobra.Command{
 		Use:   "run [alias]",
@@ -87,6 +98,24 @@ func runCmd() *cobra.Command {
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
+			}
+			// Validate loop flag values (cli.md: invalid or out-of-range → error and exit non-zero).
+			// Defaults -1 mean "not set"; we only validate when user passed a value (including 0 for timeouts).
+			if maxIterations < 0 {
+				fmt.Fprintln(os.Stderr, "ralph run: --max-iterations must be >= 0")
+				os.Exit(1)
+			}
+			if failureThreshold != -1 && failureThreshold < 0 {
+				fmt.Fprintln(os.Stderr, "ralph run: --failure-threshold must be >= 0")
+				os.Exit(1)
+			}
+			if iterationTimeout != -1 && iterationTimeout < 0 {
+				fmt.Fprintln(os.Stderr, "ralph run: --iteration-timeout must be >= 0")
+				os.Exit(1)
+			}
+			if maxOutputBuffer != -1 && maxOutputBuffer < 0 {
+				fmt.Fprintln(os.Stderr, "ralph run: --max-output-buffer must be >= 0")
+				os.Exit(1)
 			}
 			opts := review.ResolveOptions{}
 			if len(args) > 0 {
@@ -150,10 +179,23 @@ func runCmd() *cobra.Command {
 				fmt.Fprintln(os.Stderr, "ralph run: AI command not resolved (missing or invalid --ai-cmd / --ai-cmd-alias or config)")
 				os.Exit(runloop.ExitErrorPreLoop)
 			}
+			// Apply CLI overrides to effective loop (cli.md: flags override config for this run).
+			loop := applyRunLoopOverrides(eff.Loop, runLoopOverrides{
+				maxIterations:    maxIterations,
+				unlimited:        unlimited,
+				failureThreshold: failureThreshold,
+				iterationTimeout: iterationTimeout,
+				maxOutputBuffer:  maxOutputBuffer,
+				noPreamble:       noPreamble,
+				signalSuccess:    signalSuccess,
+				signalFailure:    signalFailure,
+				signalPrecedence: signalPrecedence,
+				context:          contextStrings,
+			})
 			runOpts := runloop.RunOptions{
 				Command:      command,
 				PromptBytes:  promptBytes,
-				Loop:         eff.Loop,
+				Loop:         loop,
 				Cwd:          cwd,
 				Env:          os.Environ(),
 				DryRun:       dryRun,
@@ -169,10 +211,81 @@ func runCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&filePath, "file", "f", "", "Read prompt from this file (mutually exclusive with alias and stdin)")
+	// Loop control
+	cmd.Flags().IntVarP(&maxIterations, "max-iterations", "n", 0, "Override max iterations for this run (0 = use config default)")
+	cmd.Flags().BoolVarP(&unlimited, "unlimited", "u", false, "Run until success signal or failure threshold; no iteration cap")
+	cmd.Flags().IntVar(&failureThreshold, "failure-threshold", -1, "Consecutive failures before exit; override for this run")
+	cmd.Flags().IntVar(&iterationTimeout, "iteration-timeout", -1, "Per-iteration timeout in seconds (0 = no timeout)")
+	cmd.Flags().IntVar(&maxOutputBuffer, "max-output-buffer", -1, "Max output buffer in bytes for capturing AI stdout")
+	cmd.Flags().BoolVar(&noPreamble, "no-preamble", false, "Disable preamble injection for this run")
+	cmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Print assembled prompt and exit 0; do not invoke AI")
+	// AI command
 	cmd.Flags().StringVar(&aiCmd, "ai-cmd", "", "Direct AI command string for this run")
 	cmd.Flags().StringVar(&aiCmdAlias, "ai-cmd-alias", "", "AI command alias name from config for this run")
-	cmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Print assembled prompt and exit 0; do not invoke AI")
+	// Signals
+	cmd.Flags().StringVar(&signalSuccess, "signal-success", "", "Success signal string for this run")
+	cmd.Flags().StringVar(&signalFailure, "signal-failure", "", "Failure signal string for this run")
+	cmd.Flags().StringVar(&signalPrecedence, "signal-precedence", "", "When both signals appear: static or ai_interpreted")
+	// Context / preamble
+	cmd.Flags().StringArrayVarP(&contextStrings, "context", "c", nil, "Inline context injected into preamble (repeatable)")
 	return cmd
+}
+
+// runLoopOverrides holds CLI flag values that override effective config for this run (cli.md ralph run Flags).
+type runLoopOverrides struct {
+	maxIterations    int
+	unlimited        bool
+	failureThreshold int
+	iterationTimeout int
+	maxOutputBuffer  int
+	noPreamble       bool
+	signalSuccess    string
+	signalFailure    string
+	signalPrecedence string
+	context          []string
+}
+
+// applyRunLoopOverrides applies CLI overrides to the effective loop. Only non-zero or set overrides apply.
+// maxIterations 0 = use config; -1 sentinel for "not set" is not used (we use 0 for max-iterations default).
+// For failure-threshold, iteration-timeout, max-output-buffer we use -1 as "not set".
+func applyRunLoopOverrides(base config.LoopSettings, o runLoopOverrides) config.LoopSettings {
+	out := base
+	if o.unlimited {
+		// Run-loop has a bounded for-loop; use a large cap so it effectively runs until signal or threshold.
+		const unlimitedCap = 1<<31 - 1
+		out.MaxIterations = unlimitedCap
+	} else if o.maxIterations > 0 {
+		out.MaxIterations = o.maxIterations
+	}
+	if o.failureThreshold >= 0 {
+		out.FailureThreshold = o.failureThreshold
+	}
+	if o.iterationTimeout >= 0 {
+		out.TimeoutSeconds = o.iterationTimeout
+	}
+	if o.signalSuccess != "" {
+		out.SuccessSignal = o.signalSuccess
+	}
+	if o.signalFailure != "" {
+		out.FailureSignal = o.signalFailure
+	}
+	if o.signalPrecedence != "" {
+		out.SignalPrecedence = o.signalPrecedence
+	}
+	if o.noPreamble {
+		out.Preamble = ""
+	} else if len(o.context) > 0 {
+		// -c/--context: inject as CONTEXT section into preamble (repeatable; join with newlines).
+		contextBlock := "CONTEXT\n" + strings.Join(o.context, "\n")
+		if out.Preamble != "" {
+			out.Preamble = out.Preamble + "\n" + contextBlock
+		} else {
+			out.Preamble = contextBlock
+		}
+	}
+	// maxOutputBuffer: parsed and validated but run-loop/backend do not yet use it; no field on LoopSettings.
+	_ = o.maxOutputBuffer
+	return out
 }
 
 // promptProviderForCmd builds a review.PromptProvider from root --config and cwd (explicit file or global+workspace).
