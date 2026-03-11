@@ -11,9 +11,11 @@ You are an AI coding agent executing a build procedure. This is an EXECUTABLE PR
 
 ---
 
-## PHASE 1: OBSERVE
+## PHASE 1: OBSERVE (documentation research)
 
 Execute these observation tasks to gather information. Use AGENTS.md as your guide for where things live and which commands to run.
+
+**Sub-agents:** During this phase you MAY use sub-agents (e.g. launch parallel or delegated agents) to speed or deepen research. Use sub-agents to: parallelize reading specifications, implementation, and task details; delegate focused study of one area (e.g. one spec tree or one implementation directory) while you or another sub-agent handles another; or run independent research tasks (e.g. "read all R*.md in docs/intent and summarize"). Consolidate sub-agent results before proceeding to ORIENT. Do not use sub-agents for DECIDE or ACT—those remain single-agent.
 
 ### 1. Study AGENTS.md
 
