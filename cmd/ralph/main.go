@@ -535,6 +535,8 @@ func (m *mergedPromptProvider) PromptByName(name string) (path, content string, 
 	return "", "", false
 }
 
+// reviewCmd builds the ralph review subcommand (T6.1). Syntax: review [alias], review -f <path>, or stdin.
+// Flags: --file/-f, --report, --prompt-output, --apply, --yes/-y, --quiet, --log-level; --config from root.
 func reviewCmd() *cobra.Command {
 	var (
 		filePath     string
