@@ -32,9 +32,12 @@ func (f invokerAdapter) Invoke(command string, promptBytes []byte, cwd string, e
 
 // Run validates the AI command, then runs the loop: for each iteration invokes
 // the backend with the assembled prompt, captures stdout, and scans for the
-// configured success signal. On match: reports completion (message, iteration
-// count, timing) and returns ExitSuccess. When max iterations is reached
-// without success, returns ExitMaxIterations. Implements T3.4, O001/R004, O004/R002.
+// configured success and failure signals. On success: reports completion and
+// returns ExitSuccess. On failure signal: increments consecutive-failure count;
+// if count >= failure threshold, reports and returns ExitFailureThreshold.
+// When max iterations is reached without success, returns ExitMaxIterations.
+// Static precedence: success checked first (success wins if both present).
+// Implements T3.4, T3.5, O001/R004, O001/R005, O004/R002, O004/R003.
 func Run(opts RunOptions) (exitCode int, err error) {
 	if opts.Invoker == nil {
 		opts.Invoker = invokerAdapter(backend.Invoke)
@@ -48,6 +51,11 @@ func Run(opts RunOptions) (exitCode int, err error) {
 	}
 
 	start := time.Now()
+	consecutiveFailures := 0
+	threshold := opts.Loop.FailureThreshold
+	if threshold <= 0 {
+		threshold = 1
+	}
 	for i := 1; i <= opts.Loop.MaxIterations; i++ {
 		preamble := buildPreamble(opts.Loop.Preamble, i)
 		assembled := AssemblePrompt(preamble, opts.PromptBytes)
@@ -60,6 +68,15 @@ func Run(opts RunOptions) (exitCode int, err error) {
 			report(completionMessage(i, elapsed))
 			return ExitSuccess, nil
 		}
+		if ContainsFailureSignal(stdout, opts.Loop.FailureSignal) {
+			consecutiveFailures++
+			if consecutiveFailures >= threshold {
+				report(fmt.Sprintf("Stopped after %d consecutive failure(s) (threshold: %d).", consecutiveFailures, opts.Loop.FailureThreshold))
+				return ExitFailureThreshold, nil
+			}
+			continue
+		}
+		// No success and no failure signal: do not increment consecutive count (T3.8 may treat as failure later).
 	}
 	report(fmt.Sprintf("Stopped after %d iteration(s) without success signal.", opts.Loop.MaxIterations))
 	return ExitMaxIterations, nil

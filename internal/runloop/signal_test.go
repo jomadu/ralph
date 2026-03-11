@@ -26,3 +26,25 @@ func TestContainsSuccessSignal(t *testing.T) {
 		})
 	}
 }
+
+func TestContainsFailureSignal(t *testing.T) {
+	tests := []struct {
+		name   string
+		stdout []byte
+		signal string
+		want   bool
+	}{
+		{"match substring", []byte("err <promise>FAILURE</promise> more"), "<promise>FAILURE</promise>", true},
+		{"no match", []byte("Still working..."), "<promise>FAILURE</promise>", false},
+		{"empty signal never matches", []byte("anything"), "", false},
+		{"signal equals output", []byte("FAIL"), "FAIL", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ContainsFailureSignal(tt.stdout, tt.signal)
+			if got != tt.want {
+				t.Errorf("ContainsFailureSignal(%q, %q) = %v, want %v", tt.stdout, tt.signal, got, tt.want)
+			}
+		})
+	}
+}
