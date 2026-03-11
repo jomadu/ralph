@@ -40,8 +40,8 @@ Documentation must cover at least:
 
 ### Procedures (install, uninstall, upgrade)
 
-- **Install** — Document where the binary is installed, how to add it to PATH if needed, and how to verify (`ralph version`). Any install script or package (e.g. Homebrew, npm, direct binary) must be documented so users can install and invoke Ralph.
-- **Uninstall** — Document removal of the binary and optional cleanup (config directory, caches). Uninstall is complete and documented so users can remove Ralph cleanly.
+- **Install** — Document where the binary is installed, how to add it to PATH if needed, and how to verify (`ralph version`). Any install script or package (e.g. Homebrew, npm, direct binary) must be documented so users can install and invoke Ralph. The repository provides `scripts/install.sh`: installs from GitHub release artifacts to a configurable directory (default `~/bin`), records the install path in `~/.config/ralph/install-state` for uninstall, and does not modify PATH or create symlinks; the user adds the install directory to PATH. README documents install steps, version selection, and verification.
+- **Uninstall** — Document removal of the binary and optional cleanup (config directory, caches). Uninstall is complete and documented so users can remove Ralph cleanly. The repository provides `scripts/uninstall.sh`: reads the install directory from `~/.config/ralph/install-state`, removes the binary from that directory and removes the install state file; user config (e.g. `ralph-config.yml`) is not removed. Because install does not modify PATH or symlinks, uninstall leaves no broken references.
 - **Upgrade** — Document how to upgrade (e.g. reinstall over existing, package manager upgrade). Backward compatibility within a non-breaking version and any documented migration for breaking changes (per O011) are explained. Release notes link to upgrade and migration when relevant.
 
 ### Discoverability (single place or linked set)
