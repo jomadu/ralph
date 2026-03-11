@@ -44,6 +44,16 @@ Documentation must cover at least:
 - **Uninstall** — Document removal of the binary and optional cleanup (config directory, caches). Uninstall is complete and documented so users can remove Ralph cleanly.
 - **Upgrade** — Document how to upgrade (e.g. reinstall over existing, package manager upgrade). Backward compatibility within a non-breaking version and any documented migration for breaking changes (per O011) are explained. Release notes link to upgrade and migration when relevant.
 
-### Consistency with implementation
+### Discoverability (single place or linked set)
 
-When implementation specs change in a way that affects user or automation contract (e.g. new exit code, config key, or report format), the documentation component is updated so that user docs, procedures, and contract docs remain accurate. Product requirements that reference "documented" behavior are satisfied by this component.
+User-facing docs must provide a single place or clearly linked set for:
+
+- **CLI and flags** — Authoritative spec: [cli.md](cli.md). README summarizes subcommands and flags and links to this file.
+- **Config and env** — Schema, layer order, and all env vars: [config.md](config.md). README summarizes and links.
+- **Exit codes** — Canonical contract: [docs/exit-codes.md](../../exit-codes.md). README summarizes and links.
+
+The README section "Where to look (CLI, config, env, exit codes)" is the discoverability entry point and links to each canonical source.
+
+### Consistency with implementation (doc accuracy)
+
+When implementation specs change in a way that affects user or automation contract (e.g. new flag, exit code, config key, or report format), the documentation component is updated so that user docs, procedures, and contract docs remain accurate. Update the engineering spec first (cli.md, config.md, run-loop.md, review.md, etc.), then README and [docs/exit-codes.md](../../exit-codes.md) as needed. Product requirements that reference "documented" behavior are satisfied by this component.
