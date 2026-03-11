@@ -90,6 +90,7 @@ func Run(opts RunOptions) (exitCode int, err error) {
 	if threshold <= 0 {
 		threshold = 1
 	}
+	var iterationDurations []time.Duration
 	for i := 1; i <= opts.Loop.MaxIterations; i++ {
 		select {
 		case <-ctx.Done():
@@ -98,7 +99,9 @@ func Run(opts RunOptions) (exitCode int, err error) {
 		}
 		preamble := buildPreamble(opts.Loop.Preamble, i)
 		assembled := AssemblePrompt(preamble, opts.PromptBytes)
+		iterStart := time.Now()
 		stdout, _, invErr := opts.Invoker.Invoke(opts.Command, assembled, opts.Cwd, opts.Env, opts.Loop.TimeoutSeconds)
+		iterationDurations = append(iterationDurations, time.Since(iterStart))
 		if ctx.Err() != nil {
 			return ExitInterrupt, nil
 		}
@@ -114,6 +117,7 @@ func Run(opts RunOptions) (exitCode int, err error) {
 		if ContainsSuccessSignal(stdout, opts.Loop.SuccessSignal) {
 			elapsed := time.Since(start)
 			report(completionMessage(i, elapsed))
+			reportIterationStats(report, iterationDurations)
 			return ExitSuccess, nil
 		}
 		// Failure: either failure signal present or process exited without signal (T3.8, O001/R009).
@@ -125,11 +129,35 @@ func Run(opts RunOptions) (exitCode int, err error) {
 			} else {
 				report(fmt.Sprintf("Stopped after %d consecutive iteration(s) without success or failure signal (threshold: %d).", consecutiveFailures, opts.Loop.FailureThreshold))
 			}
+			reportIterationStats(report, iterationDurations)
 			return ExitFailureThreshold, nil
 		}
 	}
 	report(fmt.Sprintf("Stopped after %d iteration(s) without success signal (max: %d).", opts.Loop.MaxIterations, opts.Loop.MaxIterations))
+	reportIterationStats(report, iterationDurations)
 	return ExitMaxIterations, nil
+}
+
+// reportIterationStats reports min/max/mean duration per iteration when there are
+// two or more iterations (T3.12, O004/R008). Single-iteration timing is already
+// in the completion message; multi-iteration runs get statistics for tuning.
+func reportIterationStats(report func(string), durations []time.Duration) {
+	if len(durations) < 2 {
+		return
+	}
+	var total time.Duration
+	minD, maxD := durations[0], durations[0]
+	for _, d := range durations {
+		total += d
+		if d < minD {
+			minD = d
+		}
+		if d > maxD {
+			maxD = d
+		}
+	}
+	meanD := total / time.Duration(len(durations))
+	report(fmt.Sprintf("Iteration stats: min %.2fs, max %.2fs, mean %.2fs (%d iterations).", minD.Seconds(), maxD.Seconds(), meanD.Seconds(), len(durations)))
 }
 
 func buildPreamble(preamble string, iteration int) string {

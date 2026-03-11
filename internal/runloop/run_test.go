@@ -80,13 +80,13 @@ func TestRun_MaxIterationsWithoutSuccess(t *testing.T) {
 	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
 		return []byte("no signal here"), 0, nil
 	}
-	var reported string
+	var reported []string
 	code, err := Run(RunOptions{
 		Command:     "true",
 		PromptBytes: []byte("p"),
 		Loop:        loop,
 		Invoker:     invokerAdapter(invoker),
-		Reporter:    func(msg string) { reported = msg },
+		Reporter:    func(msg string) { reported = append(reported, msg) },
 	})
 	if err != nil {
 		t.Fatalf("Run: %v", err)
@@ -94,7 +94,8 @@ func TestRun_MaxIterationsWithoutSuccess(t *testing.T) {
 	if code != ExitMaxIterations {
 		t.Errorf("exit code = %d, want %d (ExitMaxIterations)", code, ExitMaxIterations)
 	}
-	if !strings.Contains(reported, "Stopped after 2 iteration(s)") || !strings.Contains(reported, "max: 2") {
+	all := strings.Join(reported, " ")
+	if !strings.Contains(all, "Stopped after 2 iteration(s)") || !strings.Contains(all, "max: 2") {
 		t.Errorf("reported = %q", reported)
 	}
 }
@@ -207,13 +208,13 @@ func TestRun_FailureThresholdReached_ExitsWithCode(t *testing.T) {
 	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
 		return []byte("<promise>FAILURE</promise>"), 0, nil
 	}
-	var reported string
+	var reported []string
 	code, err := Run(RunOptions{
 		Command:     "true",
 		PromptBytes: []byte("p"),
 		Loop:        loop,
 		Invoker:     invokerAdapter(invoker),
-		Reporter:    func(msg string) { reported = msg },
+		Reporter:    func(msg string) { reported = append(reported, msg) },
 	})
 	if err != nil {
 		t.Fatalf("Run: %v", err)
@@ -221,7 +222,8 @@ func TestRun_FailureThresholdReached_ExitsWithCode(t *testing.T) {
 	if code != ExitFailureThreshold {
 		t.Errorf("exit code = %d, want %d (ExitFailureThreshold)", code, ExitFailureThreshold)
 	}
-	if !strings.Contains(reported, "2 consecutive failure(s)") || !strings.Contains(reported, "threshold: 2") {
+	all := strings.Join(reported, " ")
+	if !strings.Contains(all, "2 consecutive failure(s)") || !strings.Contains(all, "threshold: 2") {
 		t.Errorf("reported = %q", reported)
 	}
 }
@@ -325,13 +327,13 @@ func TestRun_NoSignalTreatedAsFailure(t *testing.T) {
 		// Iteration 2: again no signal → threshold reached, exit.
 		return []byte("again no signal"), 0, nil
 	}
-	var reported string
+	var reported []string
 	code, err := Run(RunOptions{
 		Command:     "true",
 		PromptBytes: []byte("p"),
 		Loop:        loop,
 		Invoker:     invokerAdapter(invoker),
-		Reporter:    func(msg string) { reported = msg },
+		Reporter:    func(msg string) { reported = append(reported, msg) },
 	})
 	if err != nil {
 		t.Fatalf("Run: %v", err)
@@ -342,10 +344,11 @@ func TestRun_NoSignalTreatedAsFailure(t *testing.T) {
 	if callCount != 2 {
 		t.Errorf("invoker called %d times, want 2 (two no-signal iterations then exit)", callCount)
 	}
-	if !strings.Contains(reported, "without success or failure signal") {
+	all := strings.Join(reported, " ")
+	if !strings.Contains(all, "without success or failure signal") {
 		t.Errorf("reported = %q (should distinguish no-signal)", reported)
 	}
-	if !strings.Contains(reported, "threshold: 2") {
+	if !strings.Contains(all, "threshold: 2") {
 		t.Errorf("reported = %q", reported)
 	}
 }
@@ -445,6 +448,85 @@ func TestRun_InterruptReturnsExitInterrupt(t *testing.T) {
 	}
 	if code != ExitInterrupt {
 		t.Errorf("exit code = %d, want ExitInterrupt (%d)", code, ExitInterrupt)
+	}
+}
+
+// TestRun_IterationStatistics verifies T3.12/O004/R008: after a multi-iteration
+// run, iteration statistics (min/max/mean duration) are reported.
+func TestRun_IterationStatistics(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 5
+	callCount := 0
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+		callCount++
+		if callCount == 3 {
+			return []byte("<promise>SUCCESS</promise>"), 0, nil
+		}
+		return []byte("working"), 0, nil
+	}
+	var reported []string
+	report := func(msg string) { reported = append(reported, msg) }
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+		Reporter:    report,
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitSuccess {
+		t.Errorf("exit code = %d, want ExitSuccess", code)
+	}
+	if callCount != 3 {
+		t.Errorf("invoker called %d times, want 3", callCount)
+	}
+	// Completion message and iteration stats (2+ iterations).
+	var hasCompletion, hasStats bool
+	for _, s := range reported {
+		if strings.Contains(s, "Completed successfully") && strings.Contains(s, "3 iterations") {
+			hasCompletion = true
+		}
+		if strings.Contains(s, "Iteration stats:") && strings.Contains(s, "min") && strings.Contains(s, "max") && strings.Contains(s, "mean") && strings.Contains(s, "3 iterations") {
+			hasStats = true
+		}
+	}
+	if !hasCompletion {
+		t.Errorf("reported messages = %v; expected completion message", reported)
+	}
+	if !hasStats {
+		t.Errorf("reported messages = %v; expected iteration stats line (min/max/mean)", reported)
+	}
+}
+
+// TestRun_SingleIteration_NoIterationStats verifies that a single-iteration
+// success does not emit the "Iteration stats:" line (only completion message).
+func TestRun_SingleIteration_NoIterationStats(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 3
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+		return []byte("<promise>SUCCESS</promise>"), 0, nil
+	}
+	var reported []string
+	report := func(msg string) { reported = append(reported, msg) }
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+		Reporter:    report,
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitSuccess {
+		t.Errorf("exit code = %d, want ExitSuccess", code)
+	}
+	for _, s := range reported {
+		if strings.Contains(s, "Iteration stats:") {
+			t.Errorf("single-iteration run should not report iteration stats; got %q", s)
+		}
 	}
 }
 
