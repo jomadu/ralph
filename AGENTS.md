@@ -29,28 +29,15 @@ All: `make all` (default target is build). Clean: `make clean`.
 
 Keep this section in sync with the Makefile.
 
-## Product and Engineering Documentation
+## Documentation (engineering as entry point)
 
-Documentation follows the **product** and **engineering** model defined in `building-intent.md` at repository root. **Product** answers who we're building for, what we're building, and why (outcomes and requirements at the level of intent). **Engineering** answers where each capability lives and how the system is built (components, interfaces, implementation specs).
+Use **engineering** as the primary context for build/implementation. Product holds intent; engineering holds placement and implementation specs and links to product.
 
-### Product (`docs/product/`)
+- **Engineering (start here):** `docs/engineering/README.md` — overview, high-level flow, **component list with O/R requirement IDs linking to product**. `docs/engineering/components/` — one file or directory per component; each has responsibility, interfaces, and **implementation specifications** (schemas, APIs, protocols). Requirement assignments live only in the engineering README; component docs link back to it.
+- **Product (via links):** Intent lives in `docs/product/` (outcomes, requirements). Engineering README and component docs reference product by O/R ID (e.g. links to `../product/O001-.../R002-....md`). For a given task, follow those links to read the relevant product requirement(s) when you need outcome/acceptance-criteria detail; do not read the full product tree up front.
+- **Methodology:** Product vs engineering roles, structure, and consistency rules: `building-intent.md`.
 
-- **Index:** `docs/product/README.md` — product summary and outcomes table.
-- **Structure:** Outcome directories `O<n>-<slug>/` use **three-digit zero-padded** IDs (e.g. `O001`, `O011`). Each outcome has:
-  - `README.md` — outcome definition (who, statement, why, verification, non-outcomes, risks table, requirements table).
-  - `R<n>-<slug>.md` — requirement documents (three-digit IDs, e.g. `R001`, `R008`). Each requirement is complete for intent: capability, acceptance criteria, edge cases, examples; implementation specs (schemas, APIs) live in engineering when present.
-- **Traceability:** Every requirement traces to one outcome; every outcome is listed in the product index.
-- **Exclude:** `docs/product/README.md` is the index, not a single outcome or requirement.
-
-### Engineering (`docs/engineering/`)
-
-- **Overview:** `docs/engineering/README.md` — purpose of engineering docs, high-level flow, **component list with assigned requirement IDs (O/R)**. This README is the single place for which component implements which product requirements; component docs do not duplicate the O/R list.
-- **Components:** `docs/engineering/components/` — one file (e.g. `cli.md`) or directory (e.g. `orchestrator/`) per component. Each component doc states responsibility, interfaces, and **implementation specifications** (schemas, APIs, protocols) that implementers build from. Requirement assignments are only in the engineering README.
-- **Traceability:** Every O/R in the engineering README exists in the product tree; product is source of truth for intent, engineering for implementation and placement.
-
-**Methodology:** Phased development (product P1–P4, engineering E1–E2), consistency rules, and templates are in `building-intent.md`.
-
-**Current state:** Product tree defined (O001–O011 and requirements). Engineering overview and components defined. Runtime implementation (e.g. Go loop runner) not yet built per TASK.md.
+**Current state:** Engineering overview and components defined; runtime implementation (e.g. Go loop runner) not yet built per TASK.md.
 
 ## Implementation Definition
 

@@ -15,7 +15,7 @@ You are an AI coding agent executing a build procedure. This is an EXECUTABLE PR
 
 Execute these observation tasks to gather information. Use AGENTS.md as your guide for where things live and which commands to run.
 
-**Sub-agents:** During this phase you MAY use sub-agents (e.g. launch parallel or delegated agents) to speed or deepen research. Use sub-agents to: parallelize reading specifications, implementation, and task details; delegate focused study of one area (e.g. one spec tree or one implementation directory) while you or another sub-agent handles another; or run independent research tasks (e.g. "read all R*.md in docs/intent and summarize"). Consolidate sub-agent results before proceeding to ORIENT. Do not use sub-agents for DECIDE or ACT—those remain single-agent.
+**Sub-agents:** During this phase you MAY use sub-agents (e.g. launch parallel or delegated agents) to speed or deepen research. Use sub-agents to: parallelize reading engineering docs, implementation, and task details; delegate focused study of one area (e.g. engineering README + one component, or one implementation directory) while you or another sub-agent handles another; or run independent research (e.g. "read docs/engineering/README.md and components X and Y"). Consolidate sub-agent results before proceeding to ORIENT. Do not use sub-agents for DECIDE or ACT—those remain single-agent.
 
 ### 1. Study AGENTS.md
 
@@ -26,7 +26,7 @@ Read AGENTS.md from the repository root. Extract and remember:
 - **Task Input** — Where task descriptions are documented
 - **Planning System** — Where draft plans live and how they are published
 - **Build/Test/Lint** — Dependencies and commands (or “manual” / “not required” if so stated)
-- **Specification** — Location (paths/globs), format, excludes, current state
+- **Documentation** — Engineering as entry point (paths); product reached via links from engineering
 - **Implementation** — Location, patterns, excludes, current state
 - **Audit Output** — Where audit reports go and in what format
 - **Quality Criteria** — For specs and implementation; refactoring triggers
@@ -38,9 +38,9 @@ If AGENTS.md is missing, note that bootstrap is needed.
 
 Run the query command documented in AGENTS.md to get ready work. Capture: available tasks, priorities, descriptions, dependencies, status. Store for later phases.
 
-### 3. Study specifications
+### 3. Study engineering docs (product via links)
 
-Read all specification files per the **Specification** section of AGENTS.md (location, format, excludes). For each, extract: job to be done / outcome, acceptance criteria, examples, cross-references, implementation status.
+Study the **engineering** docs per AGENTS.md: read `docs/engineering/README.md` (overview, flow, component→O/R map) and the relevant **component** docs in `docs/engineering/components/`. Use the README’s requirement IDs and links to pull in **product** requirement docs only when you need intent, acceptance criteria, or examples for the task you select — do not read the full product tree up front.
 
 ### 4. Study implementation
 
