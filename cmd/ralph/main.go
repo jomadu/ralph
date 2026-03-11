@@ -8,6 +8,7 @@ import (
 
 	"github.com/maxdunn/ralph/internal/config"
 	"github.com/maxdunn/ralph/internal/review"
+	"github.com/maxdunn/ralph/internal/runloop"
 	"github.com/spf13/cobra"
 )
 
@@ -22,12 +23,176 @@ func main() {
 	root.SetVersionTemplate("{{.Version}}\n")
 	root.Version = Version
 	root.PersistentFlags().String("config", "", "Use this file as the sole file-based config (must exist)")
-	root.AddCommand(versionCmd())
+	root.PersistentFlags().Bool("version", false, "Print version and exit 0")
+	// Unknown top-level command → error to stderr, non-zero exit, suggest --help (cli.md).
+	root.SilenceUsage = true
+	root.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
+		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", cmd.CommandPath())
+		return err
+	})
+	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		// Global --version: print and exit 0 (cli.md Global options).
+		if v, _ := cmd.Root().PersistentFlags().GetBool("version"); v {
+			fmt.Println(Version)
+			os.Exit(0)
+		}
+		// When --config is set, file must exist (R005); fail fast before subcommand.
+		configPath, _ := cmd.Root().PersistentFlags().GetString("config")
+		if configPath != "" {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+			path := configPath
+			if !filepath.IsAbs(path) {
+				path = filepath.Join(cwd, path)
+			}
+			if _, err := os.Stat(path); err != nil {
+				if os.IsNotExist(err) {
+					fmt.Fprintf(os.Stderr, "ralph: config file not found: %s\n", configPath)
+				} else {
+					fmt.Fprintf(os.Stderr, "ralph: config file: %s\n", err)
+				}
+				os.Exit(1)
+			}
+		}
+		return nil
+	}
+	root.AddCommand(runCmd())
 	root.AddCommand(reviewCmd())
 	root.AddCommand(listCmd())
+	root.AddCommand(showCmd())
+	root.AddCommand(versionCmd())
 	if err := root.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", root.Name())
 		os.Exit(1)
 	}
+}
+
+func runCmd() *cobra.Command {
+	var (
+		filePath   string
+		aiCmd      string
+		aiCmdAlias string
+		dryRun     bool
+	)
+	cmd := &cobra.Command{
+		Use:   "run [alias]",
+		Short: "Run the iteration loop",
+		Long:  "Prompt via alias, --file/-f <path>, or stdin. Exactly one source. Runs until success signal or failure threshold / max iterations.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			configPath, _ := cmd.Root().PersistentFlags().GetString("config")
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+			opts := review.ResolveOptions{}
+			if len(args) > 0 {
+				opts.Alias = args[0]
+			}
+			if filePath != "" {
+				opts.FilePath = filePath
+			}
+			if opts.Alias != "" && opts.FilePath != "" {
+				fmt.Fprintln(os.Stderr, "ralph run: exactly one of alias, --file/-f, or stdin required (cannot combine alias with --file)")
+				os.Exit(1)
+			}
+			if opts.Alias == "" && opts.FilePath == "" {
+				if stat, err := os.Stdin.Stat(); err == nil && (stat.Mode()&os.ModeCharDevice) != 0 {
+					fmt.Fprintln(os.Stderr, "ralph run: no prompt source (stdin is a terminal); use an alias, -f <path>, or pipe input")
+					os.Exit(1)
+				}
+				scanner := bufio.NewScanner(os.Stdin)
+				for scanner.Scan() {
+					opts.Stdin = append(opts.Stdin, scanner.Bytes()...)
+					opts.Stdin = append(opts.Stdin, '\n')
+				}
+				if err := scanner.Err(); err != nil {
+					return err
+				}
+			}
+			provider, err := promptProviderForCmd(cmd, configPath, cwd)
+			if err != nil {
+				return fmt.Errorf("config: %w", err)
+			}
+			promptBytes, err := runloop.LoadPromptOnce(provider, cwd, opts)
+			if err != nil {
+				if review.IsExit2(err) {
+					fmt.Fprintln(os.Stderr, err)
+					os.Exit(2)
+				}
+				return err
+			}
+			promptName := opts.Alias
+			eff, ok, err := config.Resolve(os.Getenv, cwd, configPath, promptName)
+			if err != nil {
+				return fmt.Errorf("config: %w", err)
+			}
+			if !ok && promptName != "" {
+				return fmt.Errorf("config: prompt %q not found", promptName)
+			}
+			overlay, _ := config.ParseEnvOverlay(os.Getenv)
+			directCmd := aiCmd
+			if directCmd == "" && overlay != nil && overlay.AICmd != nil {
+				directCmd = *overlay.AICmd
+			}
+			aliasName := aiCmdAlias
+			if aliasName == "" && overlay != nil && overlay.AICmdAlias != nil {
+				aliasName = *overlay.AICmdAlias
+			}
+			if directCmd == "" && aliasName == "" {
+				aliasName = "cursor-agent"
+			}
+			command, ok := config.ResolveAICommand(eff, directCmd, aliasName)
+			if !ok {
+				fmt.Fprintln(os.Stderr, "ralph run: AI command not resolved (missing or invalid --ai-cmd / --ai-cmd-alias or config)")
+				os.Exit(runloop.ExitErrorPreLoop)
+			}
+			runOpts := runloop.RunOptions{
+				Command:      command,
+				PromptBytes:  promptBytes,
+				Loop:         eff.Loop,
+				Cwd:          cwd,
+				Env:          os.Environ(),
+				DryRun:       dryRun,
+				StreamWriter: os.Stdout,
+			}
+			code, err := runloop.Run(runOpts)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(runloop.ExitErrorPreLoop)
+			}
+			os.Exit(code)
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&filePath, "file", "f", "", "Read prompt from this file (mutually exclusive with alias and stdin)")
+	cmd.Flags().StringVar(&aiCmd, "ai-cmd", "", "Direct AI command string for this run")
+	cmd.Flags().StringVar(&aiCmdAlias, "ai-cmd-alias", "", "AI command alias name from config for this run")
+	cmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "Print assembled prompt and exit 0; do not invoke AI")
+	return cmd
+}
+
+// promptProviderForCmd builds a review.PromptProvider from root --config and cwd (explicit file or global+workspace).
+func promptProviderForCmd(cmd *cobra.Command, configPath, cwd string) (review.PromptProvider, error) {
+	if configPath != "" {
+		path := configPath
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(cwd, path)
+		}
+		layer, err := config.LoadExplicit(path)
+		if err != nil {
+			return nil, err
+		}
+		return &review.FileLayerProvider{Layer: layer}, nil
+	}
+	global, workspace, err := config.LoadGlobalAndWorkspace(os.Getenv, cwd)
+	if err != nil {
+		return nil, err
+	}
+	return &mergedPromptProvider{global: global, workspace: workspace}, nil
 }
 
 func versionCmd() *cobra.Command {
@@ -36,6 +201,136 @@ func versionCmd() *cobra.Command {
 		Short: "Print version string and exit 0",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println(Version)
+			return nil
+		},
+	}
+}
+
+func showCmd() *cobra.Command {
+	showRoot := &cobra.Command{
+		Use:   "show",
+		Short: "Show effective config or detail for a prompt/alias",
+		Long:  "Use 'show config', 'show prompt [name]', or 'show alias [name]'. Same config resolution as run.",
+	}
+	showRoot.AddCommand(showConfigCmd())
+	showRoot.AddCommand(showPromptCmd())
+	showRoot.AddCommand(showAliasCmd())
+	return showRoot
+}
+
+func showConfigCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "config",
+		Short: "Output the effective config for the current context",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 0 {
+				return fmt.Errorf("ralph show config: unexpected argument %q", args[0])
+			}
+			configPath, _ := cmd.Root().PersistentFlags().GetString("config")
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+			eff, _, err := config.Resolve(os.Getenv, cwd, configPath, "")
+			if err != nil {
+				return fmt.Errorf("config: %w", err)
+			}
+			// Simple YAML-like output for effective config (loop + prompts + aliases).
+			fmt.Printf("loop:\n  max_iterations: %d\n  failure_threshold: %d\n  timeout_seconds: %d\n  success_signal: %q\n  failure_signal: %q\n  log_level: %q\n",
+				eff.Loop.MaxIterations, eff.Loop.FailureThreshold, eff.Loop.TimeoutSeconds,
+				eff.Loop.SuccessSignal, eff.Loop.FailureSignal, eff.Loop.LogLevel)
+			if len(eff.Prompts) > 0 {
+				fmt.Println("prompts:")
+				for name, p := range eff.Prompts {
+					fmt.Printf("  %s:\n", name)
+					if p.Path != "" {
+						fmt.Printf("    path: %q\n", p.Path)
+					}
+					if p.Content != "" {
+						fmt.Printf("    content: \"\"\"\n%s\"\"\"\n", p.Content)
+					}
+				}
+			}
+			if len(eff.Aliases) > 0 {
+				fmt.Println("aliases:")
+				for name, a := range eff.Aliases {
+					fmt.Printf("  %s: %q\n", name, a.Command)
+				}
+			}
+			return nil
+		},
+	}
+}
+
+func showPromptCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "prompt [name]",
+		Short: "Show detailed information for the prompt named [name]",
+		Long:  "Name is required. Errors if the prompt is not defined in resolved config.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				fmt.Fprintln(os.Stderr, "ralph show prompt: name required (use 'ralph show prompt <name>' or 'ralph list prompts')")
+				os.Exit(1)
+			}
+			name := args[0]
+			configPath, _ := cmd.Root().PersistentFlags().GetString("config")
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+			eff, _, err := config.Resolve(os.Getenv, cwd, configPath, "")
+			if err != nil {
+				return fmt.Errorf("config: %w", err)
+			}
+			p, ok := eff.Prompts[name]
+			if !ok {
+				fmt.Fprintf(os.Stderr, "ralph show prompt: unknown prompt %q\n", name)
+				os.Exit(1)
+			}
+			fmt.Printf("name: %s\n", name)
+			if p.DisplayName != "" {
+				fmt.Printf("display_name: %q\n", p.DisplayName)
+			}
+			if p.Description != "" {
+				fmt.Printf("description: %q\n", p.Description)
+			}
+			if p.Path != "" {
+				fmt.Printf("path: %q\n", p.Path)
+			}
+			if p.Content != "" {
+				fmt.Printf("content: \"\"\"\n%s\"\"\"\n", p.Content)
+			}
+			return nil
+		},
+	}
+}
+
+func showAliasCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "alias [name]",
+		Short: "Show detailed information for the alias named [name]",
+		Long:  "Name is required. Errors if the alias is not defined in resolved config.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				fmt.Fprintln(os.Stderr, "ralph show alias: name required (use 'ralph show alias <name>' or 'ralph list aliases')")
+				os.Exit(1)
+			}
+			name := args[0]
+			configPath, _ := cmd.Root().PersistentFlags().GetString("config")
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+			eff, _, err := config.Resolve(os.Getenv, cwd, configPath, "")
+			if err != nil {
+				return fmt.Errorf("config: %w", err)
+			}
+			a, ok := eff.Aliases[name]
+			if !ok {
+				fmt.Fprintf(os.Stderr, "ralph show alias: unknown alias %q\n", name)
+				os.Exit(1)
+			}
+			fmt.Printf("name: %s\ncommand: %q\n", name, a.Command)
 			return nil
 		},
 	}
@@ -81,23 +376,9 @@ func reviewCmd() *cobra.Command {
 				return err
 			}
 
-			var provider review.PromptProvider
-			if configPath != "" {
-				path := configPath
-				if !filepath.IsAbs(path) {
-					path = filepath.Join(cwd, path)
-				}
-				layer, err := config.LoadExplicit(path)
-				if err != nil {
-					return fmt.Errorf("config: %w", err)
-				}
-				provider = &review.FileLayerProvider{Layer: layer}
-			} else {
-				global, workspace, err := config.LoadGlobalAndWorkspace(os.Getenv, cwd)
-				if err != nil {
-					return fmt.Errorf("config: %w", err)
-				}
-				provider = &mergedPromptProvider{global: global, workspace: workspace}
+			provider, err := promptProviderForCmd(cmd, configPath, cwd)
+			if err != nil {
+				return fmt.Errorf("config: %w", err)
 			}
 
 			opts := review.ResolveOptions{}
