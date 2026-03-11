@@ -1,6 +1,7 @@
 package runloop
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -375,5 +376,62 @@ func TestRun_InvocationErrorTreatedAsNoSignal(t *testing.T) {
 	}
 	if !strings.Contains(reported, "without success or failure signal") || !strings.Contains(reported, "invocation error") {
 		t.Errorf("reported = %q (should mention invocation error)", reported)
+	}
+}
+
+// TestRun_InterruptReturnsExitInterrupt verifies T3.9/O004/R005: when the interrupt
+// context is cancelled (e.g. SIGINT/SIGTERM), Run returns ExitInterrupt (130).
+func TestRun_InterruptReturnsExitInterrupt(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // already cancelled
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 5
+	code, err := Run(RunOptions{
+		Command:          "true",
+		PromptBytes:      []byte("p"),
+		Loop:             loop,
+		Invoker:          invokerAdapter(func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) { return []byte("x"), 0, nil }),
+		InterruptContext: ctx,
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitInterrupt {
+		t.Errorf("exit code = %d, want ExitInterrupt (%d)", code, ExitInterrupt)
+	}
+}
+
+// TestRun_InterruptBetweenIterations verifies that if the interrupt context is
+// cancelled after the first iteration completes, Run returns ExitInterrupt
+// (checked at start of next iteration and after Invoke returns).
+func TestRun_InterruptBetweenIterations(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	callCount := 0
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+		callCount++
+		if callCount == 1 {
+			return []byte("no signal yet"), 0, nil
+		}
+		cancel() // simulate interrupt; Run will see it after this invocation returns
+		return []byte("no signal"), 0, nil
+	}
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 5
+	code, err := Run(RunOptions{
+		Command:          "true",
+		PromptBytes:      []byte("p"),
+		Loop:             loop,
+		Invoker:          invokerAdapter(invoker),
+		InterruptContext: ctx,
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitInterrupt {
+		t.Errorf("exit code = %d, want ExitInterrupt (%d)", code, ExitInterrupt)
+	}
+	// Run checks ctx after each Invoke; so we may have run 2 iterations then seen cancel.
+	if callCount < 1 || callCount > 2 {
+		t.Errorf("invoker called %d times, want 1 or 2", callCount)
 	}
 }

@@ -190,8 +190,9 @@ The prompt is read once at loop start and reused for every iteration. When no al
 | Code | Meaning |
 |------|---------|
 | 0 | Success signal received |
-| 1 | Failure threshold reached or abort |
-| 2 | Max iterations exhausted |
+| 2 | Error before loop (e.g. missing/invalid AI command) |
+| 3 | Max iterations exhausted |
+| 4 | Failure threshold reached |
 | 130 | Interrupted (SIGINT/SIGTERM) |
 
 ## License

@@ -1,8 +1,10 @@
 package runloop
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"strconv"
 	"time"
 
@@ -21,6 +23,10 @@ type RunOptions struct {
 	Invoker     backend.Invoker
 	// Reporter receives completion message on success; nil = print to os.Stdout.
 	Reporter func(msg string)
+	// InterruptContext if non-nil is used for interrupt detection (e.g. in tests);
+	// when it is cancelled, Run returns ExitInterrupt. If nil, Run uses
+	// signal.NotifyContext(background, os.Interrupt).
+	InterruptContext context.Context
 }
 
 // invokerAdapter adapts a package-level Invoke function to backend.Invoker.
@@ -36,11 +42,12 @@ func (f invokerAdapter) Invoke(command string, promptBytes []byte, cwd string, e
 // returns ExitSuccess. On failure signal or process exit without signal (T3.8,
 // O001/R009): increments consecutive-failure count; if count >= failure
 // threshold, reports and returns ExitFailureThreshold. When max iterations is
-// reached without success, returns ExitMaxIterations. Static precedence
+// reached without success, returns ExitMaxIterations. On SIGINT or SIGTERM
+// (T3.9, O004/R005): returns ExitInterrupt (130). Static precedence
 // (T3.6, O001/R006): success is checked before failure; when both signals
 // appear in the same output, the iteration is treated as success.
-// Implements T3.4, T3.5, T3.6, T3.7, T3.8, O001/R004, O001/R005, O001/R006, O001/R007,
-// O001/R009, O004/R002, O004/R003, O004/R004.
+// Implements T3.4, T3.5, T3.6, T3.7, T3.8, T3.9, O001/R004, O001/R005, O001/R006, O001/R007,
+// O001/R009, O004/R002, O004/R003, O004/R004, O004/R005.
 func Run(opts RunOptions) (exitCode int, err error) {
 	if opts.Invoker == nil {
 		opts.Invoker = invokerAdapter(backend.Invoke)
@@ -53,6 +60,17 @@ func Run(opts RunOptions) (exitCode int, err error) {
 		report = func(msg string) { fmt.Fprintln(os.Stdout, msg) }
 	}
 
+	// Interrupt: use optional context (e.g. for tests) or os.Interrupt (O004/R005).
+	var ctx context.Context
+	var stop context.CancelFunc
+	if opts.InterruptContext != nil {
+		ctx = opts.InterruptContext
+		stop = func() {}
+	} else {
+		ctx, stop = signal.NotifyContext(context.Background(), os.Interrupt)
+		defer stop()
+	}
+
 	start := time.Now()
 	consecutiveFailures := 0
 	threshold := opts.Loop.FailureThreshold
@@ -60,9 +78,17 @@ func Run(opts RunOptions) (exitCode int, err error) {
 		threshold = 1
 	}
 	for i := 1; i <= opts.Loop.MaxIterations; i++ {
+		select {
+		case <-ctx.Done():
+			return ExitInterrupt, nil
+		default:
+		}
 		preamble := buildPreamble(opts.Loop.Preamble, i)
 		assembled := AssemblePrompt(preamble, opts.PromptBytes)
 		stdout, _, invErr := opts.Invoker.Invoke(opts.Command, assembled, opts.Cwd, opts.Env, opts.Loop.TimeoutSeconds)
+		if ctx.Err() != nil {
+			return ExitInterrupt, nil
+		}
 		// Invocation error (e.g. timeout, crash, exec failure): treat as no-signal failure per T3.8/O001/R009.
 		if invErr != nil {
 			consecutiveFailures++

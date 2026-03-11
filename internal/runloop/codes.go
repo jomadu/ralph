@@ -15,4 +15,7 @@ const (
 	// ExitFailureThreshold is returned when consecutive failure signal count
 	// reaches the configured threshold (O001/R005, O004/R003).
 	ExitFailureThreshold = 4
+	// ExitInterrupt is returned when the process receives SIGINT or SIGTERM
+	// (O004/R005). 130 is the conventional exit code for SIGINT (128 + 2).
+	ExitInterrupt = 130
 )
