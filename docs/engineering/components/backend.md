@@ -26,6 +26,8 @@ Implements the requirements assigned to this component in the [engineering READM
 - Run-loop: once per iteration with the assembled prompt.
 - Review: when the review flow invokes the AI to evaluate the prompt (e.g. for report and suggested revision).
 
+**Implementation (T2.1)** — The interface is implemented in `internal/backend`: type `Invoker` with method `Invoke(command string, promptBytes []byte, cwd string, env []string) (stdout []byte, exitCode int, err error)`. Package function `Invoke` is the exec-style implementation (no shell; stdin receives prompt then stream closed; full stdout captured). Empty or whitespace command returns `ErrEmptyCommand`.
+
 ## Implementation spec
 
 ### Built-in AI command aliases
