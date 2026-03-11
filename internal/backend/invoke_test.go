@@ -10,7 +10,7 @@ import (
 )
 
 func TestInvoke_EmptyCommand(t *testing.T) {
-	_, code, err := Invoke("", []byte("hi"), "", nil)
+	_, code, err := Invoke("", []byte("hi"), "", nil, 0)
 	if err != ErrEmptyCommand {
 		t.Fatalf("Invoke(empty): err = %v, want ErrEmptyCommand", err)
 	}
@@ -20,7 +20,7 @@ func TestInvoke_EmptyCommand(t *testing.T) {
 }
 
 func TestInvoke_WhitespaceCommand(t *testing.T) {
-	_, code, err := Invoke("   \t  ", []byte("hi"), "", nil)
+	_, code, err := Invoke("   \t  ", []byte("hi"), "", nil, 0)
 	if err != ErrEmptyCommand {
 		t.Fatalf("Invoke(whitespace): err = %v, want ErrEmptyCommand", err)
 	}
@@ -52,7 +52,7 @@ func TestInvoke_EchoStdin(t *testing.T) {
 		}
 	}
 	input := []byte("hello stdin")
-	stdout, code, err := Invoke(cmd, input, "", nil)
+	stdout, code, err := Invoke(cmd, input, "", nil, 0)
 	if err != nil {
 		t.Fatalf("Invoke: %v", err)
 	}
@@ -72,7 +72,7 @@ func TestInvoke_Cwd(t *testing.T) {
 	}
 	if path, _ := exec.LookPath("pwd"); path != "" {
 		dir, _ := os.Getwd()
-		stdout, code, err := Invoke("pwd", nil, dir, nil)
+		stdout, code, err := Invoke("pwd", nil, dir, nil, 0)
 		if err != nil {
 			t.Fatalf("Invoke: %v", err)
 		}
@@ -98,7 +98,7 @@ func TestInvoke_CwdInherit(t *testing.T) {
 		t.Skip("pwd not available")
 	}
 	want, _ := os.Getwd()
-	stdout, code, err := Invoke("pwd", nil, "", nil)
+	stdout, code, err := Invoke("pwd", nil, "", nil, 0)
 	if err != nil {
 		t.Fatalf("Invoke: %v", err)
 	}
@@ -127,7 +127,7 @@ func TestInvoke_EnvInherit(t *testing.T) {
 	if cmd == "" {
 		t.Skip("printenv not available (Unix only)")
 	}
-	stdout, code, err := Invoke(cmd, nil, "", nil)
+	stdout, code, err := Invoke(cmd, nil, "", nil, 0)
 	if err != nil {
 		t.Fatalf("Invoke: %v", err)
 	}
@@ -137,5 +137,49 @@ func TestInvoke_EnvInherit(t *testing.T) {
 	got := string(bytes.TrimSpace(stdout))
 	if got != testVal {
 		t.Errorf("env inherit: got %q, want %q", got, testVal)
+	}
+}
+
+// TestInvoke_Timeout verifies that when timeoutSec > 0, the process is killed
+// after that many seconds and ErrTimeout is returned (T2.4).
+func TestInvoke_Timeout(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		// sleep 10 may not exist or behave the same on Windows
+		t.Skip("timeout test uses sleep (Unix)")
+	}
+	if path, _ := exec.LookPath("sleep"); path == "" {
+		t.Skip("sleep not available")
+	}
+	// sleep 10 should be killed after 1 second
+	stdout, code, err := Invoke("sleep 10", nil, "", nil, 1)
+	if err != ErrTimeout {
+		t.Fatalf("Invoke(sleep 10, timeout 1s): err = %v, want ErrTimeout", err)
+	}
+	if code != -1 {
+		t.Errorf("exitCode = %d, want -1 on timeout", code)
+	}
+	if len(stdout) != 0 {
+		t.Errorf("stdout = %q, want empty on timeout", stdout)
+	}
+}
+
+// TestInvoke_NoTimeout verifies that timeoutSec 0 means no timeout (process runs to completion).
+func TestInvoke_NoTimeout(t *testing.T) {
+	cmd := "true"
+	if runtime.GOOS == "windows" {
+		cmd = "cmd /c exit 0"
+	}
+	if path, _ := exec.LookPath("true"); path == "" && runtime.GOOS != "windows" {
+		cmd, _ = exec.LookPath("echo")
+		if cmd == "" {
+			t.Skip("no true/echo available")
+		}
+	}
+	_, code, err := Invoke(cmd, nil, "", nil, 0)
+	if err != nil {
+		t.Fatalf("Invoke(no timeout): %v", err)
+	}
+	if code != 0 {
+		t.Errorf("exitCode = %d, want 0", code)
 	}
 }

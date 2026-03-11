@@ -54,6 +54,9 @@ The backend receives the **resolved** command string (after alias expansion by t
 
 The backend may be called only after the CLI or run-loop has validated that the command is present and resolvable. If the backend is invoked with a command that cannot be executed, it returns an error; the caller (run-loop or review) is responsible for reporting a clear error and using the documented failure exit code.
 
-### Timeout
+### Timeout (T2.4)
 
-Per-iteration timeout (when configured) is applied by the run-loop or the backend; the run-loop may pass a timeout to the backend so that a single invocation is bounded. Exact placement (backend vs run-loop) is implementation-defined; the observable behavior is that the run does not hang beyond the configured timeout.
+**Placement:** Per-iteration timeout is implemented in the **backend**. The run-loop (or review, when it invokes the AI) passes the effective `timeout_seconds` (from config) into the backend; the backend kills the process after N seconds when N > 0.
+
+- **Interface:** `Invoker.Invoke(..., timeoutSec int)`. When `timeoutSec` is 0, no timeout is applied. When `timeoutSec` > 0, the backend uses `exec.CommandContext` with a deadline; when the context deadline is exceeded, the process is killed and the backend returns `ErrTimeout` and exit code -1.
+- **Observable behavior:** A single invocation does not run longer than the configured timeout; the run does not hang. The caller (run-loop) receives `ErrTimeout` and can treat the iteration as a failure (e.g. increment failure count, respect failure threshold).
