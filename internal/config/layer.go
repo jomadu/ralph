@@ -28,10 +28,13 @@ type LoopSection struct {
 }
 
 // Prompt holds a single prompt definition (path or content, optional loop overrides).
+// DisplayName and Description are optional and used for list output (R006).
 type Prompt struct {
-	Path    string       `yaml:"path,omitempty"`
-	Content string       `yaml:"content,omitempty"`
-	Loop    *LoopSection `yaml:"loop,omitempty"`
+	Path        string       `yaml:"path,omitempty"`
+	Content     string       `yaml:"content,omitempty"`
+	DisplayName string       `yaml:"display_name,omitempty"`
+	Description string       `yaml:"description,omitempty"`
+	Loop        *LoopSection `yaml:"loop,omitempty"`
 }
 
 // Alias holds an AI command alias. In YAML, an alias value may be a string
