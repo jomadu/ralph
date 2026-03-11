@@ -156,3 +156,47 @@ func TestLoadPromptOnce_aliasPathMissing(t *testing.T) {
 		t.Errorf("err = %v, want ErrAliasSourceMissing", err)
 	}
 }
+
+func TestAssemblePrompt_noPreamble(t *testing.T) {
+	content := []byte("# Prompt\nDo the thing.")
+	got := AssemblePrompt("", content)
+	if string(got) != string(content) {
+		t.Errorf("AssemblePrompt(empty preamble) = %q, want %q", got, content)
+	}
+	// Must return same slice when no preamble (no copy)
+	if len(content) > 0 && &got[0] != &content[0] {
+		t.Error("AssemblePrompt(empty preamble) should return bufferedContent as-is, not a copy")
+	}
+}
+
+func TestAssemblePrompt_withPreamble(t *testing.T) {
+	preamble := "CONTEXT:\niteration 1 of 5"
+	content := []byte("# Prompt\nDo the thing.")
+	got := AssemblePrompt(preamble, content)
+	want := preamble + "\n" + string(content)
+	if string(got) != want {
+		t.Errorf("AssemblePrompt(%q, content) = %q, want %q", preamble, got, want)
+	}
+}
+
+func TestAssemblePrompt_preambleWithNewline(t *testing.T) {
+	// Preamble "line" + separator "\n" + content "body" => "line\nbody"
+	content := []byte("body")
+	got := AssemblePrompt("line", content)
+	want := "line\nbody"
+	if string(got) != want {
+		t.Errorf("AssemblePrompt(\"line\", body) = %q, want %q", got, want)
+	}
+}
+
+func TestAssemblePrompt_emptyContent(t *testing.T) {
+	got := AssemblePrompt("preamble", nil)
+	want := "preamble\n"
+	if string(got) != want {
+		t.Errorf("AssemblePrompt(preamble, nil) = %q, want %q", got, want)
+	}
+	got2 := AssemblePrompt("preamble", []byte{})
+	if string(got2) != want {
+		t.Errorf("AssemblePrompt(preamble, []) = %q, want %q", got2, want)
+	}
+}

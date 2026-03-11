@@ -15,3 +15,26 @@ import (
 func LoadPromptOnce(provider review.PromptProvider, cwd string, opts review.ResolveOptions) ([]byte, error) {
 	return review.ResolvePromptSource(provider, cwd, opts)
 }
+
+// AssemblePrompt builds the assembled prompt sent to the AI: optional preamble
+// (e.g. iteration count, context) followed by the buffered prompt content.
+// Preamble is configurable via config/CLI; no preamble or prompt content is
+// written to any user file (O009/R001). Implements T3.3, O002/R002.
+//
+// preamble may be empty (no injection). When non-empty, it is prepended to
+// bufferedContent with a single newline separator so the AI receives one
+// coherent prompt. Callers may build preamble from config and optionally
+// inject iteration number or other per-iteration context.
+func AssemblePrompt(preamble string, bufferedContent []byte) []byte {
+	if preamble == "" {
+		return bufferedContent
+	}
+	// Prepend preamble + newline + content. No trailing newline added to preamble
+	// so we control exactly one separator.
+	sep := []byte("\n")
+	out := make([]byte, 0, len(preamble)+len(sep)+len(bufferedContent))
+	out = append(out, preamble...)
+	out = append(out, sep...)
+	out = append(out, bufferedContent...)
+	return out
+}
