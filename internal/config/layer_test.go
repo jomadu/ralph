@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -105,5 +106,51 @@ func TestLoadGlobalAndWorkspace_read_workspace(t *testing.T) {
 	}
 	if workspace == nil || workspace.Loop == nil || *workspace.Loop.MaxIterations != 3 {
 		t.Errorf("workspace = %+v", workspace)
+	}
+}
+
+func TestReadLayerRequired_missing(t *testing.T) {
+	_, err := ReadLayerRequired("/nonexistent/path/ralph-config.yml")
+	if err == nil {
+		t.Fatal("ReadLayerRequired(missing) err = nil, want error")
+	}
+	if !errors.Is(err, ErrExplicitConfigMissing) {
+		t.Errorf("ReadLayerRequired(missing) err = %v, want ErrExplicitConfigMissing", err)
+	}
+}
+
+func TestReadLayerRequired_directory(t *testing.T) {
+	dir := t.TempDir()
+	_, err := ReadLayerRequired(dir)
+	if err == nil {
+		t.Fatal("ReadLayerRequired(directory) err = nil, want error")
+	}
+	if !errors.Is(err, ErrExplicitConfigMissing) {
+		t.Errorf("ReadLayerRequired(directory) err = %v, want ErrExplicitConfigMissing", err)
+	}
+}
+
+func TestReadLayerRequired_emptyPath(t *testing.T) {
+	_, err := ReadLayerRequired("")
+	if err == nil {
+		t.Fatal("ReadLayerRequired(empty) err = nil, want error")
+	}
+	if !errors.Is(err, ErrExplicitConfigMissing) {
+		t.Errorf("ReadLayerRequired(empty) err = %v, want ErrExplicitConfigMissing", err)
+	}
+}
+
+func TestReadLayerRequired_valid(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "custom.yml")
+	if err := os.WriteFile(path, []byte("loop:\n  max_iterations: 5\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	layer, err := ReadLayerRequired(path)
+	if err != nil {
+		t.Fatalf("ReadLayerRequired(valid) err = %v", err)
+	}
+	if layer == nil || layer.Loop == nil || *layer.Loop.MaxIterations != 5 {
+		t.Errorf("ReadLayerRequired(valid) layer = %+v", layer)
 	}
 }

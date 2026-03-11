@@ -1,10 +1,17 @@
 package config
 
 import (
+	"errors"
+	"fmt"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
+
+// ErrExplicitConfigMissing is returned when the user-supplied config file path
+// does not exist or is not a regular file (O002/R005).
+var ErrExplicitConfigMissing = errors.New("config file missing or unreadable")
 
 // FileLayer holds the parsed content of a single config file (global, workspace, or explicit).
 // It mirrors the canonical config file structure; merging and defaults are applied later.
@@ -83,6 +90,32 @@ func ReadLayer(path string) (*FileLayer, error) {
 			return nil, nil
 		}
 		return nil, err
+	}
+	return ParseLayer(data)
+}
+
+// ReadLayerRequired reads and parses the config file at path when the path is
+// explicitly supplied by the user (e.g. --config). The file must exist and be
+// readable; if it is missing, a directory, or unreadable, returns an error
+// (O002/R005). Path may be relative to cwd or absolute.
+func ReadLayerRequired(path string) (*FileLayer, error) {
+	path = filepath.Clean(path)
+	if path == "" || path == "." {
+		return nil, fmt.Errorf("%w: path is empty or invalid", ErrExplicitConfigMissing)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("%w: %s", ErrExplicitConfigMissing, path)
+		}
+		return nil, fmt.Errorf("config file %s: %w", path, err)
+	}
+	if info.IsDir() {
+		return nil, fmt.Errorf("%w: %s is a directory", ErrExplicitConfigMissing, path)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("config file %s: %w", path, err)
 	}
 	return ParseLayer(data)
 }
