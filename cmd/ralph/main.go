@@ -368,6 +368,7 @@ func versionCmd() *cobra.Command {
 	}
 }
 
+// showCmd returns the ralph show command (T6.3 config, T6.4 prompt/alias). cli.md: show config, show prompt [name], show alias [name]; name required for prompt/alias; error on unknown name.
 func showCmd() *cobra.Command {
 	showRoot := &cobra.Command{
 		Use:   "show",
