@@ -15,8 +15,8 @@ If the value proposition and first-run path are unclear, potential users leave b
 ## Verification
 
 - A new user can find a short description of what Ralph is (e.g. loop runner for AI-driven tasks) and why it exists (manual read–judge–re-run replaced by automated iteration until a signal).
-- A new user can find steps to install Ralph (or run it in a documented way) and run a first command (e.g. `ralph run <alias>` or `ralph review -f <path>`) that completes successfully.
-- Listing or help commands (e.g. `ralph list prompts`, `ralph --help`) expose available prompts and subcommands so the user can see what to run.
+- A new user can find steps to install Ralph (or run it in a documented way) and run a first command (e.g. run the loop or review a prompt) that completes successfully.
+- The list command and help expose available prompts, aliases, and subcommands so the user can see what to run.
 - The path from "I have Ralph" to "I just ran a loop and it exited 0" is documented and achievable without prior knowledge of the codebase.
 
 ## Non-outcomes
@@ -40,5 +40,5 @@ If the value proposition and first-run path are unclear, potential users leave b
 |----|-------------|--------|
 | [R001](R001-what-and-why.md) | User can find a short description of what Ralph is and why it exists | draft |
 | [R002](R002-install-and-first-command.md) | User can find install steps and a first command that completes successfully | draft |
-| [R003](R003-list-and-help.md) | User can discover available prompts and subcommands via list or help commands so they can see what to run | draft |
+| [R003](R003-list-and-help.md) | User can discover available prompts, aliases, and subcommands via the list command or help so they can see what to run | draft |
 | [R004](R004-path-to-first-run.md) | Path from having Ralph to a first successful run is documented and achievable | draft |

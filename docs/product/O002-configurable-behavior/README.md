@@ -46,12 +46,13 @@ Configuration is merged from multiple layers. Later layers override earlier ones
 - User defines a prompt with a custom failure threshold and signal strings for that prompt in config. Those values take effect when running that prompt without affecting others.
 - User sets environment variables. Ralph applies them without any config file change; environment overrides file-based config.
 - User points Ralph at a specific config file. Only that file is used; global and workspace config are not loaded. If the file is missing, Ralph reports an error.
-- User runs listing commands and sees available prompts and AI commands with names and descriptions.
+- User runs the list command and sees available prompts and AI commands with names and descriptions; they can list all, only prompts, or only aliases as the product allows.
+- User can view the effective (resolved) config for the current context, including which layer supplied each value when supported.
 - User enables AI-interpreted signal precedence (e.g. via config or CLI). When both success and failure signals appear in an iteration, the loop uses that mode according to the resolved setting.
 
 ## Non-outcomes
 
-- Ralph does not provide a GUI, interactive config editor, or a dedicated `ralph config` subcommand. Configuration is files, environment variables, and flags.
+- Ralph does not provide a GUI, interactive config editor, or a config set/get subcommand. Configuration is files, environment variables, and flags. Read-only viewing of effective (resolved) config is in scope (R007).
 - Ralph does not support runtime config changes during loop execution. Config is resolved once at startup.
 - Ralph does not validate prompt file content — only that the file exists and is readable.
 - Ralph does not support config inheritance between prompts. Each prompt independently overrides the root loop section where applicable.
@@ -60,7 +61,8 @@ Configuration is merged from multiple layers. Later layers override earlier ones
 
 | Risk | Mitigating Requirement |
 |------|------------------------|
-| Unclear which config value applies for a setting | [R001 — Config layer resolution](R001-config-layer-resolution.md) |
+| Unclear which config value applies for a setting | [R001 — Config layer resolution](R001-config-layer-resolution.md), [R007 — View effective config](R007-view-effective-config.md) |
+| User cannot see which config value is active for a run | [R007 — View effective config](R007-view-effective-config.md) |
 | Explicit config file missing when specified | [R005 — Explicit config file only](R005-explicit-config-file-only.md) |
 | Per-prompt overrides not applied when running that prompt | [R003 — Named prompts with overrides](R003-named-prompts-with-overrides.md) |
 
@@ -73,4 +75,5 @@ Configuration is merged from multiple layers. Later layers override earlier ones
 | [R003](R003-named-prompts-with-overrides.md) | The system supports named prompts in config with path, optional display name and description, and optional loop overrides. | ready |
 | [R004](R004-ai-command-aliases-configurable.md) | The system supports configurable AI command aliases. | ready |
 | [R005](R005-explicit-config-file-only.md) | When the user specifies an explicit config file, the system uses only that file and reports an error if it is missing. | ready |
-| [R006](R006-list-prompts-and-commands.md) | The system provides listing commands that show available prompts and AI commands. | ready |
+| [R006](R006-list-prompts-and-commands.md) | The system provides a list command that shows available prompts and aliases; the user can list all, only prompts, or only aliases. | ready |
+| [R007](R007-view-effective-config.md) | The user can view the effective (resolved) configuration for the current context, including optional provenance (which layer supplied each value). | ready |

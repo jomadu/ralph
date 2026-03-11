@@ -15,7 +15,7 @@ A new user or evaluator needs to quickly understand the product's value: what it
 | Condition | Expected Behavior |
 |-----------|-------------------|
 | User lands on repo root | A short "what" and "why" are visible (e.g. in README or linked doc). |
-| User invokes the product's top-level help (e.g. help or list) | That entry point includes or points to a brief description of what the product does. |
+| User invokes the product's top-level help or list | That entry point includes or points to a brief description of what the product does. |
 | No prior knowledge of the codebase | User can find the description via documented entry points (README, docs index, or CLI). |
 | Documentation is split across files | At least one primary entry (e.g. main README or docs landing) states what the product is and why it exists. |
 
@@ -31,7 +31,7 @@ A new user or evaluator needs to quickly understand the product's value: what it
 
 #### Help or list entry point
 
-**Input:** User invokes the product's top-level help or a way to list prompts/subcommands (e.g. help or list).
+**Input:** User invokes the product's top-level help or list.
 
 **Expected output:** The output includes a brief description of what the product does, or a pointer (e.g. "See README" or "See docs/...") to where that description lives.
 
