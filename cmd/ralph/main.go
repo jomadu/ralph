@@ -584,12 +584,31 @@ func reviewCmd() *cobra.Command {
 				return err
 			}
 
+			// Source path for defaulting revision output when --apply without --prompt-output (file or alias with path).
+			var sourcePath string
+			if filePath != "" {
+				sourcePath = filePath
+			} else if opts.Alias != "" {
+				if p, _, ok := provider.PromptByName(opts.Alias); ok && p != "" {
+					if !filepath.IsAbs(p) {
+						sourcePath = filepath.Join(cwd, p)
+					} else {
+						sourcePath = p
+					}
+				}
+			}
+			// Non-interactive when stdin is not a TTY (O009/R003, O010; exit 2 if confirmation would be needed and --yes not set).
+			stdinStat, _ := os.Stdin.Stat()
+			nonInteractive := (stdinStat.Mode() & os.ModeCharDevice) == 0
+
 			runOpts := review.RunOptions{
 				ReportPath:       reportPath,
 				PromptOutputPath: promptOutput,
+				SourcePath:       sourcePath,
 				WorkingDir:       cwd,
 				Apply:            apply,
 				Yes:              yes,
+				NonInteractive:   nonInteractive,
 				Quiet:            quiet,
 				LogLevel:         logLevel,
 			}

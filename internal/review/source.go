@@ -28,6 +28,9 @@ var ErrFileNotFound = fmt.Errorf("%w: prompt file not found or unreadable", ErrE
 // ErrMultipleSources indicates more than one prompt source was supplied.
 var ErrMultipleSources = fmt.Errorf("%w: exactly one of alias, file path, or stdin allowed", ErrExit2)
 
+// ErrApplyConfirmationRequired indicates apply would overwrite but confirmation is required and session is non-interactive (use --yes).
+var ErrApplyConfirmationRequired = fmt.Errorf("%w: confirmation required to overwrite in non-interactive mode; use --yes to apply without confirmation", ErrExit2)
+
 // PromptProvider supplies prompt definitions by name (for alias resolution).
 // Implemented by effective config; used by review to resolve alias to path or content.
 type PromptProvider interface {
