@@ -224,6 +224,33 @@ prompts:
 	}
 }
 
+// TestResolve_usesRALPH_CONFIG_HOME verifies that when configPath is empty, Resolve
+// loads global config from RALPH_CONFIG_HOME/ralph-config.yml (T4.7, cli Environment variables).
+func TestResolve_usesRALPH_CONFIG_HOME(t *testing.T) {
+	globalDir := t.TempDir()
+	globalPath := filepath.Join(globalDir, ConfigFileName)
+	if err := os.WriteFile(globalPath, []byte("loop:\n  max_iterations: 9\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	getenv := func(k string) string {
+		if k == "RALPH_CONFIG_HOME" {
+			return globalDir
+		}
+		return ""
+	}
+	cwd := t.TempDir() // no workspace config
+	eff, ok, err := Resolve(getenv, cwd, "", "")
+	if err != nil {
+		t.Fatalf("Resolve() err = %v", err)
+	}
+	if !ok || eff == nil {
+		t.Fatalf("Resolve() = %v, %v; want effective, true", eff, ok)
+	}
+	if eff.Loop.MaxIterations != 9 {
+		t.Errorf("Resolve() with RALPH_CONFIG_HOME: MaxIterations = %d, want 9 (from global file)", eff.Loop.MaxIterations)
+	}
+}
+
 // TestResolve_singleEntrypoint verifies Resolve is the single entrypoint: same behavior
 // as ResolveEffectiveForPrompt but returned Effective includes built-in aliases (T1.7, O002/R007).
 func TestResolve_singleEntrypoint(t *testing.T) {
