@@ -87,12 +87,9 @@ func reviewCmd() *cobra.Command {
 				if !filepath.IsAbs(path) {
 					path = filepath.Join(cwd, path)
 				}
-				layer, err := config.ReadLayer(path)
+				layer, err := config.LoadExplicit(path)
 				if err != nil {
-					return fmt.Errorf("config file: %w", err)
-				}
-				if layer == nil {
-					return fmt.Errorf("config file not found: %s", path)
+					return fmt.Errorf("config: %w", err)
 				}
 				provider = &review.FileLayerProvider{Layer: layer}
 			} else {
@@ -249,12 +246,9 @@ func resolveConfigForList(cmd *cobra.Command) (*config.Resolved, error) {
 		if !filepath.IsAbs(path) {
 			path = filepath.Join(cwd, path)
 		}
-		layer, err := config.ReadLayer(path)
+		layer, err := config.LoadExplicit(path)
 		if err != nil {
-			return nil, fmt.Errorf("config file: %w", err)
-		}
-		if layer == nil {
-			return nil, fmt.Errorf("config file not found: %s", path)
+			return nil, fmt.Errorf("config: %w", err)
 		}
 		return config.MergeLayers(nil, layer), nil
 	}
