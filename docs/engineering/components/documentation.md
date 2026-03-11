@@ -54,6 +54,15 @@ User-facing docs must provide a single place or clearly linked set for:
 
 The README section "Where to look (CLI, config, env, exit codes)" is the discoverability entry point and links to each canonical source.
 
+### Discoverability content (what, why, first run)
+
+Per O008, a new user can find what Ralph is, why it exists, install steps, and a path to a first successful run:
+
+- **What and why** — README section "What is Ralph and why use it?" gives a short description (loop runner for AI-driven tasks) and rationale (automated iteration until success/failure signal).
+- **Install** — README section "Install and Uninstall" documents install (and uninstall); verification is `ralph version`.
+- **First run** — README section "Path to first run" describes one path from "I have Ralph" to a first command that completes successfully: verify PATH, choose prompt source (file, stdin, or alias), run (e.g. `ralph run -f <path> -n 1` or stdin), with minimal prerequisites (AI CLI on PATH) stated.
+- **List and help** — `ralph list` and `ralph run --help` / `ralph --help` expose prompts, aliases, and subcommands; README Quick Start and Subcommands summarize and link to [cli.md](cli.md).
+
 ### Consistency with implementation (doc accuracy)
 
 When implementation specs change in a way that affects user or automation contract (e.g. new flag, exit code, config key, or report format), the documentation component is updated so that user docs, procedures, and contract docs remain accurate. Update the engineering spec first (cli.md, config.md, run-loop.md, review.md, etc.), then README and [docs/exit-codes.md](../../exit-codes.md) as needed. Product requirements that reference "documented" behavior are satisfied by this component.

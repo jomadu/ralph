@@ -4,6 +4,13 @@ A dumb loop that pipes a prompt to an AI CLI, lets it work, and repeats.
 
 Ralph is a loop runner, not a methodology. You bring the prompt. Ralph runs it in a fresh AI process per iteration, scans for completion signals, and stops when the task is done — or when it isn't going to be.
 
+## What is Ralph and why use it?
+
+- **What:** Ralph is a loop runner for AI-driven tasks. You give it a prompt (file, alias, or stdin); it invokes your AI CLI with that prompt on each iteration, captures output, and looks for success or failure signals you configure.
+- **Why:** It replaces manual "run the AI, read the output, decide, re-run" with an automated loop that stops when the AI emits a success signal or hits a failure threshold. No conversation history between iterations — state lives on disk; each run is a fresh process.
+
+If you're new here: install (below), then follow [Path to first run](#path-to-first-run) to get from "I have Ralph" to a first command that completes successfully.
+
 ## Quick Start
 
 ```bash
@@ -62,6 +69,22 @@ Ralph can be installed with the provided script so the `ralph` binary is on your
    ralph version
    ```
    You should see version output and exit 0.
+
+## Path to first run
+
+From "I have Ralph" to a first command that completes successfully:
+
+1. **Verify Ralph is on your PATH** — Run `ralph version`; you should see a version string and exit 0.
+2. **Choose a prompt source** — You need exactly one: a prompt alias (from config), a file path, or stdin. With no config, the simplest path is a one-off file or stdin.
+3. **Run a first command** — Examples that can complete successfully (your AI CLI must be installed and on PATH; Ralph defaults to the `cursor-agent` alias if you don't set `--ai-cmd` or config):
+   - **From a file:** Create a small prompt file (e.g. `echo 'Say hello and output <promise>SUCCESS</promise>' > /tmp/hello.md`), then run:
+     ```bash
+     ralph run -f /tmp/hello.md -n 1
+     ```
+     On success you'll see the success message and exit 0.
+   - **From stdin:** `echo 'Say OK and output <promise>SUCCESS</promise>' | ralph run -n 1`
+   - **Using an alias:** Add a prompt to your config (see [Example ralph-config.yml](#example-ralph-configyml)), then `ralph run <alias>` (e.g. `ralph run build`).
+4. **Prerequisites:** Your chosen AI CLI (e.g. Cursor agent, Claude CLI) must be installed and on PATH. Ralph does not install it. Use `--ai-cmd-alias` or `--ai-cmd` to select a different command; see Configuration and [config](docs/engineering/components/config.md).
 
 **Uninstall:**
 
