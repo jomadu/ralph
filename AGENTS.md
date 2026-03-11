@@ -29,15 +29,28 @@ All: `make all` (default target is build). Clean: `make clean`.
 
 Keep this section in sync with the Makefile.
 
-## Specification Definition
+## Product and Engineering Documentation
 
-Specifications live in `docs/intent/`. Index at `docs/intent/README.md`. Methodology in `building-intent.md` at repository root.
+Documentation follows the **product** and **engineering** model defined in `building-intent.md` at repository root. **Product** answers who we're building for, what we're building, and why (outcomes and requirements at the level of intent). **Engineering** answers where each capability lives and how the system is built (components, interfaces, implementation specs).
 
-Format: Outcome/requirement hierarchy. Each outcome has a directory `O<n>-<slug>/` with `README.md` (outcome, risks, requirement one-liners) and `R<n>-<slug>.md` (requirement + specification). Every specification traces to a requirement; every requirement traces to an outcome.
+### Product (`docs/product/`)
 
-Exclude: `docs/intent/README.md` is the index, not a single spec.
+- **Index:** `docs/product/README.md` — product summary and outcomes table.
+- **Structure:** Outcome directories `O<n>-<slug>/` use **three-digit zero-padded** IDs (e.g. `O001`, `O011`). Each outcome has:
+  - `README.md` — outcome definition (who, statement, why, verification, non-outcomes, risks table, requirements table).
+  - `R<n>-<slug>.md` — requirement documents (three-digit IDs, e.g. `R001`, `R008`). Each requirement is complete for intent: capability, acceptance criteria, edge cases, examples; implementation specs (schemas, APIs) live in engineering when present.
+- **Traceability:** Every requirement traces to one outcome; every outcome is listed in the product index.
+- **Exclude:** `docs/product/README.md` is the index, not a single outcome or requirement.
 
-Current state: Intent tree defined (O1–O4 and requirements). Implementation pending.
+### Engineering (`docs/engineering/`)
+
+- **Overview:** `docs/engineering/README.md` — purpose of engineering docs, high-level flow, **component list with assigned requirement IDs (O/R)**. This README is the single place for which component implements which product requirements; component docs do not duplicate the O/R list.
+- **Components:** `docs/engineering/components/` — one file (e.g. `cli.md`) or directory (e.g. `orchestrator/`) per component. Each component doc states responsibility, interfaces, and **implementation specifications** (schemas, APIs, protocols) that implementers build from. Requirement assignments are only in the engineering README.
+- **Traceability:** Every O/R in the engineering README exists in the product tree; product is source of truth for intent, engineering for implementation and placement.
+
+**Methodology:** Phased development (product P1–P4, engineering E1–E2), consistency rules, and templates are in `building-intent.md`.
+
+**Current state:** Product tree defined (O001–O011 and requirements). Engineering overview and components defined. Runtime implementation (e.g. Go loop runner) not yet built per TASK.md.
 
 ## Implementation Definition
 
@@ -46,12 +59,12 @@ Location: `scripts/`, and (when present) any future `cmd/`, `internal/`, or equi
 Patterns:
 - `scripts/*.sh` — Scripts and wrappers
 - `scripts/cursor-wrapper.sh` — Optional Cursor Agent wrapper; built-in `cursor-agent` alias is the raw `agent` command
-- `testdata/` — Test fixture files (e.g. config YAMLs used only by tests). See O2-R5 for the convention; integration tests use `--config testdata/<fixture>.yml` from repo root.
-- **Review report summary (O5 R6):** Machine-parseable line format and exit code derivation are specified in `docs/intent/O5-prompt-review/R6-report-format-exit-codes.md`; parser in `internal/review/summary.go`.
+- `testdata/` — Test fixture files (e.g. config YAMLs used only by tests). See O002/R005 for the convention; integration tests use `--config testdata/<fixture>.yml` from repo root.
+- **Review report summary:** Machine-parseable line format and exit code derivation are specified in `docs/engineering/components/review.md` (and product O005/R002, O005/R008, O010/R003); parser in `internal/review/summary.go`.
 
-Excludes: `.git/`, `docs/` (specifications), `AGENTS.md`, `PLAN.md`, `TASK.md`, `building-intent.md`
+Excludes: `.git/`, `docs/product/`, `docs/engineering/` (documentation only), `AGENTS.md`, `PLAN.md`, `TASK.md`, `building-intent.md`
 
-Implementation status: Specs and intent complete; runtime implementation (e.g. Go loop runner) not yet built per TASK.md.
+Implementation status: Product and engineering docs complete; runtime implementation (e.g. Go loop runner) not yet built per TASK.md.
 
 ## Audit Output
 
@@ -59,9 +72,10 @@ Audit results written to `AUDIT.md` at repository root.
 
 ## Quality Criteria
 
-**Specifications:**
+**Product and engineering docs:**
 - All outcomes have README with outcome definition and risks (PASS/FAIL)
 - All requirements have traceability to an outcome (PASS/FAIL)
+- Engineering README assigns every product requirement to at least one component; every O/R in engineering exists in product (PASS/FAIL)
 - Examples and implementation notes where applicable (PASS/FAIL)
 
 **Implementation:**
@@ -70,7 +84,7 @@ Audit results written to `AUDIT.md` at repository root.
 - Documentation and examples match actual behavior (PASS/FAIL)
 
 **Refactoring triggers:**
-- Spec/implementation divergence
+- Product/engineering doc and implementation divergence
 - Test failures (when tests exist)
 - Unclear or broken documentation
 
@@ -79,17 +93,17 @@ Audit results written to `AUDIT.md` at repository root.
 Last verified: (update when verified)
 
 **Working:**
-- Intent structure in `docs/intent/` with O1–O4 and requirements
-- TASK.md defines Ralph scope and design; building-intent.md defines spec methodology
+- Product structure in `docs/product/` (O001–O011, three-digit IDs) and engineering structure in `docs/engineering/` (overview + components)
+- TASK.md defines Ralph scope and design; building-intent.md defines product/engineering methodology (P1–P4, E1–E2)
 
 **Not working:**
 - No automated test or build yet (implementation pending)
 
 **Rationale:**
-- Specification model follows outcome → requirement → specification from building-intent.md
+- Product = intent (who, what, why); engineering = placement and implementation specs (where, how); both follow building-intent.md
 - Non-interactive shell commands reduce agent hangs and stranded work
 
-**Session completion:** When ending a work session: (1) Note remaining work in PLAN.md or TODOs, (2) Run quality gates if code changed, (3) `git pull --rebase`, `git push` until `git status` shows "up to date with origin", (4) Hand off with context for next session.
+**Session completion:** When ending a work session: (1) Note remaining work in PLAN.md or file issues in bd, (2) Run quality gates if code changed, (3) `git pull --rebase`, `git push` until `git status` shows "up to date with origin", (4) Hand off with context for next session.
 
 <!-- BEGIN BEADS INTEGRATION -->
 ## Issue Tracking with bd (beads)
