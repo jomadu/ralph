@@ -37,6 +37,7 @@ The report file contains three parts:
    - Line matching: `ralph-review:\s*status=(ok|errors|warnings)(\s+errors=(\d+))?(\s+warnings=(\d+))?`
    - Examples: `ralph-review: status=ok`, `ralph-review: status=errors errors=2`, `ralph-review: status=warnings warnings=1 errors=0`
    - Exit code derivation: `status=ok` and `errors=0` (or absent) → 0; `status=errors` or `errors>=1` → 1; `status=warnings` with `errors=0` → 0 (if policy allows). Missing or malformed summary → 1 (fail-safe for CI).
+   - **For CI:** Use `ralph review` exit code (0, 1, 2) for gating; or parse the report file for a line matching the pattern above and apply the same derivation. Parser: `internal/review/summary.go` (`ParseSummaryFromReport`, `ExitCodeFromSummary`).
 3. **Full suggested revision** — The complete suggested prompt text. May be inline in the report or written to the revision output path when apply is used; the full revision must be available to the user/CI.
 
 ### Exit code derivation
