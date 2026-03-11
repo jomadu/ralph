@@ -96,6 +96,28 @@ Run from anywhere (the script reads the install location from `~/.config/ralph/i
 
 This removes the `ralph` binary from the directory where it was installed and removes the install state file. User config in `~/.config/ralph/` (e.g. `ralph-config.yml`) is **not** removed. No PATH or symlink changes are made by the install script, so uninstall does not leave broken references.
 
+**Upgrade:**
+
+To upgrade or update an existing install:
+
+- **Upgrade to a chosen version** — Re-run the install script with the desired version (same as a fresh install to that version). The script overwrites the binary in the same install directory (recorded in `~/.config/ralph/install-state`). Example:
+  ```bash
+  ./scripts/install.sh 1.2.0
+  # or, to match your current install directory:
+  ./scripts/install.sh 1.2.0 --dir "$(cat ~/.config/ralph/install-state)"
+  ```
+  After upgrade, run `ralph version` to confirm the new version; your config and prompts are unchanged.
+
+- **Update within a non-breaking version** — To get the latest patch or minor release on the same major line (e.g. stay on 1.x), run the install script with no version to fetch the latest release, or with a specific newer tag in the same major:
+  ```bash
+  ./scripts/install.sh
+  ```
+  Within a non-breaking range (same major version), existing config, prompts, and documented commands/exit codes continue to work; no migration is required. Ralph does not rewrite or migrate your config automatically. If a release introduces behavior changes or deprecations, they are described in release notes with migration guidance (see [Release notes and contract](#release-notes-and-stable-contract)).
+
+- **Backward compatibility** — Config and prompt files that worked in an older patch/minor (same major) keep working after update. Documented commands, options, and exit codes remain valid across non-breaking upgrades. Breaking contract or config changes are documented in release notes with migration steps; major version bumps may introduce breaking changes as documented.
+
+**Release notes and stable contract:** For each release, behavior changes and deprecations that affect config or scripts are described in the release notes (e.g. GitHub Releases). See [docs/exit-codes.md](docs/exit-codes.md) for the stable exit-code contract; when that contract or config schema changes, release notes explain the change and how to adapt.
+
 ## How It Works
 
 Each iteration:
@@ -275,6 +297,7 @@ Exit codes for `ralph run` and `ralph review` are stable for scripts and CI. Ful
 - **Config file and layers** — Schema, layer order, and env overlay: [docs/engineering/components/config.md](docs/engineering/components/config.md). README summarizes in Configuration and Example.
 - **Environment variables** — `RALPH_CONFIG_HOME` and `RALPH_LOOP_*` are listed in [docs/engineering/components/config.md](docs/engineering/components/config.md) (Environment variables). README lists them in Environment variables.
 - **Exit codes** — Stable contract for run and review: [docs/exit-codes.md](docs/exit-codes.md). README summarizes in Exit Codes.
+- **Upgrade and release notes** — Upgrade and backward-compatibility procedure is in this README (Install and Uninstall → Upgrade). Release notes (e.g. GitHub Releases) describe behavior changes and deprecations; see [Release notes and stable contract](#release-notes-and-stable-contract) above.
 
 When implementation or contract changes (e.g. new flag, config key, or exit code), update the engineering spec and then this README (and exit-codes.md if needed) so docs stay accurate.
 
