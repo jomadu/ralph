@@ -52,6 +52,10 @@ The run-loop is the authority for run exit codes. User and automation documentat
 - **Static precedence (O001/R006):** When both success and failure signals appear in the same output, the iteration is classified by a defined rule so the outcome is never ambiguous. With `signal_precedence: static` (the default), **success is checked first** — if the success signal is present, the iteration is treated as success regardless of the failure signal; only if the success signal is absent is the failure signal considered. So with static precedence, "success wins" when both are present. This behavior is documented for users and automation.
 - **AI-interpreted precedence:** When `signal_precedence: ai_interpreted` is configured, the AI output may be interpreted to decide outcome; the exact mechanism is implementation-defined and documented. When that option is off or when interpretation does not yield a clear result, the static rule above applies.
 
+### Process exit without signal (O001/R009, T3.8)
+
+When the AI process exits without emitting the configured success or failure signal (e.g. exit 0 with no signal in output, crash, kill, timeout, or invocation error), the iteration is treated as a **failure**: the run-loop increments the consecutive-failure count and continues or exits according to the same failure threshold as for failure-signal (R005). Thus no iteration is left undefined. The report when exiting due to threshold **distinguishes** "no signal" from "failure signal present": e.g. "Stopped after N consecutive iteration(s) without success or failure signal (threshold: T)" vs "Stopped after N consecutive failure(s) (threshold: T)", so the user can tell the two cases apart for debugging or tuning.
+
 ### Dry-run
 
 When dry-run is enabled, the run-loop does not invoke the backend. It assembles the prompt (including preamble if configured) and outputs it to the user (stdout or logs per log level). Exit code and report semantics for "dry-run completed" are documented (e.g. 0 and a message that no run was performed).

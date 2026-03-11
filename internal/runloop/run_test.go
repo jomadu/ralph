@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/maxdunn/ralph/internal/backend"
 	"github.com/maxdunn/ralph/internal/config"
 )
 
@@ -253,5 +254,126 @@ func TestRun_SuccessResetsConsecutiveFailures(t *testing.T) {
 	}
 	if !strings.Contains(reported, "2 iterations") {
 		t.Errorf("reported = %q", reported)
+	}
+}
+
+// TestRun_NoSignalTreatedAsFailure verifies T3.8/O001/R009: when the process exits
+// without success or failure signal (e.g. exit 0 but no signal in output),
+// the iteration is treated as failure; consecutive-failure count increments and
+// continue/exit follows the same threshold logic as failure-signal.
+func TestRun_NoSignalTreatedAsFailure(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 5
+	loop.FailureThreshold = 2
+	loop.SuccessSignal = "<promise>SUCCESS</promise>"
+	loop.FailureSignal = "<promise>FAILURE</promise>"
+	callCount := 0
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+		callCount++
+		// Iteration 1: no signal (e.g. process exited 0 but no markers).
+		if callCount == 1 {
+			return []byte("output with no signal"), 0, nil
+		}
+		// Iteration 2: again no signal → threshold reached, exit.
+		return []byte("again no signal"), 0, nil
+	}
+	var reported string
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+		Reporter:    func(msg string) { reported = msg },
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitFailureThreshold {
+		t.Errorf("exit code = %d, want %d (ExitFailureThreshold)", code, ExitFailureThreshold)
+	}
+	if callCount != 2 {
+		t.Errorf("invoker called %d times, want 2 (two no-signal iterations then exit)", callCount)
+	}
+	if !strings.Contains(reported, "without success or failure signal") {
+		t.Errorf("reported = %q (should distinguish no-signal)", reported)
+	}
+	if !strings.Contains(reported, "threshold: 2") {
+		t.Errorf("reported = %q", reported)
+	}
+}
+
+// TestRun_NoSignalBelowThreshold_Continues verifies that a single no-signal
+// iteration increments consecutive failures but loop continues when below threshold.
+func TestRun_NoSignalBelowThreshold_Continues(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 5
+	loop.FailureThreshold = 2
+	loop.SuccessSignal = "<promise>SUCCESS</promise>"
+	loop.FailureSignal = "<promise>FAILURE</promise>"
+	callCount := 0
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+		callCount++
+		if callCount == 1 {
+			return []byte("no signal"), 0, nil
+		}
+		return []byte("<promise>SUCCESS</promise>"), 0, nil
+	}
+	var reported string
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+		Reporter:    func(msg string) { reported = msg },
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitSuccess {
+		t.Errorf("exit code = %d, want ExitSuccess (one no-signal then success)", code)
+	}
+	if callCount != 2 {
+		t.Errorf("invoker called %d times, want 2", callCount)
+	}
+	if !strings.Contains(reported, "2 iterations") {
+		t.Errorf("reported = %q", reported)
+	}
+}
+
+// TestRun_InvocationErrorTreatedAsNoSignal verifies that when the backend
+// returns an error (e.g. timeout, crash), the iteration is treated as
+// no-signal failure and threshold/continue logic applies (T3.8/O001/R009).
+func TestRun_InvocationErrorTreatedAsNoSignal(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 5
+	loop.FailureThreshold = 2
+	loop.SuccessSignal = "<promise>SUCCESS</promise>"
+	callCount := 0
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int) ([]byte, int, error) {
+		callCount++
+		if callCount == 1 {
+			return nil, -1, backend.ErrTimeout
+		}
+		return nil, -1, backend.ErrTimeout
+	}
+	var reported string
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+		Reporter:    func(msg string) { reported = msg },
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitFailureThreshold {
+		t.Errorf("exit code = %d, want ExitFailureThreshold", code)
+	}
+	if callCount != 2 {
+		t.Errorf("invoker called %d times, want 2", callCount)
+	}
+	if !strings.Contains(reported, "without success or failure signal") || !strings.Contains(reported, "invocation error") {
+		t.Errorf("reported = %q (should mention invocation error)", reported)
 	}
 }

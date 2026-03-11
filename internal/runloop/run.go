@@ -33,12 +33,14 @@ func (f invokerAdapter) Invoke(command string, promptBytes []byte, cwd string, e
 // Run validates the AI command, then runs the loop: for each iteration invokes
 // the backend with the assembled prompt, captures stdout, and scans for the
 // configured success and failure signals. On success: reports completion and
-// returns ExitSuccess. On failure signal: increments consecutive-failure count;
-// if count >= failure threshold, reports and returns ExitFailureThreshold.
-// When max iterations is reached without success, returns ExitMaxIterations.
-// Static precedence (T3.6, O001/R006): success is checked before failure; when
-// both signals appear in the same output, the iteration is treated as success.
-// Implements T3.4, T3.5, T3.6, O001/R004, O001/R005, O001/R006, O004/R002, O004/R003.
+// returns ExitSuccess. On failure signal or process exit without signal (T3.8,
+// O001/R009): increments consecutive-failure count; if count >= failure
+// threshold, reports and returns ExitFailureThreshold. When max iterations is
+// reached without success, returns ExitMaxIterations. Static precedence
+// (T3.6, O001/R006): success is checked before failure; when both signals
+// appear in the same output, the iteration is treated as success.
+// Implements T3.4, T3.5, T3.6, T3.8, O001/R004, O001/R005, O001/R006, O001/R009,
+// O004/R002, O004/R003.
 func Run(opts RunOptions) (exitCode int, err error) {
 	if opts.Invoker == nil {
 		opts.Invoker = invokerAdapter(backend.Invoke)
@@ -61,23 +63,31 @@ func Run(opts RunOptions) (exitCode int, err error) {
 		preamble := buildPreamble(opts.Loop.Preamble, i)
 		assembled := AssemblePrompt(preamble, opts.PromptBytes)
 		stdout, _, invErr := opts.Invoker.Invoke(opts.Command, assembled, opts.Cwd, opts.Env, opts.Loop.TimeoutSeconds)
+		// Invocation error (e.g. timeout, crash, exec failure): treat as no-signal failure per T3.8/O001/R009.
 		if invErr != nil {
-			return ExitErrorPreLoop, invErr
+			consecutiveFailures++
+			if consecutiveFailures >= threshold {
+				report(fmt.Sprintf("Stopped after %d consecutive iteration(s) without success or failure signal (invocation error: %v; threshold: %d).", consecutiveFailures, invErr, opts.Loop.FailureThreshold))
+				return ExitFailureThreshold, nil
+			}
+			continue
 		}
 		if ContainsSuccessSignal(stdout, opts.Loop.SuccessSignal) {
 			elapsed := time.Since(start)
 			report(completionMessage(i, elapsed))
 			return ExitSuccess, nil
 		}
-		if ContainsFailureSignal(stdout, opts.Loop.FailureSignal) {
-			consecutiveFailures++
-			if consecutiveFailures >= threshold {
+		// Failure: either failure signal present or process exited without signal (T3.8, O001/R009).
+		hasFailureSignal := ContainsFailureSignal(stdout, opts.Loop.FailureSignal)
+		consecutiveFailures++
+		if consecutiveFailures >= threshold {
+			if hasFailureSignal {
 				report(fmt.Sprintf("Stopped after %d consecutive failure(s) (threshold: %d).", consecutiveFailures, opts.Loop.FailureThreshold))
-				return ExitFailureThreshold, nil
+			} else {
+				report(fmt.Sprintf("Stopped after %d consecutive iteration(s) without success or failure signal (threshold: %d).", consecutiveFailures, opts.Loop.FailureThreshold))
 			}
-			continue
+			return ExitFailureThreshold, nil
 		}
-		// No success and no failure signal: do not increment consecutive count (T3.8 may treat as failure later).
 	}
 	report(fmt.Sprintf("Stopped after %d iteration(s) without success signal.", opts.Loop.MaxIterations))
 	return ExitMaxIterations, nil
