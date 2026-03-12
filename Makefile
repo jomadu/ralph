@@ -19,6 +19,7 @@ build:
 # Cross-build for release (GOOS/GOARCH set by CI). Output: dist/ralph-$(VERSION)-$(GOOS)-$(GOARCH)[.exe]
 build-multi:
 	@mkdir -p dist
+	@mkdir -p cmd/ralph/embed && cp -f docs/writing-ralph-prompts.md cmd/ralph/embed/writing-ralph-prompts.md
 	@case "$(GOOS)" in windows) SUF=".exe";; *) SUF="";; esac; \
 	OUT="dist/ralph-$(VERSION)-$(GOOS)-$(GOARCH)$$SUF"; \
 	go build $(LDFLAGS) -o "$$OUT" ./cmd/ralph; \
