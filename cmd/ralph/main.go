@@ -23,7 +23,8 @@ var Version = "dev"
 //go:embed embed/writing-ralph-prompts.md
 var promptGuideContent []byte
 
-func main() {
+// newRoot returns the root cobra command (used by main and tests).
+func newRoot() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "ralph",
 		Short: "Ralph — loop runner for AI-driven tasks",
@@ -72,9 +73,13 @@ func main() {
 	root.AddCommand(listCmd())
 	root.AddCommand(showCmd())
 	root.AddCommand(versionCmd())
-	if err := root.Execute(); err != nil {
+	return root
+}
+
+func main() {
+	if err := newRoot().Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", root.Name())
+		fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", "ralph")
 		os.Exit(1)
 	}
 }
@@ -533,7 +538,7 @@ func showPromptGuideCmd() *cobra.Command {
 				return fmt.Errorf("ralph show prompt-guide: unexpected argument %q", args[0])
 			}
 			_ = markdown // output is same with or without flag; flag exists for CLI consistency and scripts (saving/piping to pager)
-			_, err := os.Stdout.Write(promptGuideContent)
+			_, err := cmd.OutOrStdout().Write(promptGuideContent)
 			return err
 		},
 	}
