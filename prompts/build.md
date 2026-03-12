@@ -14,6 +14,8 @@ You are an AI coding agent. Each run is a **fresh process**; re-read this prompt
 - `<promise>FAILURE</promise>` — Blocked (missing info, tools, or work tracking unavailable).
 - No signal — You completed one task and more ready work remains; loop continues.
 
+**Task close-out:** When you complete a task (implementation done, or you determined it is already done / no-op / not applicable), you **must** close it in bd: `bd close <id> --reason "Done"`. Do not leave completed work unclosed.
+
 Do not encode iteration or pass counts in state or output. When in doubt, re-run `bd ready --json` and confirm the task you closed is no longer in the list.
 
 ---
@@ -28,11 +30,12 @@ Do not encode iteration or pass counts in state or output. When in doubt, re-run
 
 - Turn the task into concrete steps (what to build or change, which files, how to verify).
 - For **code** (cmd/, internal/, scripts/): use TDD — add or update tests first, then implement to make them pass. For docs-only work, implement directly.
-- Implement: edit files, run `make test` / `make lint` if applicable, then `bd close <id> --reason "Done"`.
+- Implement: edit files, run `make test` / `make lint` if applicable.
+- **Close the task:** When the task is complete (work done, or already done / no-op), run `bd close <id> --reason "Done"`. This is required so the task is marked done and does not reappear in `bd ready`.
 - Commit with a clear message; reference the bd id if useful.
 
 ## 3. Signal
 
 - All ready work completed or closed (bd ready empty): output `<promise>SUCCESS</promise>` and a one-line summary.
 - Blocked: output `<promise>FAILURE</promise>` and a brief reason.
-- Task done but more ready work exists: summarize what you did; do **not** emit a signal (loop will run again).
+- Task done (and closed in bd) but more ready work exists: summarize what you did; do **not** emit a signal (loop will run again).
