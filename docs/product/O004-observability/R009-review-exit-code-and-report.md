@@ -8,7 +8,7 @@ The system makes the review outcome clear via report and presentation so the use
 
 ## Detail
 
-The review command has distinct outcomes: review completed (with or without findings), the prompt had errors (e.g. structural or validation failures), or the run failed (e.g. AI command or execution failure). The user must be able to tell which case occurred and what to do next. The report content and structure are defined by the prompt review outcome; this requirement covers observability: clarity of outcome and exit code.
+The review command has distinct outcomes: review completed (with or without findings), the prompt had errors (e.g. structural or validation failures), or the run failed (e.g. AI command or execution failure). The user must be able to tell which case occurred and what to do next. The report directory content and structure (result.json, summary.md, etc.) are defined by the prompt review outcome; this requirement covers observability: clarity of outcome and exit code.
 
 ### Edge cases
 
@@ -39,7 +39,7 @@ The review command has distinct outcomes: review completed (with or without find
 
 ## Acceptance criteria
 
-- [ ] The review command produces a report (or equivalent presentation) that makes the outcome clear: review completed, prompt had errors, or run failed.
+- [ ] The review command produces a report directory (result.json, summary.md, original.md, revision.md, diff.md) that makes the outcome clear: review completed, prompt had errors, or run failed.
 - [ ] The user can distinguish "review completed" (with or without findings) from "prompt had errors" from "run failed."
 - [ ] Exit codes for the review command follow the contract defined in the prompt review outcome (O005) and are distinct for these cases.
 - [ ] The user can determine what to do next (e.g. fix prompt vs. fix config/command) from the report and exit code.

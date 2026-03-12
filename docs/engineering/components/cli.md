@@ -19,7 +19,7 @@ The first argument after `ralph` is always one of: **run**, **review**, **list**
 | Command | Purpose |
 |--------|--------|
 | `ralph run` | Run the iteration loop. Prompt via alias, file, or stdin. |
-| `ralph review` | Review prompt (alias, file, stdin); report and suggested revision; optional apply. |
+| `ralph review` | Review prompt (alias, file, stdin); produce a report directory (result.json, summary.md, original.md, revision.md, diff.md) and a suggested revision; optional apply. |
 | `ralph list` | List prompts and/or aliases from resolved config. |
 | `ralph show` | Show effective config or detail for a prompt/alias. |
 | `ralph version` | Print version string and exit 0. |
@@ -127,7 +127,7 @@ Precedence: CLI flags override environment and config (config component layer or
 
 ## ralph review
 
-**Purpose:** Review a prompt (alias, file, or stdin). Produce a report (narrative + machine-parseable summary) and a suggested revision; optionally write the revision to a path with confirmation (or non-interactive flag).
+**Purpose:** Review a prompt (alias, file, or stdin). Produce a report directory (result.json, summary.md, original.md, revision.md, diff.md) and a suggested revision; optionally write the revision to a path with confirmation (or non-interactive flag).
 
 ### Syntax
 
@@ -149,7 +149,7 @@ Precedence: CLI flags override environment and config (config component layer or
 
 | Flag | Short | Type | Effect |
 |------|-------|------|--------|
-| `--report` | — | path | Write report file to this path. If omitted, report is written to `./ralph-review-report.txt` in the current working directory. Path must be writable; if it is an existing directory, error and exit 2. |
+| `--report` | — | path | Report directory path. The path is interpolated into the review prompt so the AI knows where to create the five files (`result.json`, `summary.md`, `original.md`, `revision.md`, `diff.md`). If omitted, default is `./ralph-review/` (under current working directory). If the path exists and is a file (not a directory), error and exit 2. If the path does not exist, Ralph creates it as a directory before invoking the AI. Path must be writable. |
 | `--prompt-output` | — | path | When using `--apply`, write the revision to this path. **Required** when prompt is from stdin and `--apply` is set; if missing in that case, error and exit 2. When prompt is from file/alias, may default to source file (with confirmation) or require path; behavior must be documented. |
 | `--apply` | — | — | Request that the suggested revision be written to a file. In interactive mode, confirmation is required before overwriting (unless `--yes`). In non-interactive mode, use `--yes` to apply without confirmation or error with a clear message if confirmation would be needed. |
 | `--yes` | `-y` | — | Non-interactive apply: do not prompt for confirmation; apply revision when `--apply` is set. If confirmation would be required and session is non-interactive and `--yes` is not set, exit 2 with clear message. |
@@ -167,7 +167,7 @@ Precedence: CLI flags override environment and config (config component layer or
 
 - Invalid or missing prompt source (alias unknown, file missing, stdin TTY with no input) → error before review; exit 2.
 - Stdin + `--apply` and no `--prompt-output` → error, exit 2.
-- Report path unwritable or invalid → error, exit 2.
+- Report directory unwritable, or path exists and is not a directory (e.g. existing file), or directory cannot be created → error, exit 2.
 - Apply requested, confirmation required, non-interactive and no `--yes` → error, exit 2.
 - Unknown flag or invalid value → parser error, non-zero exit.
 

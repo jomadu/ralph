@@ -6,7 +6,7 @@ Users who want to check prompt quality and structure before or without running t
 
 ## Statement
 
-Prompts can be reviewed for quality and structure before or without running the loop; the user gets a report and a suggested revision (both required outputs), and can request that the revision be written to a file (with confirmation when appropriate).
+Prompts can be reviewed for quality and structure before or without running the loop; the user gets a report directory (with result, summary, original, revision, and diff) and a suggested revision (in revision.md and optionally applied to a path); both are required outputs. The user can request that the revision be written to a file (with confirmation when appropriate).
 
 ## Why it matters
 
@@ -14,10 +14,10 @@ Without a reviewer, problems show up only when the loop runs: the AI never emits
 
 ## Verification
 
-- User runs the review command with the prompt supplied by alias, file path, or stdin; receives a report and a suggested revision (both always produced). The user can request that the revision be written to a file; when doing so, the user confirms (or uses a non-interactive option where supported). Exit codes distinguish: review completed with no errors, review completed but the prompt has errors, or review or apply did not complete successfully.
-- The report is always saved to a file. The user can choose where the report is written or accept a default (e.g. a temporary location). The user can direct the revised prompt to a chosen path.
+- User runs the review command with the prompt supplied by alias, file path, or stdin; receives a report directory containing result.json, summary.md, original.md, revision.md, diff.md, and a suggested revision (in revision.md and optionally applied). The user can request that the revision be written to a file; when doing so, the user confirms (or uses a non-interactive option where supported). Exit codes distinguish: review completed with no errors, review completed but the prompt has errors, or review or apply did not complete successfully.
+- The report is always saved to a directory of files (user-chosen or default). The user can direct the revised prompt to a chosen path.
 - When the prompt was supplied via stdin and the user requests that the revision be written, the user must specify where to write it (there is no source file to overwrite); if they do not, the system reports an error and does not apply.
-- The report includes narrative feedback and a machine-parseable summary so scripts or CI can gate on the result.
+- The report directory includes summary.md (narrative) and result.json (machine-parseable status) so scripts or CI can gate on the result.
 - The review evaluates prompts along these dimensions:
   - **Signal and state** — Clear success and failure signals Ralph can detect, and statefulness (e.g. filesystem, work-tracking) that works with the loop model.
   - **Iteration awareness** — The prompt acknowledges that execution is multi-iteration with a fresh process each time, so the AI can behave accordingly (e.g. re-read state, emit signals).
@@ -39,7 +39,7 @@ Without a reviewer, problems show up only when the loop runs: the AI never emits
 | Review produces no useful or actionable feedback | [R007 — Evaluation dimensions](R007-evaluation-dimensions.md) |
 | User overwrites prompt file without intent | [R004 — Apply with confirmation](R004-apply-with-confirmation.md) |
 | stdin + apply writes to wrong place or fails silently | [R006 — Revision output path](R006-revision-output-path.md) |
-| Report not usable by CI or scripts | [R002 — Report content and format](R002-report-content-and-format.md) |
+| Report not usable by CI or scripts | [R002 — Report content and format](R002-report-content-and-format.md) (content spread across five files; format includes result.json and directory layout) |
 | Exit codes unclear for scripting or gating | [R008 — Exit codes](R008-exit-codes.md) |
 
 ## Requirements

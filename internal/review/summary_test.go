@@ -1,6 +1,8 @@
 package review
 
 import (
+	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -74,26 +76,36 @@ func TestExitCodeFromSummary(t *testing.T) {
 	}
 }
 
-func TestRun_exitCodeMatchesParsedSummary(t *testing.T) {
+func TestRun_exitCodeMatchesResultJSON(t *testing.T) {
 	dir := t.TempDir()
-	reportPath := filepath.Join(dir, "report.txt")
-	code, err := Run([]byte("# prompt"), RunOptions{ReportPath: reportPath})
+	reportDir := filepath.Join(dir, "report")
+	// Mock invoker writes result.json (status=ok) so exit code is 0.
+	mock := invokerAdapter(func(_ string, prompt []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+		reportDir := extractReportDirFromPrompt(prompt)
+		if reportDir != "" {
+			_ = os.MkdirAll(reportDir, 0755)
+			b, _ := json.Marshal(resultJSON{Status: "ok", Errors: 0, Warnings: 0})
+			_ = os.WriteFile(filepath.Join(reportDir, ReportResultJSON), b, 0644)
+		}
+		return []byte("Created the review report."), 0, nil
+	})
+	opts := RunOptions{ReportPath: reportDir, WorkingDir: dir, Command: "echo", Invoker: mock}
+	code, err := Run([]byte("# prompt"), opts)
 	if err != nil {
 		t.Fatalf("Run err = %v", err)
 	}
-	data, err := os.ReadFile(reportPath)
+	data, err := os.ReadFile(filepath.Join(reportDir, ReportResultJSON))
 	if err != nil {
-		t.Fatalf("ReadFile(report) err = %v", err)
+		t.Fatalf("ReadFile(result.json) err = %v", err)
 	}
-	status, errorsCount, _, ok := ParseSummaryFromReport(data)
-	if !ok {
-		t.Fatal("report has no parseable summary line")
+	var result resultJSON
+	if err := json.Unmarshal(data, &result); err != nil {
+		t.Fatal("result.json invalid:", err)
 	}
-	wantCode := ExitCodeFromSummary(status, errorsCount)
+	wantCode := ExitCodeFromSummary(SummaryStatus(result.Status), result.Errors)
 	if code != wantCode {
-		t.Errorf("Run exit code = %d, want %d (from parsed status=%q errors=%d)", code, wantCode, status, errorsCount)
+		t.Errorf("Run exit code = %d, want %d (from result status=%q errors=%d)", code, wantCode, result.Status, result.Errors)
 	}
-	// Code must be 0 or 1 on success (T5.5)
 	if code != 0 && code != 1 {
 		t.Errorf("Run exit code = %d, want 0 or 1", code)
 	}

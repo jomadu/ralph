@@ -1,6 +1,7 @@
 package review
 
 import (
+	"errors"
 	"strings"
 	"testing"
 )
@@ -45,23 +46,27 @@ func TestReport_String(t *testing.T) {
 	}
 }
 
-func TestGenerateReport(t *testing.T) {
-	prompt := []byte("# Task\nDo it.")
-	report := GenerateReport(prompt)
+func TestParseAIOutput(t *testing.T) {
+	stdout := []byte("**Signal and state**\nLooks good.\n\n**Scope**\nDefine scope.\n\nralph-review: status=errors errors=2 warnings=0\n---\n# Task\nDo it.\n")
+	report, err := ParseAIOutput(stdout)
+	if err != nil {
+		t.Fatalf("ParseAIOutput: %v", err)
+	}
 	if report == nil {
-		t.Fatal("GenerateReport returned nil")
+		t.Fatal("ParseAIOutput returned nil report")
 	}
 	if report.Narrative == "" {
 		t.Error("Narrative empty")
 	}
-	// T5.6: narrative is structured by dimension
-	if !strings.Contains(report.Narrative, "Signal and state") || !strings.Contains(report.Narrative, "Scope and convergence") {
-		t.Errorf("Narrative missing dimension labels: %s", report.Narrative)
+	if !strings.Contains(report.Narrative, "Signal and state") || !strings.Contains(report.Narrative, "Scope") {
+		t.Errorf("Narrative missing expected content: %s", report.Narrative)
 	}
 	if !strings.HasPrefix(report.SummaryLine, "ralph-review:") {
 		t.Errorf("SummaryLine = %q, want ralph-review:...", report.SummaryLine)
 	}
-	// Revision includes prompt and may include suggestions (T5.6)
+	if !strings.Contains(report.SummaryLine, "status=errors") || !strings.Contains(report.SummaryLine, "errors=2") {
+		t.Errorf("SummaryLine = %q", report.SummaryLine)
+	}
 	if !strings.Contains(report.Revision, "# Task") || !strings.Contains(report.Revision, "Do it.") {
 		t.Errorf("Revision missing prompt content: %q", report.Revision)
 	}
@@ -71,5 +76,27 @@ func TestGenerateReport(t *testing.T) {
 	}
 	if !strings.Contains(body, "# Task") {
 		t.Error("Report body missing revision content")
+	}
+}
+
+func TestParseAIOutput_missingSummary_returnsError(t *testing.T) {
+	stdout := []byte("Some text.\n---\nrevision")
+	_, err := ParseAIOutput(stdout)
+	if err == nil {
+		t.Fatal("ParseAIOutput(missing summary) err = nil, want error")
+	}
+	if !errors.Is(err, ErrParseAIOutput) {
+		t.Errorf("err = %v, want ErrParseAIOutput", err)
+	}
+}
+
+func TestParseAIOutput_missingSeparator_returnsError(t *testing.T) {
+	stdout := []byte("Narrative\nralph-review: status=ok errors=0 warnings=0\nno separator line")
+	_, err := ParseAIOutput(stdout)
+	if err == nil {
+		t.Fatal("ParseAIOutput(missing ---) err = nil, want error")
+	}
+	if !errors.Is(err, ErrParseAIOutput) {
+		t.Errorf("err = %v, want ErrParseAIOutput", err)
 	}
 }

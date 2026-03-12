@@ -20,7 +20,7 @@ Implements the requirements assigned to this component in the [engineering READM
 - **Upgrade procedure** — How to upgrade to a chosen version or update within a non-breaking version; backward compatibility and migration are documented (per O011). No `ralph upgrade` subcommand; upgrade is a procedure.
 - **Release notes** — For changes that affect users or automation (new features, breaking changes, migrations). Users can understand what changed and how to adapt.
 - **Discoverability content** — What Ralph is, why to use it, and how to get to a first successful run (install, first command). May live in README, docs site, or both.
-- **Stable contract documentation** — Exit codes (run and review), non-interactive flags, machine-parseable review summary format, and config contract so scripts and CI can rely on them. When the contract changes (e.g. new exit code, new summary field), docs and release notes are updated.
+- **Stable contract documentation** — Exit codes (run and review), non-interactive flags, review result format (result.json in report directory) and report directory layout, and config contract so scripts and CI can rely on them. When the contract changes (e.g. new exit code, new result field), docs and release notes are updated.
 
 ## Implementation spec
 
@@ -34,7 +34,7 @@ Documentation must cover at least:
 - Config: layer order, config file location (global, workspace), explicit config option, and the canonical config structure (loop, prompts, aliases) so users can author valid config.
 - Prompt sources: alias, file path, stdin; how to specify them for run and review.
 - Loop behavior: iterations, failure threshold, timeout, signals, precedence, preamble, AI command/alias, streaming, log level.
-- Review: invocation (alias, file, stdin); report content and location; machine-parseable summary format and how to parse it for CI; apply and confirmation; revision output path requirement when prompt is from stdin.
+- Review: invocation (alias, file, stdin); report **directory** and the five files (result.json, summary.md, original.md, revision.md, diff.md); **result.json** as the machine-parseable outcome and how to use it for CI (or exit code); apply and confirmation; revision output path requirement when prompt is from stdin.
 - Exit codes: run (success, failure threshold, max iterations, interrupt, error) and review (0, 1, 2) with exact values and semantics so automation can gate reliably. The canonical user and automation doc is [docs/exit-codes.md](../../exit-codes.md); README summarizes and links to it.
 - Non-interactive use: flags and environment so CI/scripts can run without prompts; behavior when confirmation would be required in non-interactive mode.
 
@@ -74,7 +74,7 @@ User-facing docs must help users resolve common problems. The README includes a 
 
 - **Prompt not found / unknown alias** — How prompt source is resolved (alias, file, stdin); using `ralph list` to verify; effect of `--config` and config file locations.
 - **Config file not found** — Behavior when `--config` is used (no fallback); where global and workspace config are read; skipping missing files without error.
-- **Wrong or unexpected exit code** — Reference to exit code semantics (run: 0, 2, 3, 4, 130; review: 0, 1, 2) and how to interpret them; common causes for exit 2 (e.g. missing AI command, stdin + apply without `--prompt-output`).
+- **Wrong or unexpected exit code** — Reference to exit code semantics (run: 0, 2, 3, 4, 130; review: 0, 1, 2) and how to interpret them; common causes for exit 2 (e.g. missing AI command, stdin + apply without `--prompt-output`, report directory unwritable or path is an existing file). Optionally: report is now a directory; look in `result.json` for status and in `summary.md` for narrative.
 - **AI command not found** — AI CLI must be on PATH or specified via `--ai-cmd`; Ralph validates before the loop and exits 2 with a clear error.
 - **ralph: command not found** — PATH must include the install directory; how to verify (e.g. `ralph version`, `~/.config/ralph/install-state`).
 
@@ -82,4 +82,4 @@ Troubleshooting content lives in the README and links to the canonical CLI, conf
 
 ### Consistency with implementation (doc accuracy)
 
-When implementation specs change in a way that affects user or automation contract (e.g. new flag, exit code, config key, or report format), the documentation component is updated so that user docs, procedures, and contract docs remain accurate. Update the engineering spec first (cli.md, config.md, run-loop.md, review.md, etc.), then README and [docs/exit-codes.md](../../exit-codes.md) as needed. Product requirements that reference "documented" behavior are satisfied by this component.
+When implementation specs change in a way that affects user or automation contract (e.g. new flag, exit code, config key, or report directory and file formats (result.json, summary.md, original.md, revision.md, diff.md)), the documentation component is updated so that user docs, procedures, and contract docs remain accurate. Update the engineering spec first (cli.md, config.md, run-loop.md, review.md, etc.), then README and [docs/exit-codes.md](../../exit-codes.md) as needed. Product requirements that reference "documented" behavior are satisfied by this component.

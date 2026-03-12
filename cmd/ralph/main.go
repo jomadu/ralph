@@ -591,7 +591,7 @@ func (m *mergedPromptProvider) PromptByName(name string) (path, content string, 
 }
 
 // reviewCmd builds the ralph review subcommand (T6.1). Syntax: review [alias], review -f <path>, or stdin.
-// Flags: --file/-f, --report, --prompt-output, --apply, --yes/-y, --verbose/-v, --quiet/-q, --log-level; --config from root.
+// Flags: --file/-f, --report, --prompt-output, --apply, --yes/-y, --verbose/-v, --quiet/-q, --log-level, --ai-cmd, --ai-cmd-alias; --config from root.
 func reviewCmd() *cobra.Command {
 	var (
 		filePath     string
@@ -602,6 +602,8 @@ func reviewCmd() *cobra.Command {
 		verbose      bool
 		quiet        bool
 		logLevel     string
+		aiCmd        string
+		aiCmdAlias   string
 	)
 	cmd := &cobra.Command{
 		Use:   "review [alias]",
@@ -660,6 +662,33 @@ func reviewCmd() *cobra.Command {
 				return err
 			}
 
+			// Resolve AI command for review (same precedence as run: config, env overlay, default cursor-agent).
+			promptName := opts.Alias
+			eff, ok, err := config.Resolve(os.Getenv, cwd, configPath, promptName)
+			if err != nil {
+				return fmt.Errorf("config: %w", err)
+			}
+			if !ok && promptName != "" {
+				return fmt.Errorf("config: prompt %q not found", promptName)
+			}
+			overlay, _ := config.ParseEnvOverlay(os.Getenv)
+			directCmd := aiCmd
+			if directCmd == "" && overlay != nil && overlay.AICmd != nil {
+				directCmd = *overlay.AICmd
+			}
+			aliasName := aiCmdAlias
+			if aliasName == "" && overlay != nil && overlay.AICmdAlias != nil {
+				aliasName = *overlay.AICmdAlias
+			}
+			if directCmd == "" && aliasName == "" {
+				aliasName = "cursor-agent"
+			}
+			command, ok := config.ResolveAICommand(eff, directCmd, aliasName)
+			if !ok {
+				fmt.Fprintln(os.Stderr, "ralph review: AI command not resolved (missing or invalid --ai-cmd / --ai-cmd-alias or config)")
+				os.Exit(2)
+			}
+
 			// Source path for defaulting revision output when --apply without --prompt-output (file or alias with path).
 			var sourcePath string
 			if filePath != "" {
@@ -700,6 +729,10 @@ func reviewCmd() *cobra.Command {
 				Verbose:          verbose,
 				Quiet:            quiet,
 				LogLevel:         effLogLevel,
+				Command:          command,
+				Cwd:              cwd,
+				Env:              os.Environ(),
+				TimeoutSec:       eff.Loop.TimeoutSeconds,
 			}
 			code, err := review.Run(content, runOpts)
 			if err != nil {
@@ -714,13 +747,15 @@ func reviewCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&filePath, "file", "f", "", "Read prompt from this file (mutually exclusive with alias and stdin)")
-	cmd.Flags().StringVar(&reportPath, "report", "", "Write report file to this path (default: ./ralph-review-report.txt)")
+	cmd.Flags().StringVar(&reportPath, "report", "", "Write report directory to this path (default: ./ralph-review); AI creates result.json, summary.md, original.md, revision.md, diff.md inside it")
 	cmd.Flags().StringVar(&promptOutput, "prompt-output", "", "When using --apply, write revision to this path (required when prompt is from stdin)")
 	cmd.Flags().BoolVar(&apply, "apply", false, "Write suggested revision to a file")
 	cmd.Flags().BoolVarP(&yes, "yes", "y", false, "Non-interactive apply: do not prompt for confirmation")
 	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity (e.g. log level debug)")
 	cmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Minimize output (e.g. log level error-only)")
 	cmd.Flags().StringVar(&logLevel, "log-level", "", "Log level: debug, info, warn, error (overrides shortcuts)")
+	cmd.Flags().StringVar(&aiCmd, "ai-cmd", "", "Direct AI command string for this review")
+	cmd.Flags().StringVar(&aiCmdAlias, "ai-cmd-alias", "", "AI command alias name from config for this review")
 	return cmd
 }
 

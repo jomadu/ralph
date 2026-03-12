@@ -116,7 +116,7 @@ To upgrade or update an existing install:
 
 - **Backward compatibility** — Config and prompt files that worked in an older patch/minor (same major) keep working after update. Documented commands, options, and exit codes remain valid across non-breaking upgrades. Breaking contract or config changes are documented in release notes with migration steps; major version bumps may introduce breaking changes as documented.
 
-**Release notes and stable contract:** For each release, behavior changes and deprecations that affect config or scripts are described in the release notes (e.g. [GitHub Releases](https://github.com/maxdunn/ralph/releases)). See [docs/exit-codes.md](docs/exit-codes.md) for the stable exit-code contract and [docs/release-notes.md](docs/release-notes.md) for where to find release notes and what constitutes the stable contract (exit codes, review summary format, config). When that contract or config schema changes, release notes explain the change and how to adapt.
+**Release notes and stable contract:** For each release, behavior changes and deprecations that affect config or scripts are described in the release notes (e.g. [GitHub Releases](https://github.com/maxdunn/ralph/releases)). See [docs/exit-codes.md](docs/exit-codes.md) for the stable exit-code contract and [docs/release-notes.md](docs/release-notes.md) for where to find release notes and what constitutes the stable contract (exit codes, review result format and report directory layout, config). When that contract or config schema changes, release notes explain the change and how to adapt.
 
 ## How It Works
 
@@ -224,7 +224,7 @@ Flags (all optional): `-f, --file`, `-n, --max-iterations`, `-u, --unlimited`, `
 
 ### ralph review
 
-Review a prompt (alias, file, or stdin). Produces a report (narrative + machine-parseable summary) and a suggested revision; optionally apply the revision with confirmation (or `--yes` in non-interactive mode).
+Review a prompt (alias, file, or stdin). Produces a report directory (result.json, summary.md, original.md, revision.md, diff.md) and a suggested revision; optionally apply the revision with confirmation (or `--yes` in non-interactive mode).
 
 ```
 ralph review [alias] [flags]
@@ -232,7 +232,7 @@ ralph review -f <path> [flags]
 cat prompt.md | ralph review [flags]
 ```
 
-Flags: `-f, --file`, `--report` (report output path; default `./ralph-review-report.txt`), `--prompt-output` (required when using `--apply` with stdin), `--apply`, `--yes`/`-y` (non-interactive apply), `-v, -q, --quiet`, `--log-level`, `--config`. For CI: use exit code 0/1/2 to gate; or parse the report for a line `ralph-review: status=ok|errors|warnings` (see [docs/exit-codes.md](docs/exit-codes.md) and `docs/engineering/components/review.md`).
+Flags: `-f, --file`, `--report` (report output directory; default `./ralph-review/`). The report directory path is passed to the AI in the prompt; the AI creates result.json, summary.md, original.md, revision.md, diff.md in that directory. `--prompt-output` (required when using `--apply` with stdin), `--apply`, `--yes`/`-y` (non-interactive apply), `-v, -q, --quiet`, `--log-level`, `--config`. For CI: use exit code 0/1/2 to gate, or read result.json in the report directory for status (see [docs/exit-codes.md](docs/exit-codes.md) and [docs/engineering/components/review.md](docs/engineering/components/review.md)).
 
 ### ralph list
 
@@ -307,7 +307,7 @@ Common problems and how to resolve them:
 
 - **Prompt not found / unknown alias** — You must supply exactly one prompt source: an alias (from config), a file path with `-f`/`--file`, or stdin. If you use an alias (e.g. `ralph run build`), that alias must be defined in your resolved config (global, workspace, or `--config`). Check with `ralph list prompts` and `ralph list aliases`; ensure the config file is where Ralph looks (see [Configuration](#configuration) and `RALPH_CONFIG_HOME`). If you pass `--config <path>`, that file must exist and be readable; Ralph does not fall back to global/workspace when `--config` is set.
 - **Config file not found** — When you pass `--config <path>`, Ralph uses only that file. If the path is wrong or the file is missing, Ralph exits with an error (exit 2). Fix the path or omit `--config` to use global/workspace config. Global config is `$RALPH_CONFIG_HOME/ralph-config.yml` (or `~/.config/ralph/ralph-config.yml` if `RALPH_CONFIG_HOME` is unset); workspace config is `./ralph-config.yml` in the current directory. Missing global or workspace files are skipped without error.
-- **Wrong or unexpected exit code** — Exit codes are stable and documented in [Exit Codes](#exit-codes) and [docs/exit-codes.md](docs/exit-codes.md). **ralph run:** 0 = success signal; 2 = error before loop (e.g. missing AI command); 3 = max iterations; 4 = failure threshold; 130 = interrupted. **ralph review:** 0 = no prompt errors; 1 = prompt has errors; 2 = invocation/apply error. If you get 2, check the error message (e.g. AI command not on PATH, invalid config, or for review: stdin + `--apply` without `--prompt-output`, or non-interactive apply without `--yes`). If you get 3 or 4 on run, the loop ended without seeing the success signal — check your prompt’s success/failure signals and that the AI actually emits them.
+- **Wrong or unexpected exit code** — Exit codes are stable and documented in [Exit Codes](#exit-codes) and [docs/exit-codes.md](docs/exit-codes.md). **ralph run:** 0 = success signal; 2 = error before loop (e.g. missing AI command); 3 = max iterations; 4 = failure threshold; 130 = interrupted. **ralph review:** 0 = no prompt errors; 1 = prompt has errors; 2 = invocation/apply error. If you get 2, check the error message (e.g. AI command not on PATH, invalid config, or for review: stdin + `--apply` without `--prompt-output`, or non-interactive apply without `--yes`). Report is a directory; check result.json for status and summary.md for narrative. If you get 3 or 4 on run, the loop ended without seeing the success signal — check your prompt’s success/failure signals and that the AI actually emits them.
 - **AI command not found / exit 2 before loop** — Ralph resolves the AI command from config or `--ai-cmd`/`--ai-cmd-alias` and checks that the executable exists (e.g. on PATH) before starting the loop. Install your AI CLI (e.g. Cursor agent, Claude CLI) and ensure it is on your PATH, or set `--ai-cmd` to the full path. Use `ralph list aliases` to see resolved aliases.
 - **ralph: command not found** — The `ralph` binary is not on your PATH. After install, add the install directory (e.g. `~/bin` or the value in `~/.config/ralph/install-state`) to your PATH. Verify with `ralph version`.
 

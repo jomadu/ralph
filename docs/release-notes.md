@@ -19,7 +19,7 @@ Within the compatibility contract (e.g. same major version), the following are s
 | Contract | Canonical doc | Summary |
 |----------|----------------|---------|
 | **Exit codes** | [docs/exit-codes.md](exit-codes.md) | Run: 0 (success), 2 (error before loop), 3 (max iterations), 4 (failure threshold), 130 (interrupt). Review: 0 (OK), 1 (prompt errors), 2 (did not complete). |
-| **Review summary format** | [docs/engineering/components/review.md](engineering/components/review.md) | Machine-parseable line: `ralph-review: status=ok\|errors\|warnings` with optional `errors=N` / `warnings=N`. Parser: `internal/review/summary.go`. |
+| **Review result format** | [docs/engineering/components/review.md](engineering/components/review.md) | Review result: result.json in report directory (status, errors, warnings). Report directory contains result.json, summary.md, original.md, revision.md, diff.md. Canonical spec: docs/engineering/components/review.md. |
 | **Config** | [docs/engineering/components/config.md](engineering/components/config.md) | Layer order, config file locations, schema (loop, prompts, aliases), env vars (`RALPH_CONFIG_HOME`, `RALPH_LOOP_*`). |
 | **Non-interactive use** | README and [exit-codes.md](exit-codes.md) | Flags and env for CI; `--yes` for review apply; exit semantics for gating. |
 

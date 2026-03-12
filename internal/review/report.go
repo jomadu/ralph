@@ -53,31 +53,3 @@ func (r *Report) String() string {
 	}
 	return b.String()
 }
-
-// GenerateReport produces a report from prompt content.
-// T5.2: produces narrative, machine-parseable summary line, and full suggested revision.
-// T5.6 (O005/R007): evaluates prompt on four dimensions (signal/state, iteration awareness, scope/convergence, subjective completion) and structures narrative by dimension.
-func GenerateReport(promptContent []byte) *Report {
-	dimensions := evaluateDimensions(promptContent)
-	narrative := narrativeFromDimensions(dimensions)
-	revision := suggestedRevisionFromDimensions(promptContent, dimensions)
-
-	errorsCount := 0
-	for _, d := range dimensions {
-		if !d.OK {
-			errorsCount++
-		}
-	}
-	status := StatusOK
-	if errorsCount >= 1 {
-		status = StatusErrors
-	}
-	warningsCount := 0
-	summaryLine := FormatSummaryLine(status, errorsCount, warningsCount)
-
-	return &Report{
-		Narrative:   narrative,
-		SummaryLine: summaryLine,
-		Revision:    revision,
-	}
-}

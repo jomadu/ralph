@@ -27,13 +27,13 @@ This document is the **stable contract** for Ralph’s exit codes. Scripts and C
 
 | Exit code | Meaning |
 |-----------|---------|
-| **0** | Review completed; report written; no prompt errors (summary indicates OK). |
-| **1** | Review completed; report written; prompt has one or more errors (summary indicates errors). |
+| **0** | Review completed; report directory written (result.json, summary.md, original.md, revision.md, diff.md); no prompt errors (result.json indicates OK). |
+| **1** | Review completed; report directory written; prompt has one or more errors (result.json indicates errors). |
 | **2** | Review or apply did not complete — invalid prompt source, report write failure, stdin + apply without `--prompt-output`, confirmation required in non-interactive mode without `--yes`, or internal error. |
 
 ### For scripts and CI
 
-- **Gate on prompt quality:** Exit 0 = pass, exit 1 = prompt has errors (fail the gate), exit 2 = invocation error (fail the job).
+- **Gate on prompt quality:** Exit 0 = pass, exit 1 = prompt has errors (fail the gate), exit 2 = invocation error (fail the job). For outcome details, read result.json in the report directory.
 - **Apply flow:** Use `--yes` when applying in non-interactive mode to avoid exit 2 for missing confirmation.
 
 ---

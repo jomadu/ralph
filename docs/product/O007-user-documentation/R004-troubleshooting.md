@@ -24,7 +24,7 @@ User-facing documentation includes guidance for common problems—for example: p
 
 **Input:** User ran `ralph run` or `ralph review` and got a non-zero exit code; they are unsure what it means.
 
-**Expected output:** Documentation lists exit codes (run: 0, 2, 3, 4, 130; review: 0, 1, 2) with clear meanings and common causes (e.g. exit 2 = error before loop or invocation error; 3/4 = loop ended without success). It points to the stable exit-code contract (e.g. docs/exit-codes.md) for scripts and CI.
+**Expected output:** Documentation lists exit codes (run: 0, 2, 3, 4, 130; review: 0, 1, 2) with clear meanings and common causes (e.g. exit 2 = error before loop or invocation error; 3/4 = loop ended without success). For review, the report is a directory; result.json holds the machine outcome. It points to the stable exit-code contract (e.g. docs/exit-codes.md) for scripts and CI.
 
 **Verification:** User can interpret the exit code and take the right action (fix config, check signals, add `--yes` for apply, etc.).
 
