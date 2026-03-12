@@ -92,7 +92,6 @@ func runCmd() *cobra.Command {
 		verbose          bool
 		quiet            bool
 		logLevel         string
-		stream           bool
 		noStream         bool
 	)
 	cmd := &cobra.Command{
@@ -204,7 +203,6 @@ func runCmd() *cobra.Command {
 				verbose:          verbose,
 				quiet:            quiet,
 				logLevel:         logLevel,
-				stream:           stream,
 				noStream:         noStream,
 			})
 			streamWriter := io.Writer(io.Discard)
@@ -248,11 +246,10 @@ func runCmd() *cobra.Command {
 	// Context / preamble
 	cmd.Flags().StringArrayVarP(&contextStrings, "context", "c", nil, "Inline context injected into preamble (repeatable)")
 	// Output and observability (cli.md ralph run)
-	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity (e.g. log level debug and enable streaming)")
-	cmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Minimal output: log level error-only; streaming disabled")
+	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity (log level debug)")
+	cmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Minimal output: log level error-only; do not show AI command output")
 	cmd.Flags().StringVar(&logLevel, "log-level", "", "Log level: debug, info, warn, error (overrides config and shortcuts)")
-	cmd.Flags().BoolVar(&stream, "stream", false, "Enable streaming of AI output to terminal (still captured for signal scan)")
-	cmd.Flags().BoolVar(&noStream, "no-stream", false, "Disable streaming of AI output to terminal")
+	cmd.Flags().BoolVar(&noStream, "no-stream", false, "Do not show AI command output in the terminal")
 	return cmd
 }
 
@@ -271,7 +268,6 @@ type runLoopOverrides struct {
 	verbose          bool
 	quiet            bool
 	logLevel         string
-	stream           bool
 	noStream         bool
 }
 
@@ -313,9 +309,8 @@ func applyRunLoopOverrides(base config.LoopSettings, o runLoopOverrides) config.
 			out.Preamble = contextBlock
 		}
 	}
-	// Output and observability (cli.md: --verbose/-v, --quiet/-q, --log-level, --stream, --no-stream).
-	// Apply shortcuts first; explicit --log-level and --stream/--no-stream override (O004/R006).
-	// When both -q and -v are set, verbose wins (user opted for more output).
+	// Output and observability (cli.md: --verbose/-v, --quiet/-q, --log-level, --no-stream). Default is streaming on.
+	// Apply shortcuts first; explicit --log-level overrides; only --no-stream turns off AI output (no enable flag).
 	if o.quiet && !o.verbose {
 		out.LogLevel = "error"
 		out.Streaming = false
@@ -326,9 +321,6 @@ func applyRunLoopOverrides(base config.LoopSettings, o runLoopOverrides) config.
 	}
 	if o.logLevel != "" {
 		out.LogLevel = o.logLevel
-	}
-	if o.stream {
-		out.Streaming = true
 	}
 	if o.noStream {
 		out.Streaming = false
@@ -398,7 +390,6 @@ func showConfigCmd() *cobra.Command {
 		verbose        bool
 		quiet          bool
 		logLevel       string
-		stream         bool
 		noStream       bool
 	)
 	c := &cobra.Command{
@@ -426,7 +417,7 @@ func showConfigCmd() *cobra.Command {
 				var cli *config.CLIOverlay
 				if maxIterations > 0 || unlimited || failureThresh >= 0 || iterTimeout >= 0 ||
 					noPreamble || signalSuccess != "" || signalFailure != "" || signalPreced != "" ||
-					len(contextStrings) > 0 || verbose || quiet || logLevel != "" || stream || noStream {
+					len(contextStrings) > 0 || verbose || quiet || logLevel != "" || noStream {
 					cli = &config.CLIOverlay{
 						MaxIterations:    maxIterations,
 						Unlimited:        unlimited,
@@ -440,7 +431,6 @@ func showConfigCmd() *cobra.Command {
 						Verbose:          verbose,
 						Quiet:            quiet,
 						LogLevel:         logLevel,
-						Stream:           stream,
 						NoStream:         noStream,
 					}
 				}
@@ -492,8 +482,7 @@ func showConfigCmd() *cobra.Command {
 	c.Flags().BoolVarP(&verbose, "verbose", "v", false, "Verbose / debug log level (for provenance)")
 	c.Flags().BoolVarP(&quiet, "quiet", "q", false, "Quiet / error-only log level (for provenance)")
 	c.Flags().StringVar(&logLevel, "log-level", "", "Log level (for provenance)")
-	c.Flags().BoolVar(&stream, "stream", false, "Enable streaming (for provenance)")
-	c.Flags().BoolVar(&noStream, "no-stream", false, "Disable streaming (for provenance)")
+	c.Flags().BoolVar(&noStream, "no-stream", false, "Do not show AI command output (for provenance)")
 	return c
 }
 
@@ -602,6 +591,7 @@ func reviewCmd() *cobra.Command {
 		verbose      bool
 		quiet        bool
 		logLevel     string
+		noStream     bool
 		aiCmd        string
 		aiCmdAlias   string
 	)
@@ -706,7 +696,7 @@ func reviewCmd() *cobra.Command {
 			stdinStat, _ := os.Stdin.Stat()
 			nonInteractive := (stdinStat.Mode() & os.ModeCharDevice) == 0
 
-			// Resolve effective log level: same precedence as run (quiet→error, verbose→debug, explicit overrides).
+			// Resolve effective log level and streaming: same precedence as run (quiet→error, no-stream→no AI output).
 			effLogLevel := ""
 			if quiet && !verbose {
 				effLogLevel = "error"
@@ -716,6 +706,17 @@ func reviewCmd() *cobra.Command {
 			}
 			if logLevel != "" {
 				effLogLevel = logLevel
+			}
+			streaming := eff.Loop.Streaming
+			if quiet && !verbose {
+				streaming = false
+			}
+			if noStream {
+				streaming = false
+			}
+			var streamWriter io.Writer
+			if streaming {
+				streamWriter = os.Stdout
 			}
 
 			runOpts := review.RunOptions{
@@ -729,6 +730,7 @@ func reviewCmd() *cobra.Command {
 				Verbose:          verbose,
 				Quiet:            quiet,
 				LogLevel:         effLogLevel,
+				StreamWriter:     streamWriter,
 				Command:          command,
 				Cwd:              cwd,
 				Env:              os.Environ(),
@@ -751,9 +753,10 @@ func reviewCmd() *cobra.Command {
 	cmd.Flags().StringVar(&promptOutput, "prompt-output", "", "When using --apply, write revision to this path (required when prompt is from stdin)")
 	cmd.Flags().BoolVar(&apply, "apply", false, "Write suggested revision to a file")
 	cmd.Flags().BoolVarP(&yes, "yes", "y", false, "Non-interactive apply: do not prompt for confirmation")
-	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity (e.g. log level debug)")
-	cmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Minimize output (e.g. log level error-only)")
+	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity (log level debug)")
+	cmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Minimal output: log level error-only; do not show AI command output")
 	cmd.Flags().StringVar(&logLevel, "log-level", "", "Log level: debug, info, warn, error (overrides shortcuts)")
+	cmd.Flags().BoolVar(&noStream, "no-stream", false, "Do not show AI command output in the terminal")
 	cmd.Flags().StringVar(&aiCmd, "ai-cmd", "", "Direct AI command string for this review")
 	cmd.Flags().StringVar(&aiCmdAlias, "ai-cmd-alias", "", "AI command alias name from config for this review")
 	return cmd

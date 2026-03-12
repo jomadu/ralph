@@ -104,11 +104,10 @@ Precedence: CLI flags override environment and config (config component layer or
 
 | Flag | Short | Type | Effect |
 |------|-------|------|--------|
-| `--verbose` | `-v` | — | Increase verbosity: e.g. set log level to debug and enable streaming (unless overridden). |
-| `--quiet` | `-q` | — | Minimal output: log level effectively error-only; streaming disabled. AI output is still captured for signal scanning. |
-| `--log-level` | — | string | Set log level: `debug`, `info`, `warn`, `error`. Overrides config and shortcuts when set. |
-| `--stream` | — | — | Enable streaming of AI command output to terminal (still captured for signal scanning). Overrides config. |
-| `--no-stream` | — | — | Disable streaming of AI command output to terminal (still captured). Overrides config. When combined with quiet, quiet wins unless log-level or streaming is explicitly overridden. |
+| `--verbose` | `-v` | — | Increase verbosity: log level debug. |
+| `--quiet` | `-q` | — | Minimal output: log level error-only; do not show AI command output. |
+| `--log-level` | — | string | Log level: `debug`, `info`, `warn`, `error`. Overrides config and shortcuts when set. |
+| `--no-stream` | — | — | Do not show AI command output in the terminal. Default is to show it; this flag turns it off for this run. |
 
 **Configuration (global)**
 
@@ -154,13 +153,19 @@ Precedence: CLI flags override environment and config (config component layer or
 | `--apply` | — | — | Request that the suggested revision be written to a file. In interactive mode, confirmation is required before overwriting (unless `--yes`). In non-interactive mode, use `--yes` to apply without confirmation or error with a clear message if confirmation would be needed. |
 | `--yes` | `-y` | — | Non-interactive apply: do not prompt for confirmation; apply revision when `--apply` is set. If confirmation would be required and session is non-interactive and `--yes` is not set, exit 2 with clear message. |
 
-**Output and config**
+**Output and observability**
 
 | Flag | Short | Type | Effect |
 |------|-------|------|--------|
-| `--verbose` | `-v` | — | Increase verbosity (e.g. log level debug). Same semantics as run. |
-| `--quiet` | `-q` | — | Minimize output (e.g. log level error-only). Same semantics as run. |
+| `--verbose` | `-v` | — | Increase verbosity: log level debug. Same semantics as run. |
+| `--quiet` | `-q` | — | Minimal output: log level error-only; do not show AI command output. Same semantics as run. |
 | `--log-level` | — | string | Log level: `debug`, `info`, `warn`, `error`. Overrides shortcuts when set. |
+| `--no-stream` | — | — | Do not show AI command output in the terminal. Default is to show it; same semantics as run. |
+
+**Configuration (global)**
+
+| Flag | Short | Type | Effect |
+|------|-------|------|--------|
 | `--config` | — | path | Explicit config file (global). |
 
 ### Review: error handling

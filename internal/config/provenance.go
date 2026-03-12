@@ -179,7 +179,6 @@ type CLIOverlay struct {
 	Verbose          bool
 	Quiet            bool
 	LogLevel         string
-	Stream           bool
 	NoStream         bool
 }
 
@@ -244,10 +243,6 @@ func applyCLIOverlayWithProvenance(loop LoopSettings, o *CLIOverlay, prov LoopPr
 	if o.LogLevel != "" {
 		out.LogLevel = o.LogLevel
 		prov.LogLevel = ProvenanceCLI
-	}
-	if o.Stream {
-		out.Streaming = true
-		prov.Streaming = ProvenanceCLI
 	}
 	if o.NoStream {
 		out.Streaming = false

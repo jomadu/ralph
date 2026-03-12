@@ -49,7 +49,8 @@ func (f invokerAdapter) Invoke(command string, promptBytes []byte, cwd string, e
 // When ReportPath is empty, report is written to WorkingDir/DefaultReportFilename (or cwd if WorkingDir is empty).
 // For apply: when prompt is from file/alias, SourcePath can default the revision path; otherwise --prompt-output is required.
 // NonInteractive is true when stdin is not a TTY (e.g. CI); when true and overwrite would need confirmation, Run returns ErrApplyConfirmationRequired unless Yes is set.
-// Quiet minimizes output (O004/R006); Verbose adds revision path when applying.
+// Quiet minimizes output; Verbose adds revision path when applying.
+// StreamWriter: when non-nil, AI command stdout is streamed here in real time (default is to stream to terminal).
 // Review requires an AI command: Command must be non-empty; Invoker is used to run it (nil = backend.Invoke). Cwd, Env, TimeoutSec passed to the backend.
 type RunOptions struct {
 	ReportPath       string
@@ -62,6 +63,7 @@ type RunOptions struct {
 	Verbose          bool
 	Quiet            bool
 	LogLevel         string
+	StreamWriter     io.Writer // when non-nil, backend tees AI stdout here (e.g. os.Stdout); nil = do not stream
 	// Backend (required for agent-based review)
 	Command    string
 	Invoker    backend.Invoker // nil = use backend.Invoke
@@ -122,7 +124,7 @@ func Run(promptContent []byte, opts RunOptions) (exitCode int, err error) {
 	}
 
 	reviewPrompt := AssembleReviewPrompt(promptContent, reportDirAbs)
-	stdout, _, invErr := invoker.Invoke(opts.Command, reviewPrompt, opts.Cwd, opts.Env, opts.TimeoutSec, nil)
+	stdout, _, invErr := invoker.Invoke(opts.Command, reviewPrompt, opts.Cwd, opts.Env, opts.TimeoutSec, opts.StreamWriter)
 	if invErr != nil {
 		return 0, fmt.Errorf("%w: backend invocation failed: %v", ErrExit2, invErr)
 	}

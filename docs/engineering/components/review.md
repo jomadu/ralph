@@ -11,8 +11,8 @@ Implements the requirements assigned to this component in the [engineering READM
 **Consumes**
 
 - **Prompt source** — Resolved by CLI/config: alias (resolved to prompt content), file path, or stdin. Invalid or missing source must be detected before review runs; the component reports clear error and exit code 2.
-- **Resolved config** — For AI command/alias when review uses the backend; report output directory (or path that denotes the directory), revision output path (when apply is requested), and apply/confirmation options. When prompt is from stdin and apply is requested, revision output path is still required.
-- **Flags** — e.g. `--apply`, revision output path (`--prompt-output` or equivalent), non-interactive. When prompt is from stdin and apply is requested, revision output path is required; if missing, error and exit 2.
+- **Resolved config** — For AI command/alias when review uses the backend; report output directory (or path that denotes the directory), revision output path (when apply is requested), apply/confirmation options, and **streaming** (show AI output). When prompt is from stdin and apply is requested, revision output path is still required.
+- **Flags** — e.g. `--apply`, revision output path (`--prompt-output` or equivalent), non-interactive, `--no-stream` (do not show AI command output; default is to show it; same semantics as run). When prompt is from stdin and apply is requested, revision output path is required; if missing, error and exit 2.
 
 **Produces**
 
@@ -23,7 +23,7 @@ Implements the requirements assigned to this component in the [engineering READM
 **Calls**
 
 - Config: prompt source and paths already resolved by CLI; review receives them.
-- Backend: when the review flow uses the AI to evaluate the prompt and generate report and revision (e.g. via embedded review instructions and prompt content).
+- Backend: when the review flow uses the AI to evaluate the prompt and generate report and revision (e.g. via embedded review instructions and prompt content). When streaming is enabled, the component passes a stream writer (e.g. stdout) so the backend tees AI stdout to the user in real time (O004/R006); outcome is still derived from the report directory.
 - (Optional) After invoke, verify report directory contains `result.json`; read it for exit code derivation. For apply, read `revision.md` from the report directory.
 
 ## Implementation spec
@@ -57,6 +57,10 @@ Review **requires** an AI command (no fallback). The component invokes the backe
 - **User prompt content** (the prompt under review), clearly delimited in the review prompt (e.g. in a fenced block or section).
 
 If no AI command is configured (e.g. missing `loop.ai_cmd_alias` and no `--ai-cmd-alias`) or backend invocation fails, review fails with a clear error and exit 2.
+
+### Streaming (show AI output)
+
+Review respects the same **streaming** (show-AI-output) setting as run (config `loop.streaming`, env, and CLI `--stream` / `--no-stream`; O004/R006). When streaming is true, the component invokes the backend with a non-nil stream writer (e.g. process stdout) so the AI command's stdout is streamed to the user in real time. When streaming is false (e.g. `--quiet` or `--no-stream`), the stream writer is nil and the user sees only the tool's logs and final report path. Exit code and apply content are always derived from the report directory (result.json, revision.md); streaming only affects visibility of the AI's raw output.
 
 ### Expected AI behavior
 

@@ -74,7 +74,7 @@ Config files are YAML. The following structure is the authoritative shape implem
   - **failure_signal** (string, optional) — Substring or pattern that indicates failure.
   - **signal_precedence** (string, optional) — e.g. `static` (first match wins) or `ai_interpreted` when both signals appear.
   - **preamble** (string or boolean, optional) — Optional preamble injection; or enable/disable.
-  - **streaming** (boolean, optional) — Whether to stream AI output to the terminal. Env: `RALPH_LOOP_STREAMING`. CLI: `--stream` / `--no-stream`.
+  - **streaming** (boolean, optional) — Whether to show AI command output in the terminal (default: true). Used by both `ralph run` and `ralph review`. Env: `RALPH_LOOP_STREAMING`. CLI: `--no-stream` only (turns off for that run; no flag to turn on—streaming is the default).
   - **log_level** (string, optional) — Log verbosity (e.g. debug, info, warn, error).
 - **prompts** (object, optional) — Map of prompt name to prompt definition.
   - Each entry: **path** or **content** (file path or inline); optional **loop** overrides (same keys as root loop).
