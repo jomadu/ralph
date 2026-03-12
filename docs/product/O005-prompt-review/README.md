@@ -22,7 +22,7 @@ Without a reviewer, problems show up only when the loop runs: the AI never emits
   - **Signal and state** — Clear success and failure signals Ralph can detect, and statefulness (e.g. filesystem, work-tracking) that works with the loop model.
   - **Iteration awareness** — The prompt acknowledges that execution is multi-iteration with a fresh process each time, so the AI can behave accordingly (e.g. re-read state, emit signals).
   - **Scope and convergence** — The task has a defined scope and completion criteria that are checkable in practice, so the loop can converge rather than run indefinitely.
-  - **Subjective completion criteria** — When "done" is subjective (e.g. "good enough" or "reads well"), the prompt includes techniques that help escape local optima: variation, creative exploration, or brainstorming and stepping back (e.g. consider alternatives, challenge assumptions) so the AI does not get stuck in small repetitive tweaks or a mediocre solution.
+  - **Subjective completion criteria** — When "done" is subjective (e.g. "good enough" or "reads well"), the prompt includes techniques that help escape local optima (e.g. variation, consider alternatives, step back), phrased as per-run behavior rather than conditional on pass/iteration count, so the AI does not get stuck and does not emit iteration artifacts.
 
 ## Non-outcomes
 

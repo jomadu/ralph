@@ -35,6 +35,7 @@ Documentation must cover at least:
 - Prompt sources: alias, file path, stdin; how to specify them for run and review.
 - Loop behavior: iterations, failure threshold, timeout, signals, precedence, preamble, AI command/alias, streaming, log level.
 - Review: invocation (alias, file, stdin); report **directory** and the five files (result.json, summary.md, original.md, revision.md, diff.md); **result.json** as the machine-parseable outcome and how to use it for CI (or exit code); apply and confirmation; revision output path requirement when prompt is from stdin.
+- **Writing Ralph prompts:** A user-facing guide ([docs/writing-ralph-prompts.md](../../writing-ralph-prompts.md)) that explains how to write a well-formed Ralph prompt using the same four dimensions as `ralph review` (O005/R007): signal and state, iteration awareness, scope and convergence, subjective completion criteria. The guide is the single source of truth; `ralph show prompt-guide` outputs it verbatim. Discoverable from the path to first run or README and via that command (O007/R005, O008/R005).
 - Exit codes: run (success, failure threshold, max iterations, interrupt, error) and review (0, 1, 2) with exact values and semantics so automation can gate reliably. The canonical user and automation doc is [docs/exit-codes.md](../../exit-codes.md); README summarizes and links to it.
 - Non-interactive use: flags and environment so CI/scripts can run without prompts; behavior when confirmation would be required in non-interactive mode.
 
@@ -67,6 +68,7 @@ Per O008, a new user can find what Ralph is, why it exists, install steps, and a
 - **Install** — README section "Install and Uninstall" documents install (and uninstall); verification is `ralph version`.
 - **First run** — README section "Path to first run" describes one path from "I have Ralph" to a first command that completes successfully: verify PATH, choose prompt source (file, stdin, or alias), run (e.g. `ralph run -f <path> -n 1` or stdin), with minimal prerequisites (AI CLI on PATH) stated.
 - **List and help** — `ralph list` and `ralph run --help` / `ralph --help` expose prompts, aliases, and subcommands; README Quick Start and Subcommands summarize and link to [cli.md](cli.md).
+- **Prompt-writing guide** — New users who do not know how to write a prompt can find [Writing Ralph prompts](../../writing-ralph-prompts.md) via README or path-to-first-run content, or run `ralph show prompt-guide` to get the full guide verbatim (O008/R005).
 
 ### Troubleshooting (O007/R004)
 

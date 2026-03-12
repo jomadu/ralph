@@ -75,7 +75,7 @@ Ralph can be installed with the provided script so the `ralph` binary is on your
 From "I have Ralph" to a first command that completes successfully:
 
 1. **Verify Ralph is on your PATH** — Run `ralph version`; you should see a version string and exit 0.
-2. **Choose a prompt source** — You need exactly one: a prompt alias (from config), a file path, or stdin. With no config, the simplest path is a one-off file or stdin.
+2. **Choose a prompt source** — You need exactly one: a prompt alias (from config), a file path, or stdin. With no config, the simplest path is a one-off file or stdin. New to writing prompts? See [Writing Ralph prompts](docs/writing-ralph-prompts.md) or run `ralph show prompt-guide` for guidance.
 3. **Run a first command** — Examples that can complete successfully (your AI CLI must be installed and on PATH; Ralph defaults to the `cursor-agent` alias if you don't set `--ai-cmd` or config):
    - **From a file:** Create a small prompt file (e.g. `echo 'Say hello and output <promise>SUCCESS</promise>' > /tmp/hello.md`), then run:
      ```bash

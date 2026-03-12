@@ -33,6 +33,7 @@ If the value proposition and first-run path are unclear, potential users leave b
 | User cannot find how to install or run a first command | [R002 — Install and first command](R002-install-and-first-command.md) |
 | User does not know which prompts or subcommands to run | [R003 — List and help](R003-list-and-help.md) |
 | Path from "have Ralph" to first successful run is unclear | [R004 — Path to first run](R004-path-to-first-run.md) |
+| User does not know how to write a good prompt | [R005 — Prompt-writing guide discoverable](R005-prompt-writing-guide-discoverable.md) |
 
 ## Requirements
 
@@ -42,3 +43,4 @@ If the value proposition and first-run path are unclear, potential users leave b
 | [R002](R002-install-and-first-command.md) | User can find install steps and a first command that completes successfully | draft |
 | [R003](R003-list-and-help.md) | User can discover available prompts, aliases, and subcommands via the list command or help so they can see what to run | draft |
 | [R004](R004-path-to-first-run.md) | Path from having Ralph to a first successful run is documented and achievable | draft |
+| [R005](R005-prompt-writing-guide-discoverable.md) | User can discover prompt-writing guidance via documentation and/or CLI command | draft |

@@ -212,8 +212,9 @@ Output format (e.g. table, YAML, JSON) is implementation-defined but must includ
 - `ralph show config [flags]` — Output the effective config for the current context (same resolution as run). Accepts only `--provenance`, `--prompt`, and global `--config`; no run-style flags. Optionally include provenance (which layer supplied each value).
 - `ralph show prompt [name] [flags]` — Show detailed information for the prompt named `name`. **When `name` is omitted:** the implementation errors with "name required" and suggests `ralph show prompt <name>` or `ralph list prompts`; name is required.
 - `ralph show alias [name] [flags]` — Show detailed information for the alias named `name`. **When `name` is omitted:** the implementation errors with "name required" and suggests `ralph show alias <name>` or `ralph list aliases`; name is required.
+- `ralph show prompt-guide [flags]` — Output the full [Writing Ralph prompts](../../writing-ralph-prompts.md) guide **verbatim** (same content as docs/writing-ralph-prompts.md). Single source of truth: the doc is defined only in docs/; the CLI emits that content so users get the full guide from the command. Supports optional `--markdown` (output is already markdown; flag for consistency or saving/piping to a pager). No config resolution required; exits 0. Implements O008/R005.
 
-**Required:** The first argument after `show` must be one of: **config**, **prompt**, **alias**. Unknown object (e.g. `ralph show foo`) → error and non-zero exit.
+**Required:** The first argument after `show` must be one of: **config**, **prompt**, **alias**, **prompt-guide**. Unknown object (e.g. `ralph show foo`) → error and non-zero exit.
 
 ### Flags
 
@@ -222,6 +223,7 @@ Output format (e.g. table, YAML, JSON) is implementation-defined but must includ
 | `--config` | — | path | Explicit config file (global). |
 | `--provenance` | — | — | For `show config` only: show which layer supplied each loop value (default, global, workspace, explicit file, env, prompt override). The "cli" layer does not appear when viewing config because `show config` does not accept run-style flags; CLI overrides apply only when running. |
 | `--prompt` | — | string | For `show config` only: show effective config for the named prompt (includes prompt-level loop overrides). |
+| `--markdown` | — | — | For `show prompt-guide` only: output the full guide (already markdown; flag for saving or piping to a pager). |
 | `--help` | `-h` | — | Print show command help and exit. |
 
 ### Show: error handling

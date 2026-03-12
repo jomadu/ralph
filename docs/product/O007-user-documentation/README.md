@@ -33,6 +33,7 @@ Without clear documentation, users guess at subcommands, config format, and beha
 | User cannot find CLI, flags, or config reference in one place | [R002 — Doc discoverability](R002-doc-discoverability.md) |
 | Documentation does not match actual behavior | [R003 — Doc accuracy](R003-doc-accuracy.md) |
 | User stuck on common problems with no guidance | [R004 — Troubleshooting](R004-troubleshooting.md) |
+| User does not know how to write a well-formed prompt | [R005 — Prompt-writing guidance](R005-prompt-writing-guidance.md) |
 
 ## Requirements
 
@@ -42,3 +43,4 @@ Without clear documentation, users guess at subcommands, config format, and beha
 | [R002](R002-doc-discoverability.md) | User can look up CLI, flags, config, and environment variables in one place or a clearly linked set | ready |
 | [R003](R003-doc-accuracy.md) | Documentation matches actual product behavior | ready |
 | [R004](R004-troubleshooting.md) | User can resolve common problems using documented troubleshooting guidance | ready |
+| [R005](R005-prompt-writing-guidance.md) | Users can find guidance on how to write a well-formed Ralph prompt (same criteria as review) | draft |
