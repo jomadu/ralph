@@ -1,6 +1,7 @@
 package runloop
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"os"
@@ -354,6 +355,194 @@ func TestRun_FailureThresholdReached_ExitsWithCode(t *testing.T) {
 	all := strings.Join(reported, " ")
 	if !strings.Contains(all, "2 consecutive failure(s)") || !strings.Contains(all, "threshold: 2") {
 		t.Errorf("reported = %q", reported)
+	}
+}
+
+// TestRun_AiInterpreted_BothSignalsPresent_interpreterReturnsSuccess verifies O001/R008:
+// when signal_precedence is ai_interpreted and both signals appear, one interpretation
+// invocation is made; if the AI returns clear success, the iteration is success.
+func TestRun_AiInterpreted_BothSignalsPresent_interpreterReturnsSuccess(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 3
+	loop.SuccessSignal = "DONE"
+	loop.FailureSignal = "FAIL"
+	loop.SignalPrecedence = "ai_interpreted"
+	callCount := 0
+	invoker := func(_ string, prompt []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+		callCount++
+		if callCount == 1 {
+			// Main iteration: both signals present.
+			return []byte("output FAIL and DONE together"), 0, nil
+		}
+		// Interpretation call: return success so iteration is treated as success.
+		if bytes.Contains(prompt, []byte("--- iteration stdout ---")) {
+			return []byte("DONE"), 0, nil
+		}
+		return []byte("unexpected"), 0, nil
+	}
+	var reported string
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+		Reporter:    func(msg string) { reported = msg },
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitSuccess {
+		t.Errorf("exit code = %d, want ExitSuccess (ai_interpreted: interpreter said success)", code)
+	}
+	if callCount != 2 {
+		t.Errorf("invoker called %d times, want 2 (main + one interpretation)", callCount)
+	}
+	if !strings.Contains(reported, "Completed successfully") || !strings.Contains(reported, "1 iteration") {
+		t.Errorf("reported = %q", reported)
+	}
+}
+
+// TestRun_AiInterpreted_BothSignalsPresent_interpreterReturnsFailure verifies O001/R008:
+// when interpreter returns clear failure, the iteration is treated as failure.
+func TestRun_AiInterpreted_BothSignalsPresent_interpreterReturnsFailure(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 3
+	loop.FailureThreshold = 1
+	loop.SuccessSignal = "DONE"
+	loop.FailureSignal = "FAIL"
+	loop.SignalPrecedence = "ai_interpreted"
+	callCount := 0
+	invoker := func(_ string, prompt []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+		callCount++
+		if callCount == 1 {
+			return []byte("both DONE and FAIL"), 0, nil
+		}
+		if bytes.Contains(prompt, []byte("--- iteration stdout ---")) {
+			return []byte("FAIL"), 0, nil
+		}
+		return []byte("unexpected"), 0, nil
+	}
+	var reported []string
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+		Reporter:    func(msg string) { reported = append(reported, msg) },
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitFailureThreshold {
+		t.Errorf("exit code = %d, want ExitFailureThreshold", code)
+	}
+	if callCount != 2 {
+		t.Errorf("invoker called %d times, want 2 (main + interpretation)", callCount)
+	}
+	all := strings.Join(reported, " ")
+	if !strings.Contains(all, "consecutive failure(s)") {
+		t.Errorf("reported = %q", reported)
+	}
+}
+
+// TestRun_AiInterpreted_BothSignalsPresent_interpreterUnclear_fallbackToFailure verifies O001/R008:
+// when interpretation is unclear or interpretation run fails, fallback (treat as failure) is applied.
+func TestRun_AiInterpreted_BothSignalsPresent_interpreterUnclear_fallbackToFailure(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 3
+	loop.FailureThreshold = 1
+	loop.SuccessSignal = "DONE"
+	loop.FailureSignal = "FAIL"
+	loop.SignalPrecedence = "ai_interpreted"
+	callCount := 0
+	invoker := func(_ string, prompt []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+		callCount++
+		if callCount == 1 {
+			return []byte("both DONE and FAIL"), 0, nil
+		}
+		// Interpretation returns unclear (no parseable marker).
+		if bytes.Contains(prompt, []byte("--- iteration stdout ---")) {
+			return []byte("I'm not sure"), 0, nil
+		}
+		return []byte("unexpected"), 0, nil
+	}
+	var reported []string
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+		Reporter:    func(msg string) { reported = append(reported, msg) },
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitFailureThreshold {
+		t.Errorf("exit code = %d, want ExitFailureThreshold (fallback on unclear)", code)
+	}
+	if callCount != 2 {
+		t.Errorf("invoker called %d times, want 2", callCount)
+	}
+}
+
+// TestRun_AiInterpreted_onlySuccessSignal_noInterpretationCall verifies O001/R008:
+// when only one signal is present, no interpretation step is run.
+func TestRun_AiInterpreted_onlySuccessSignal_noInterpretationCall(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 2
+	loop.SuccessSignal = "DONE"
+	loop.FailureSignal = "FAIL"
+	loop.SignalPrecedence = "ai_interpreted"
+	callCount := 0
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+		callCount++
+		return []byte("only DONE here"), 0, nil
+	}
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitSuccess {
+		t.Errorf("exit code = %d, want ExitSuccess", code)
+	}
+	if callCount != 1 {
+		t.Errorf("invoker called %d times, want 1 (no interpretation when only one signal)", callCount)
+	}
+}
+
+// TestRun_AiInterpreted_onlyFailureSignal_noInterpretationCall verifies O001/R008:
+// when only failure signal is present, no interpretation step is run.
+func TestRun_AiInterpreted_onlyFailureSignal_noInterpretationCall(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 2
+	loop.FailureThreshold = 2
+	loop.SuccessSignal = "DONE"
+	loop.FailureSignal = "FAIL"
+	loop.SignalPrecedence = "ai_interpreted"
+	callCount := 0
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+		callCount++
+		return []byte("only FAIL here"), 0, nil
+	}
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitFailureThreshold {
+		t.Errorf("exit code = %d, want ExitFailureThreshold", code)
+	}
+	if callCount != 2 {
+		t.Errorf("invoker called %d times, want 2 (two failures, no interpretation)", callCount)
 	}
 }
 

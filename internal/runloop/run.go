@@ -152,18 +152,36 @@ func Run(opts RunOptions) (exitCode int, err error) {
 			}
 			continue
 		}
-		if ContainsSuccessSignal(stdout, opts.Loop.SuccessSignal) {
+		hasSuccess := ContainsSuccessSignal(stdout, opts.Loop.SuccessSignal)
+		hasFailure := ContainsFailureSignal(stdout, opts.Loop.FailureSignal)
+		// Static precedence (O001/R006): when both signals present, success wins unless ai_interpreted.
+		if hasSuccess && (!hasFailure || opts.Loop.SignalPrecedence != "ai_interpreted") {
 			elapsed := time.Since(start)
-			// Completion message is always shown (O004/R002, R006: "user still sees completion message" in quiet).
 			report(completionMessage(i, elapsed))
 			reportIterationStatsLevel(report, logLevel, iterationDurations)
 			return ExitSuccess, nil
 		}
-		// Failure: either failure signal present or process exited without signal (T3.8, O001/R009).
-		hasFailureSignal := ContainsFailureSignal(stdout, opts.Loop.FailureSignal)
+		// AI-interpreted precedence (O001/R008): both signals present; invoke AI once to interpret; fallback on unclear.
+		reportAsFailureSignal := hasFailure // for threshold message: "failure(s)" vs "without signal"
+		if hasSuccess && hasFailure && opts.Loop.SignalPrecedence == "ai_interpreted" {
+			interpPrompt := BuildInterpretationPrompt(stdout, opts.Loop.SuccessSignal, opts.Loop.FailureSignal)
+			interpOut, _, interpErr := opts.Invoker.Invoke(opts.Command, interpPrompt, opts.Cwd, opts.Env, opts.Loop.TimeoutSeconds, nil)
+			if interpErr == nil {
+				outcome := ParseInterpretationResponse(interpOut, opts.Loop.SuccessSignal, opts.Loop.FailureSignal)
+				if outcome == InterpretedSuccess {
+					elapsed := time.Since(start)
+					report(completionMessage(i, elapsed))
+					reportIterationStatsLevel(report, logLevel, iterationDurations)
+					return ExitSuccess, nil
+				}
+			}
+			// InterpretedFailure, InterpretedUnclear, or interpretation run error: apply fallback (treat as failure).
+			reportAsFailureSignal = true
+		}
+		// Failure: failure signal present, or no signal (T3.8, O001/R009), or ai_interpreted fallback.
 		consecutiveFailures++
 		if consecutiveFailures >= threshold {
-			if hasFailureSignal {
+			if reportAsFailureSignal {
 				reportLevel(report, logLevel, "error", fmt.Sprintf("Stopped after %d consecutive failure(s) (threshold: %d).", consecutiveFailures, opts.Loop.FailureThreshold))
 			} else {
 				reportLevel(report, logLevel, "error", fmt.Sprintf("Stopped after %d consecutive iteration(s) without success or failure signal (threshold: %d).", consecutiveFailures, opts.Loop.FailureThreshold))
