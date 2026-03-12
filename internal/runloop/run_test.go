@@ -127,6 +127,108 @@ func TestRun_QuietLogLevel_stillShowsCompletionMessage(t *testing.T) {
 	}
 }
 
+// TestRun_Streaming_passesStreamWriterToInvoker ensures O004/R006: when Streaming is true
+// and StreamWriter is set, the invoker is called with that writer so AI stdout is streamed.
+func TestRun_Streaming_passesStreamWriterToInvoker(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 2
+	loop.Streaming = true
+	loop.SuccessSignal = "<promise>SUCCESS</promise>"
+	var receivedStreamTo io.Writer
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, streamTo io.Writer) ([]byte, int, error) {
+		receivedStreamTo = streamTo
+		return []byte("<promise>SUCCESS</promise>"), 0, nil
+	}
+	streamWriter := &strings.Builder{}
+	code, err := Run(RunOptions{
+		Command:      "true",
+		PromptBytes:  []byte("p"),
+		Loop:         loop,
+		Invoker:      invokerAdapter(invoker),
+		StreamWriter: streamWriter,
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitSuccess {
+		t.Errorf("exit code = %d, want ExitSuccess", code)
+	}
+	if receivedStreamTo != streamWriter {
+		t.Errorf("invoker streamTo = %v, want StreamWriter %v (streaming must pass writer for O004/R006)", receivedStreamTo, streamWriter)
+	}
+}
+
+// TestRun_NoStreaming_invokerReceivesNilStreamTo ensures O004/R006: when Streaming is false,
+// the invoker is called with nil streamTo so AI stdout is not streamed (still captured).
+func TestRun_NoStreaming_invokerReceivesNilStreamTo(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 2
+	loop.Streaming = false
+	loop.SuccessSignal = "<promise>SUCCESS</promise>"
+	var receivedStreamTo io.Writer
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, streamTo io.Writer) ([]byte, int, error) {
+		receivedStreamTo = streamTo
+		return []byte("<promise>SUCCESS</promise>"), 0, nil
+	}
+	code, err := Run(RunOptions{
+		Command:      "true",
+		PromptBytes:  []byte("p"),
+		Loop:         loop,
+		Invoker:      invokerAdapter(invoker),
+		StreamWriter: os.Stdout, // even if set, run-loop should pass nil when !Streaming
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitSuccess {
+		t.Errorf("exit code = %d, want ExitSuccess", code)
+	}
+	if receivedStreamTo != nil {
+		t.Errorf("invoker streamTo = %v, want nil when Streaming is false (O004/R006)", receivedStreamTo)
+	}
+}
+
+// TestRun_LogLevelError_suppressesDebugAndInfo ensures O004/R006: at log level "error",
+// debug and info messages (e.g. "Starting iteration") are not reported; completion message still is.
+func TestRun_LogLevelError_suppressesDebugAndInfo(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 3
+	loop.LogLevel = "error"
+	loop.SuccessSignal = "<promise>SUCCESS</promise>"
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+		return []byte("<promise>SUCCESS</promise>"), 0, nil
+	}
+	var reported []string
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+		Reporter:    func(msg string) { reported = append(reported, msg) },
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitSuccess {
+		t.Errorf("exit code = %d, want ExitSuccess", code)
+	}
+	for _, msg := range reported {
+		if strings.Contains(msg, "Starting iteration") {
+			t.Errorf("log level error must not emit debug messages (R006); got %q", msg)
+		}
+	}
+	hasCompletion := false
+	for _, msg := range reported {
+		if strings.Contains(msg, "Completed successfully") {
+			hasCompletion = true
+			break
+		}
+	}
+	if !hasCompletion {
+		t.Errorf("completion message must still be shown at log level error (R006); reported = %v", reported)
+	}
+}
+
 func TestRun_InvalidCommand(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	code, err := Run(RunOptions{
