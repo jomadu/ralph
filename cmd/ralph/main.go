@@ -747,7 +747,7 @@ func reviewCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&filePath, "file", "f", "", "Read prompt from this file (mutually exclusive with alias and stdin)")
-	cmd.Flags().StringVar(&reportPath, "report", "", "Write report directory to this path (default: ./ralph-review); AI creates result.json, summary.md, original.md, revision.md, diff.md inside it")
+	cmd.Flags().StringVar(&reportPath, "report", "", "Write report directory to this path (default: ./ralph-review, a directory in the current working directory); AI creates result.json, summary.md, original.md, revision.md, diff.md inside it")
 	cmd.Flags().StringVar(&promptOutput, "prompt-output", "", "When using --apply, write revision to this path (required when prompt is from stdin)")
 	cmd.Flags().BoolVar(&apply, "apply", false, "Write suggested revision to a file")
 	cmd.Flags().BoolVarP(&yes, "yes", "y", false, "Non-interactive apply: do not prompt for confirmation")

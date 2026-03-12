@@ -39,19 +39,31 @@ func mockInvoker(revisionContent string) backend.Invoker {
 	})
 }
 
+// extractReportDirFromPrompt finds the report directory path in the assembled prompt.
+// The path appears on its own line between "**Directory where you must create the files:**" and "**Files to create".
 func extractReportDirFromPrompt(prompt []byte) string {
 	s := string(prompt)
-	prefix := "**Directory where you must create the files:**"
-	idx := strings.Index(s, prefix)
+	dirHeader := "**Directory where you must create the files:**"
+	filesHeader := "**Files to create"
+	idx := strings.Index(s, dirHeader)
 	if idx < 0 {
 		return ""
 	}
-	rest := strings.TrimLeft(s[idx+len(prefix):], " \t\n")
-	end := strings.Index(rest, "\n")
-	if end >= 0 {
-		rest = rest[:end]
+	block := s[idx+len(dirHeader):]
+	if end := strings.Index(block, filesHeader); end >= 0 {
+		block = block[:end]
 	}
-	return strings.TrimSpace(rest)
+	for _, line := range strings.Split(block, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		// The interpolated path is always absolute; it's the only such line in this block.
+		if filepath.IsAbs(line) {
+			return line
+		}
+	}
+	return ""
 }
 
 func TestRun_emptyCommand_exit2(t *testing.T) {
