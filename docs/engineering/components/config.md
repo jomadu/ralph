@@ -20,7 +20,7 @@ Implements the requirements assigned to this component in the [engineering READM
 **Produces**
 
 - **Effective config** — A single merged configuration for the current context: root loop settings, prompt definitions (with optional per-prompt overrides), alias definitions. Used by run-loop, review, list, and show.
-- **Effective config for display** — The same resolved config, optionally with provenance (which layer supplied each value), for `ralph show config`.
+- **Effective config for display** — The same resolved config, optionally with provenance (which layer supplied each value), for `ralph show config`. The show config command does not pass CLI overrides; display uses file/env/prompt layers only.
 
 **Called by**
 

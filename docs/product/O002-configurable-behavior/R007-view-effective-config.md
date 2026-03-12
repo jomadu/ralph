@@ -4,15 +4,15 @@
 
 ## Requirement
 
-The user can view the effective (resolved) configuration the tool would use for the current context — current working directory, chosen prompt (if any), explicit config file, environment variables, and command-line overrides — and optionally see which layer supplied each value (defaults, global file, workspace file, explicit file, environment, prompt-level override, CLI).
+The user can view the effective (resolved) configuration the tool would use for the current context — current working directory, chosen prompt (if any), explicit config file, and environment variables — and optionally see which layer supplied each value (defaults, global file, workspace file, explicit file, environment, prompt-level override). Run-style CLI overrides are not accepted or simulated by the view; they apply only when running (e.g. `ralph run`).
 
 ## Detail
 
 Users need to answer "what config would Ralph actually use if I ran it here?" without running the loop. With multiple layers (defaults, global, workspace, explicit file, env, prompt overrides, CLI), it can be unclear which value applies for a given setting. A read-only view of the resolved config lets users verify behavior before running, debug config issues, and script or document the effective settings.
 
-**Context:** The view uses the same resolution as the run command (R001): current working directory (determines whether workspace config is loaded), any explicit config file path supplied, environment variables, and command-line options. When a prompt is selected (e.g. by name), the effective config includes that prompt's overrides merged with the rest. So the output reflects exactly what would be used for a run with the same invocation (same cwd, same config option, same env, same flags, same prompt choice).
+**Context:** The view uses the same resolution as the run command (R001) for file and environment layers: current working directory (determines whether workspace config is loaded), any explicit config file path supplied, and environment variables. When a prompt is selected (e.g. by name), the effective config includes that prompt's overrides merged with the rest. The view does not accept or simulate run-style CLI flags; the output reflects what would be used for a run with the same cwd, config file, env, and prompt choice but no CLI overrides.
 
-**Output:** The system exposes the effective values for all configurable settings (loop behavior, prompts, AI commands as applicable). Optionally, the system can show provenance per setting (which layer supplied the value — e.g. "default", "global", "workspace", "env", "cli"). Exact format (e.g. YAML dump, key-value list, or structured output) and whether provenance is default or opt-in are implementation details; the requirement is that the user can see the resolved config and, optionally, where each value came from.
+**Output:** The system exposes the effective values for all configurable settings (loop behavior, prompts, AI commands as applicable). Optionally, the system can show provenance per setting (which layer supplied the value — e.g. "default", "global", "workspace", "env", "prompt"). Provenance does not include "cli" when viewing config because the view command does not accept run-style flags. Exact format and whether provenance is default or opt-in are implementation details; the requirement is that the user can see the resolved config and, optionally, where each value came from.
 
 **Mechanism:** Implemented via a documented entry point (e.g. a show command or equivalent). Product does not prescribe the exact CLI shape; engineering defines the command and output format.
 
@@ -27,7 +27,7 @@ Users need to answer "what config would Ralph actually use if I ran it here?" wi
 | Missing global or workspace file | That layer is skipped; view shows resolved config as if that layer were absent (same as run). |
 | Explicit config file missing | Same as run: error (R005); view does not produce resolved config when explicit file is required and missing. |
 | Environment variable overrides a setting | Resolved value shown is the env value; optional provenance shows "env". |
-| CLI flag overrides a setting | Resolved value shown is the CLI value; optional provenance shows "cli". |
+| Run-style CLI flags | The view command does not accept run-style CLI flags; CLI overrides apply only when running (e.g. `ralph run`), not when viewing config. |
 
 ### Examples
 
@@ -38,14 +38,6 @@ Users need to answer "what config would Ralph actually use if I ran it here?" wi
 **Expected output:** Output includes resolved max iterations 5, failure threshold 2, and other loop settings (from defaults or workspace). Optionally, provenance indicates "workspace" for those two and "default" for others.
 
 **Verification:** Invoke the view-effective-config capability; confirm values match workspace config for set keys and defaults elsewhere. Run the loop; loop behavior matches the viewed config.
-
-#### View with CLI override
-
-**Input:** Same workspace as above. User invokes the view-effective-config capability with the documented CLI option to set max iterations to 1 for this invocation.
-
-**Expected output:** Resolved max iterations is 1; failure threshold remains 2. Optionally, provenance shows "cli" for max iterations and "workspace" for failure threshold.
-
-**Verification:** View output shows 1 and 2; running the loop with the same CLI flag stops after 1 iteration.
 
 #### View with explicit config file
 
@@ -58,7 +50,7 @@ Users need to answer "what config would Ralph actually use if I ran it here?" wi
 ## Acceptance criteria
 
 - [ ] The user can invoke a documented command or option that outputs the effective (resolved) configuration the tool would use for the current context.
-- [ ] Resolution context matches the run command: current working directory, explicit config file (if specified), environment variables, command-line options, and optional prompt selection (R001).
+- [ ] Resolution context matches the run command for file and env layers: current working directory, explicit config file (if specified), environment variables, and optional prompt selection (R001). The view does not accept run-style command-line options; CLI overrides apply only when running.
 - [ ] Output includes effective values for configurable loop behavior (and for the chosen prompt's overrides when a prompt is specified). Prompt definitions and AI command aliases from resolved config may be included or referenced as designed.
 - [ ] When an explicit config file is specified and that file is missing, the system reports an error and does not output resolved config (same as R005).
 - [ ] Optionally, the user can see which layer supplied each value (provenance). If provenance is opt-in, it is documented.

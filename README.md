@@ -220,7 +220,7 @@ ralph run -f <path> [flags]        Prompt from file
 cat prompt.md | ralph run [flags]  Prompt from stdin
 ```
 
-Flags (all optional): `-f, --file`, `-n, --max-iterations`, `-u, --unlimited`, `--failure-threshold`, `--iteration-timeout`, `--max-output-buffer`, `--no-preamble`, `-d, --dry-run`, `--ai-cmd`, `--ai-cmd-alias`, `--signal-success`, `--signal-failure`, `--signal-precedence`, `-c, --context` (repeatable), `-v, --verbose`, `-q, --quiet`, `--log-level`, `--stream`, `--no-stream`, `--config`. Use `ralph run --help` for full list.
+Flags (all optional): `-f, --file`, `-n, --max-iterations`, `-u, --unlimited`, `--failure-threshold`, `--iteration-timeout`, `--max-output-buffer`, `--no-preamble`, `-d, --dry-run`, `--ai-cmd`, `--ai-cmd-alias`, `--signal-success`, `--signal-failure`, `--signal-precedence`, `-c, --context` (repeatable), `-v, --verbose`, `-q, --quiet`, `--log-level`, `--no-stream` (do not show AI command output in terminal; default is to show it), `--config`. Use `ralph run --help` for full list.
 
 ### ralph review
 
@@ -232,7 +232,7 @@ ralph review -f <path> [flags]
 cat prompt.md | ralph review [flags]
 ```
 
-Flags: `-f, --file`, `--report` (report output directory; default `./ralph-review/`). The report directory path is passed to the AI in the prompt; the AI creates result.json, summary.md, original.md, revision.md, diff.md in that directory. `--prompt-output` (required when using `--apply` with stdin), `--apply`, `--yes`/`-y` (non-interactive apply), `-v, -q, --quiet`, `--log-level`, `--config`. For CI: use exit code 0/1/2 to gate, or read result.json in the report directory for status (see [docs/exit-codes.md](docs/exit-codes.md) and [docs/engineering/components/review.md](docs/engineering/components/review.md)).
+Flags: `-f, --file`, `--report` (report output directory; default `./ralph-review/`). The report directory path is passed to the AI in the prompt; the AI creates result.json, summary.md, original.md, revision.md, diff.md in that directory. `--prompt-output` (required when using `--apply` with stdin), `--apply`, `--yes`/`-y` (non-interactive apply), `-v, --verbose`, `-q, --quiet`, `--log-level`, `--no-stream` (do not show AI command output in terminal; default is to show it), `--config`. For CI: use exit code 0/1/2 to gate, or read result.json in the report directory for status (see [docs/exit-codes.md](docs/exit-codes.md) and [docs/engineering/components/review.md](docs/engineering/components/review.md)).
 
 ### ralph list
 

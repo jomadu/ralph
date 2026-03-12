@@ -376,26 +376,13 @@ func showCmd() *cobra.Command {
 
 func showConfigCmd() *cobra.Command {
 	var (
-		provenance     bool
-		promptName     string
-		maxIterations  int
-		unlimited      bool
-		failureThresh  int
-		iterTimeout    int
-		noPreamble     bool
-		signalSuccess  string
-		signalFailure  string
-		signalPreced   string
-		contextStrings []string
-		verbose        bool
-		quiet          bool
-		logLevel       string
-		noStream       bool
+		provenance bool
+		promptName string
 	)
 	c := &cobra.Command{
 		Use:   "config",
 		Short: "Output the effective config for the current context",
-		Long:  "Same config resolution as run. Use --provenance to show which layer supplied each loop value (default, global, workspace, explicit, env, cli, prompt). Optional --prompt and run-style flags show effective config as for that run.",
+		Long:  "Uses the same config resolution as run (default, global, workspace, explicit file, env). Use --provenance to show which layer supplied each loop value. Use --prompt to show effective config for a specific prompt (including prompt-level loop overrides).",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
 				return fmt.Errorf("ralph show config: unexpected argument %q", args[0])
@@ -414,27 +401,7 @@ func showConfigCmd() *cobra.Command {
 			}
 			loop := eff.Loop
 			if provenance {
-				var cli *config.CLIOverlay
-				if maxIterations > 0 || unlimited || failureThresh >= 0 || iterTimeout >= 0 ||
-					noPreamble || signalSuccess != "" || signalFailure != "" || signalPreced != "" ||
-					len(contextStrings) > 0 || verbose || quiet || logLevel != "" || noStream {
-					cli = &config.CLIOverlay{
-						MaxIterations:    maxIterations,
-						Unlimited:        unlimited,
-						FailureThreshold: failureThresh,
-						IterationTimeout: iterTimeout,
-						NoPreamble:       noPreamble,
-						SignalSuccess:    signalSuccess,
-						SignalFailure:    signalFailure,
-						SignalPrecedence: signalPreced,
-						Context:          contextStrings,
-						Verbose:          verbose,
-						Quiet:            quiet,
-						LogLevel:         logLevel,
-						NoStream:         noStream,
-					}
-				}
-				loop, prov, err := config.LoopWithProvenance(os.Getenv, cwd, configPath, promptName, cli)
+				loop, prov, err := config.LoopWithProvenance(os.Getenv, cwd, configPath, promptName, nil)
 				if err != nil {
 					return fmt.Errorf("config: %w", err)
 				}
@@ -468,21 +435,8 @@ func showConfigCmd() *cobra.Command {
 			return nil
 		},
 	}
-	c.Flags().BoolVar(&provenance, "provenance", false, "Include which layer supplied each loop value (default, global, workspace, explicit, env, cli, prompt)")
+	c.Flags().BoolVar(&provenance, "provenance", false, "Show which layer supplied each loop value")
 	c.Flags().StringVar(&promptName, "prompt", "", "Show effective config for this prompt (includes prompt-level loop overrides)")
-	c.Flags().IntVarP(&maxIterations, "max-iterations", "n", 0, "Override max iterations (for provenance; 0 = use config)")
-	c.Flags().BoolVarP(&unlimited, "unlimited", "u", false, "No iteration cap (for provenance)")
-	c.Flags().IntVar(&failureThresh, "failure-threshold", -1, "Consecutive failures before exit (for provenance; -1 = not set)")
-	c.Flags().IntVar(&iterTimeout, "iteration-timeout", -1, "Per-iteration timeout in seconds (for provenance; -1 = not set)")
-	c.Flags().BoolVar(&noPreamble, "no-preamble", false, "Disable preamble (for provenance)")
-	c.Flags().StringVar(&signalSuccess, "signal-success", "", "Success signal (for provenance)")
-	c.Flags().StringVar(&signalFailure, "signal-failure", "", "Failure signal (for provenance)")
-	c.Flags().StringVar(&signalPreced, "signal-precedence", "", "Signal precedence: static or ai_interpreted (for provenance)")
-	c.Flags().StringArrayVarP(&contextStrings, "context", "c", nil, "Context lines for preamble (for provenance)")
-	c.Flags().BoolVarP(&verbose, "verbose", "v", false, "Verbose / debug log level (for provenance)")
-	c.Flags().BoolVarP(&quiet, "quiet", "q", false, "Quiet / error-only log level (for provenance)")
-	c.Flags().StringVar(&logLevel, "log-level", "", "Log level (for provenance)")
-	c.Flags().BoolVar(&noStream, "no-stream", false, "Do not show AI command output (for provenance)")
 	return c
 }
 

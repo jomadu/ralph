@@ -1,5 +1,5 @@
 // Package config: provenance for effective config (which layer supplied each value).
-// Used by ralph show config --provenance (O002/R007, T6.3, T7.3). Layers: default, global, workspace, explicit, env, cli, prompt.
+// Used by ralph show config --provenance (O002/R007, T6.3, T7.3). Layers: default, global, workspace, explicit, env, prompt; "cli" only when a CLIOverlay is passed (e.g. from run); show config passes nil.
 
 package config
 
@@ -163,7 +163,8 @@ func applyEnvOverlayWithProvenance(loop LoopSettings, overlay *EnvOverlay, prov 
 }
 
 // CLIOverlay holds optional CLI flag overrides for loop settings (T7.3, O002/R007).
-// Used by show config --provenance when run-style flags are passed; only set fields override.
+// Used when computing effective loop with run-style overrides (e.g. from ralph run). The show config
+// command does not accept run-style flags and calls LoopWithProvenance with nil.
 // Semantics match run: MaxIterations 0 = use config; FailureThreshold/IterationTimeout -1 = not set.
 // Unlimited sets max iterations to a large cap and provenance to cli.
 type CLIOverlay struct {
