@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	_ "embed"
 	"fmt"
 	"io"
 	"os"
@@ -16,6 +17,11 @@ import (
 
 // Version is set at build time via ldflags (e.g. make build VERSION=1.0.0).
 var Version = "dev"
+
+// promptGuideContent is the full Writing Ralph prompts guide (build-time copy of docs/writing-ralph-prompts.md). Single source of truth: docs/writing-ralph-prompts.md; Makefile copies before build.
+//
+//go:embed embed/writing-ralph-prompts.md
+var promptGuideContent []byte
 
 func main() {
 	root := &cobra.Command{
@@ -361,16 +367,17 @@ func versionCmd() *cobra.Command {
 	}
 }
 
-// showCmd returns the ralph show command (T6.3 config, T6.4 prompt/alias). cli.md: show config, show prompt [name], show alias [name]; name required for prompt/alias; error on unknown name.
+// showCmd returns the ralph show command (T6.3 config, T6.4 prompt/alias, prompt-guide). cli.md: show config, show prompt [name], show alias [name], show prompt-guide.
 func showCmd() *cobra.Command {
 	showRoot := &cobra.Command{
 		Use:   "show",
 		Short: "Show effective config or detail for a prompt/alias",
-		Long:  "Use 'show config', 'show prompt [name]', or 'show alias [name]'. Same config resolution as run.",
+		Long:  "Use 'show config', 'show prompt [name]', 'show alias [name]', or 'show prompt-guide'. Same config resolution as run (except prompt-guide).",
 	}
 	showRoot.AddCommand(showConfigCmd())
 	showRoot.AddCommand(showPromptCmd())
 	showRoot.AddCommand(showAliasCmd())
+	showRoot.AddCommand(showPromptGuideCmd())
 	return showRoot
 }
 
@@ -512,6 +519,26 @@ func showAliasCmd() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+// showPromptGuideCmd returns the ralph show prompt-guide command (PLAN T1–T3, cli.md). Outputs full guide verbatim; --markdown is optional (same output; for saving or piping to a pager).
+func showPromptGuideCmd() *cobra.Command {
+	var markdown bool
+	c := &cobra.Command{
+		Use:   "prompt-guide",
+		Short: "Output the full Writing Ralph prompts guide",
+		Long:  "Output the full prompt-writing guide verbatim (same content as docs/writing-ralph-prompts.md). No config required; exit 0.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 0 {
+				return fmt.Errorf("ralph show prompt-guide: unexpected argument %q", args[0])
+			}
+			_ = markdown // output is same with or without flag; flag exists for CLI consistency and scripts (saving/piping to pager)
+			_, err := os.Stdout.Write(promptGuideContent)
+			return err
+		},
+	}
+	c.Flags().BoolVar(&markdown, "markdown", false, "Output the full guide as markdown (e.g. for saving or piping to a pager)")
+	return c
 }
 
 // mergedPromptProvider implements review.PromptProvider by checking workspace then global.
