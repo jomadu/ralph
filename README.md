@@ -2,76 +2,80 @@
 
 A dumb loop that pipes a prompt to an AI CLI, lets it work, and repeats.
 
-Ralph is a loop runner, not a methodology. You bring the prompt. Ralph runs it in a fresh AI process per iteration, scans for completion signals, and stops when the task is done — or when it isn't going to be.
+Ralph is a loop runner — an implementation of the [Ralph Wiggum technique](https://ghuntley.com/ralph/) by [Geoffrey Huntley](https://github.com/ghuntley). The idea: put an AI coding agent in a `while` loop, give it a prompt, and let it build your project one task at a time with a fresh context window each iteration. State continuity comes from the filesystem, not conversation history.
+
+For the full technique and playbook, see [How to Ralph Wiggum](https://github.com/ghuntley/how-to-ralph-wiggum).
+
+Ralph (this tool) adds structure on top of the raw bash loop: configurable signals for success/failure detection, per-prompt loop settings, multi-CLI support, and a config layer so you can tune the loop without editing scripts.
 
 ## Quick Start
 
-```bash
-# Define a prompt alias in ralph-config.yml
+Create a prompt file:
+
+`prompts/build.md`
+```markdown
+Study AGENTS.md for build commands and project context.
+Pick the most important task.
+Write tests first. Run them — they should fail.
+Implement fully. No placeholders, no stubs, no partial implementations.
+Run tests again — they should pass.
+If all work is done, output: <promise>SUCCESS</promise>
+If blocked, output: <promise>FAILURE</promise>
+```
+
+Wire it up in `ralph-config.yml`:
+
+```yaml
+loop:
+  ai_cmd_alias: claude
+
 prompts:
   build:
     path: "./prompts/build.md"
-
-# Run it
-ralph run build
-
-# Override iteration limit
-ralph run build -n 20
-
-# Run until success or failure threshold
-ralph run build --unlimited
-
-# Preview assembled prompt without executing
-ralph run build --dry-run
-
-# Run a one-off prompt from a file (no alias needed)
-ralph run -f ./prompts/fix-tests.md
-
-# Pipe a prompt via stdin
-cat prompts/build.md | ralph run
 ```
+
+Run it:
+
+```bash
+ralph run build              # run the loop
+ralph run build -n 20        # cap at 20 iterations
+ralph run build --unlimited  # run until signal or failure threshold
+ralph run build --dry-run    # preview assembled prompt
+ralph run -f ./prompts/fix.md  # one-off prompt from file
+cat prompt.md | ralph run    # pipe via stdin
+```
+
+Each iteration: read prompt, pipe to AI CLI, scan output for signals, stop or loop.
 
 ## Install and Uninstall
 
-Ralph can be installed with the provided script so the `ralph` binary is on your PATH. Uninstall removes only the binary and install state; your config (e.g. `~/.config/ralph/ralph-config.yml`) is not removed.
+**Prerequisites:** `curl`. Installs from release artifacts only. Supported: Linux, macOS, Windows (amd64, arm64).
 
-**Prerequisites:** `curl`. The install script **only** installs from release artifacts (no build from source). Supported: Linux, macOS, Windows (amd64, arm64); script runs on macOS/Linux or Windows (e.g. Git Bash).
-
-**Install:**
-
-1. **Latest release** (from repo or one-line):
-   ```bash
-   ./scripts/install.sh
-   # or
-   curl -fsSL https://raw.githubusercontent.com/maxdunn/ralph/main/scripts/install.sh | sh
-   ```
-   **Specific version** (e.g. `1.0.0` or `v1.0.0`):
-   ```bash
-   ./scripts/install.sh 1.0.0
-   ./scripts/install.sh v1.0.0 --dir /usr/local/bin
-   ```
-   The script installs to `~/bin` by default and records the install location for uninstall.
-2. Optional: use a different directory with `RALPH_INSTALL_DIR` or `--dir`:
-   ```bash
-   ./scripts/install.sh --dir /usr/local/bin
-   ```
-   If the directory is not writable (e.g. `/usr/local/bin`), run with `sudo` or choose a user directory like `~/bin`.
-3. Ensure the install directory is on your PATH (e.g. add it to your shell profile, or use `~/bin` if it is already on PATH).
-4. Open a new terminal and verify:
-   ```bash
-   ralph version
-   ```
-   You should see version output and exit 0.
-
-**Uninstall:**
-
-Run from anywhere (the script reads the install location from `~/.config/ralph/install-state`):
+Install latest:
 
 ```bash
-./scripts/uninstall.sh
+curl -fsSL https://raw.githubusercontent.com/maxdunn/ralph/main/scripts/install.sh | sh
 ```
 
-This removes the `ralph` binary from the directory where it was installed and removes the install state file. User config in `~/.config/ralph/` (e.g. `ralph-config.yml`) is **not** removed. No PATH or symlink changes are made by the install script, so uninstall does not leave broken references.
+Install specific version:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/maxdunn/ralph/main/scripts/install.sh | sh -s -- 1.0.0
+```
+
+Verify:
+
+```bash
+ralph version
+```
+
+Uninstall (removes binary + install state, keeps config):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/maxdunn/ralph/main/scripts/uninstall.sh | sh
+```
+
+Installs to `~/bin` by default. Ensure the install directory is on your PATH.
 
 ## How It Works
 
@@ -81,10 +85,10 @@ Each iteration:
 2. Wrap it with a preamble (iteration count, optional context)
 3. Pipe the assembled prompt to the AI CLI's stdin
 4. Capture output, scan for success/failure signals
-5. On success signal → exit 0
-6. On failure signal → increment consecutive failure counter
-7. On consecutive failure threshold → abort (exit 1)
-8. On max iterations reached → exit 2
+5. On success signal: exit 0
+6. On failure signal: increment consecutive failure counter
+7. On consecutive failure threshold: abort (exit 1)
+8. On max iterations reached: exit 2
 9. Otherwise → next iteration
 
 Fresh process per iteration. No conversation history carried between runs. State continuity comes from the filesystem — the AI reads and writes files, and the next iteration's AI sees those changes.
@@ -98,10 +102,29 @@ Five layers, highest precedence first:
 | CLI flags | `--max-iterations`, `--ai-cmd`, etc. |
 | Environment variables | `RALPH_LOOP_*` |
 | Workspace config | `./ralph-config.yml` |
-| Global config | `~/.config/ralph/ralph-config.yml` |
+| Global config | `$RALPH_CONFIG_HOME/ralph-config.yml`, `$XDG_CONFIG_HOME/ralph/ralph-config.yml`, or `~/.config/ralph/ralph-config.yml` |
 | Built-in defaults | Compiled into the binary |
 
-### Example `ralph-config.yml`
+### `ralph-config.yml`
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `loop.ai_cmd_alias` | string | AI command alias to use (e.g. `claude`) |
+| `loop.default_max_iterations` | integer | Max iterations before exit |
+| `loop.failure_threshold` | integer | Consecutive failures before abort |
+| `loop.iteration_timeout` | integer | Per-iteration timeout in seconds (0 = no timeout) |
+| `loop.show_ai_output` | boolean | Stream AI output to terminal |
+| `loop.preamble` | boolean | Enable/disable preamble injection |
+| `loop.log_level` | string | Log verbosity: `debug`, `info`, `warn`, `error` |
+| `loop.signals.success` | string | Signal string indicating task success |
+| `loop.signals.failure` | string | Signal string indicating task failure |
+| `ai_cmd_aliases.<name>` | string | AI CLI command string for a named alias |
+| `prompts.<name>.path` | string | Path to the prompt file |
+| `prompts.<name>.name` | string | Display name |
+| `prompts.<name>.description` | string | Description of the prompt |
+| `prompts.<name>.loop` | object | Per-prompt loop overrides (same keys as `loop.*`) |
+
+Example:
 
 ```yaml
 loop:
@@ -129,16 +152,34 @@ prompts:
       default_max_iterations: 10
       failure_threshold: 5
 
-  bootstrap:
-    path: "./prompts/bootstrap.md"
-    name: "Bootstrap"
-    description: "One-shot project setup"
-    loop:
-      default_max_iterations: 1
-      preamble: false
 ```
 
 Each prompt alias maps a name to a file and can override any loop setting.
+
+### Built-in Aliases
+
+Ralph ships with built-in AI command aliases. Use them via `loop.ai_cmd_alias` in config or `--ai-cmd-alias` on the CLI. User-defined aliases in config override a built-in with the same name.
+
+| Alias | Command |
+|-------|---------|
+| `claude` | `claude -p --dangerously-skip-permissions` |
+| `kiro` | `kiro-cli chat --no-interactive --trust-all-tools` |
+| `copilot` | `copilot --yolo` |
+| `cursor-agent` | `agent -p --force --output-format stream-json --stream-partial-output` |
+
+### Environment Variables
+
+| Variable | Effect |
+|----------|--------|
+| `RALPH_CONFIG_HOME` | Directory for global config file lookup |
+| `RALPH_LOOP_AI_CMD` | Direct AI command string |
+| `RALPH_LOOP_AI_CMD_ALIAS` | AI command alias name |
+| `RALPH_LOOP_DEFAULT_MAX_ITERATIONS` | Max iterations |
+| `RALPH_LOOP_FAILURE_THRESHOLD` | Consecutive failures before exit |
+| `RALPH_LOOP_ITERATION_TIMEOUT` | Per-iteration timeout in seconds (0 = no timeout) |
+| `RALPH_LOOP_STREAMING` | Stream AI output to terminal |
+| `RALPH_LOOP_PREAMBLE` | Enable/disable preamble injection |
+| `RALPH_LOOP_LOG_LEVEL` | Log level (`debug`, `info`, `warn`, `error`) |
 
 ## Signals
 
@@ -155,35 +196,95 @@ If both signals appear in the same output, failure wins.
 
 ## CLI
 
-```
-ralph run <alias> [flags]          Run a prompt by config alias
-ralph run -f <path> [flags]        Run a prompt from a file path
-cat prompt.md | ralph run [flags]  Run a prompt piped via stdin
-ralph list prompts                 List available prompt aliases
-ralph list aliases                 List available AI command aliases
-ralph version                      Show version info
+### `ralph run`
 
-Flags:
-  -f, --file path                 Read prompt from file (no alias required)
-  -n, --max-iterations int        Override max iterations
-  -u, --unlimited                 Run until signal or failure threshold
-      --failure-threshold int     Consecutive failures before abort
-      --iteration-timeout int     Per-iteration timeout in seconds (0 = no timeout)
-      --max-output-buffer int     Max output buffer in bytes
-      --no-preamble               Disable preamble injection
-  -d, --dry-run                   Validate and show assembled prompt
-      --ai-cmd string             Direct AI command string
-      --ai-cmd-alias string       AI command alias
-      --signal-success string     Success signal string
-      --signal-failure string     Failure signal string
-  -c, --context string            Inject context into preamble (repeatable)
-  -v, --verbose                   Stream AI output to terminal
-  -q, --quiet                     Suppress non-error output
-      --log-level string          debug, info, warn, error
-      --config path               Alternate config file path
+Run the iteration loop. The prompt is read once at loop start and reused for every iteration.
+
+```
+ralph run <alias> [flags]          Prompt from config alias
+ralph run -f <path> [flags]        Prompt from file
+cat prompt.md | ralph run [flags]  Prompt from stdin
 ```
 
-The prompt is read once at loop start and reused for every iteration. When no alias or `-f` flag is provided, Ralph reads from stdin.
+Exactly one prompt source (alias, `--file`, or stdin). When no alias or `-f` flag is provided and stdin is not a TTY, Ralph reads from stdin.
+
+| Flag | Short | Type | Description |
+|------|-------|------|-------------|
+| `--file` | `-f` | path | Read prompt from file |
+| `--max-iterations` | `-n` | int | Override max iterations |
+| `--unlimited` | `-u` | — | Run until signal or failure threshold |
+| `--failure-threshold` | — | int | Consecutive failures before abort |
+| `--iteration-timeout` | — | int | Per-iteration timeout in seconds (0 = no timeout) |
+| `--max-output-buffer` | — | int | Max output buffer in bytes |
+| `--no-preamble` | — | — | Disable preamble injection |
+| `--dry-run` | `-d` | — | Assemble and print prompt, then exit |
+| `--ai-cmd` | — | string | Direct AI command string |
+| `--ai-cmd-alias` | — | string | AI command alias from config |
+| `--signal-success` | — | string | Success signal string |
+| `--signal-failure` | — | string | Failure signal string |
+| `--context` | `-c` | string | Inject context into preamble (repeatable) |
+| `--verbose` | `-v` | — | Stream AI output to terminal |
+| `--quiet` | `-q` | — | Suppress non-error output |
+| `--log-level` | — | string | `debug`, `info`, `warn`, `error` |
+| `--config` | — | path | Explicit config file (skips global/workspace) |
+
+### `ralph review`
+
+Review a prompt and produce a report with a suggested revision.
+
+```
+ralph review <alias> [flags]
+ralph review -f <path> [flags]
+cat prompt.md | ralph review [flags]
+```
+
+| Flag | Short | Type | Description |
+|------|-------|------|-------------|
+| `--file` | `-f` | path | Read prompt from file |
+| `--report` | — | path | Write report to this path |
+| `--prompt-output` | — | path | Write suggested revision to this path |
+| `--apply` | — | — | Write the suggested revision to a file |
+| `--yes` | `-y` | — | Skip confirmation when applying |
+| `--quiet` | `-q` | — | Suppress non-error output |
+| `--log-level` | — | string | `debug`, `info`, `warn`, `error` |
+| `--config` | — | path | Explicit config file (skips global/workspace) |
+
+### `ralph list`
+
+List prompts and/or AI command aliases from resolved config.
+
+```
+ralph list                         List all prompts and aliases
+ralph list prompts                 List prompt aliases
+ralph list aliases                 List AI command aliases
+```
+
+| Flag | Short | Type | Description |
+|------|-------|------|-------------|
+| `--config` | — | path | Explicit config file (skips global/workspace) |
+
+### `ralph show`
+
+Show effective config or detail for a prompt or alias.
+
+```
+ralph show config                  Show resolved configuration
+ralph show prompt <name>           Show prompt detail
+ralph show alias <name>            Show alias detail
+```
+
+| Flag | Short | Type | Description |
+|------|-------|------|-------------|
+| `--provenance` | — | — | Include which layer supplied each value |
+| `--config` | — | path | Explicit config file (skips global/workspace) |
+
+### `ralph version`
+
+Print version string and exit.
+
+```
+ralph version
+```
 
 ## Exit Codes
 
@@ -193,6 +294,27 @@ The prompt is read once at loop start and reused for every iteration. When no al
 | 1 | Failure threshold reached or abort |
 | 2 | Max iterations exhausted |
 | 130 | Interrupted (SIGINT/SIGTERM) |
+
+## Cursor Agent Wrapper
+
+The built-in `cursor-agent` alias invokes the raw `agent` command with JSON streaming output. This works, but the JSON is noisy for signal scanning and terminal readability. Cursor's docs include a [wrapper script](https://cursor.com/docs/cli/headless#real-time-progress-tracking) that parses the stream-json output into clean text — use that as your alias so Ralph can scan signals cleanly.
+
+Set up a custom alias in your config pointing to the wrapper:
+
+```yaml
+ai_cmd_aliases:
+  cursor: "./scripts/cursor-wrapper.sh"
+```
+
+Then run with it:
+
+```bash
+ralph run build --ai-cmd-alias cursor
+```
+
+## Acknowledgments
+
+Ralph is named after and inspired by the [Ralph Wiggum technique](https://ghuntley.com/ralph/) originated by [Geoffrey Huntley](https://github.com/ghuntley) — the idea of putting an AI coding agent in a bash `while` loop and letting it build software autonomously, one task per iteration, with a fresh context window each time. For the full technique, playbook, and prompt templates, see [How to Ralph Wiggum](https://github.com/ghuntley/how-to-ralph-wiggum).
 
 ## License
 
