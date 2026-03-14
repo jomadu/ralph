@@ -1,0 +1,47 @@
+# Documentation
+
+## Responsibility
+
+The documentation component is the body of user-facing documentation and procedures that support install, uninstall, upgrade, discoverability, user guidance, and automation contracts. It is not a runtime component; it is the set of docs and documented procedures that the product team maintains so that users can install Ralph, get to a first successful run, use the product correctly, run it from scripts and CI with stable exit codes and non-interactive behavior, and upgrade without breaking config or workflows. Implementation-wise, this "component" is realized as docs in the repository (and any published sites), install/uninstall/upgrade scripts or package-manager instructions, and release notes. The engineering README does not list O/R in component docs; requirement assignments for this component are in the [engineering README](../README.md).
+
+Implements the requirements assigned to this component in the [engineering README](../README.md).
+
+## Interfaces
+
+**Consumes**
+
+- Product intent (outcomes and requirements) and engineering implementation specs (config schema, exit codes, report format) so that documentation stays accurate.
+
+**Produces**
+
+- **User documentation** — Covers how to use Ralph: run, review, list, show, version; config file and layers; prompt sources; loop behavior; review report and apply; exit codes and automation. Must cover the capabilities required by the product so users can operate the product from the docs alone.
+- **Install procedure** — Documented steps (and/or scripts, package manager) to install Ralph so the binary is invocable (e.g. `ralph version` succeeds). No `ralph install` subcommand; install is a procedure.
+- **Uninstall procedure** — Documented steps to remove Ralph and clean up (e.g. config, caches) so uninstall is complete and documented.
+- **Upgrade procedure** — How to upgrade to a chosen version or update within a non-breaking version; backward compatibility and migration are documented (per O011). No `ralph upgrade` subcommand; upgrade is a procedure.
+- **Release notes** — For changes that affect users or automation (new features, breaking changes, migrations). Users can understand what changed and how to adapt.
+- **Discoverability content** — What Ralph is, why to use it, and how to get to a first successful run (install, first command). May live in README, docs site, or both.
+- **Stable contract documentation** — Exit codes (run and review), non-interactive flags, machine-parseable review summary format, and config contract so scripts and CI can rely on them. When the contract changes (e.g. new exit code, new summary field), docs and release notes are updated.
+
+## Implementation spec
+
+### Doc coverage
+
+Documentation must cover at least:
+
+- All subcommands and their options (run, review, list, show, version) and the fact that install/uninstall/upgrade are procedures, not subcommands.
+- Config: layer order, config file location (global, workspace), explicit config option, and the canonical config structure (loop, prompts, aliases) so users can author valid config.
+- Prompt sources: alias, file path, stdin; how to specify them for run and review.
+- Loop behavior: iterations, failure threshold, timeout, signals, precedence, preamble, AI command/alias, streaming, log level.
+- Review: invocation (alias, file, stdin); report content and location; machine-parseable summary format and how to parse it for CI; apply and confirmation; revision output path requirement when prompt is from stdin.
+- Exit codes: run (success, failure threshold, max iterations, interrupt, error) and review (0, 1, 2) with exact values and semantics so automation can gate reliably.
+- Non-interactive use: flags and environment so CI/scripts can run without prompts; behavior when confirmation would be required in non-interactive mode.
+
+### Procedures (install, uninstall, upgrade)
+
+- **Install** — Document where the binary is installed, how to add it to PATH if needed, and how to verify (`ralph version`). Any install script or package (e.g. Homebrew, npm, direct binary) must be documented so users can install and invoke Ralph.
+- **Uninstall** — Document removal of the binary and optional cleanup (config directory, caches). Uninstall is complete and documented so users can remove Ralph cleanly.
+- **Upgrade** — Document how to upgrade (e.g. reinstall over existing, package manager upgrade). Backward compatibility within a non-breaking version and any documented migration for breaking changes (per O011) are explained. Release notes link to upgrade and migration when relevant.
+
+### Consistency with implementation
+
+When implementation specs change in a way that affects user or automation contract (e.g. new exit code, config key, or report format), the documentation component is updated so that user docs, procedures, and contract docs remain accurate. Product requirements that reference "documented" behavior are satisfied by this component.
