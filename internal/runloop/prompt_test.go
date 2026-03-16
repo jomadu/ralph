@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/maxdunn/ralph/internal/config"
-	"github.com/maxdunn/ralph/internal/review"
+	"github.com/jomadu/ralph/internal/config"
+	"github.com/jomadu/ralph/internal/review"
 )
 
 func TestLoadPromptOnce_noSource(t *testing.T) {

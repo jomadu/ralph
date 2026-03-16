@@ -41,7 +41,7 @@ Documentation must cover at least:
 
 ### Release notes and stable contract
 
-- **Release notes** — Published for each release (e.g. [GitHub Releases](https://github.com/maxdunn/ralph/releases)); semantic-release creates releases on push to main/rc/alpha/beta. Each release describes intentional behavior changes, deprecations, and changes that affect config or scripts so users can adapt. The location and expectations are documented in [docs/release-notes.md](../../release-notes.md); README links to it.
+- **Release notes** — Published for each release (e.g. [GitHub Releases](https://github.com/jomadu/ralph/releases)); semantic-release creates releases on push to main/rc/alpha/beta. Each release describes intentional behavior changes, deprecations, and changes that affect config or scripts so users can adapt. The location and expectations are documented in [docs/release-notes.md](../../release-notes.md); README links to it.
 - **Stable contract** — Documented in one place for scripts and CI: [docs/release-notes.md](../../release-notes.md) summarizes the contract (exit codes, review summary format, config, non-interactive use) and links to canonical specs ([docs/exit-codes.md](../../exit-codes.md), [review.md](review.md), [config.md](config.md)). When the contract changes, release notes for that release explain the change and migration.
 
 ### Procedures (install, uninstall, upgrade)

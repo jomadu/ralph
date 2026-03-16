@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/maxdunn/ralph/internal/backend"
+	"github.com/jomadu/ralph/internal/backend"
 )
 
 // mockInvoker simulates the AI creating the five files in the report dir (embedded in the prompt).

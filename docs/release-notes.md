@@ -6,7 +6,7 @@ This document describes **where to find release notes** for Ralph and **what con
 
 Ralph publishes release notes for each release so users can see what changed and how to adapt config or scripts.
 
-- **Location:** [GitHub Releases](https://github.com/maxdunn/ralph/releases) for this repository. Each tagged release (created by semantic-release on push to `main`, `rc`, `alpha`, or `beta`) has a release page with notes.
+- **Location:** [GitHub Releases](https://github.com/jomadu/ralph/releases) for this repository. Each tagged release (created by semantic-release on push to `main`, `rc`, `alpha`, or `beta`) has a release page with notes.
 - **Content:** For each release, intentional behavior changes, deprecations, and changes that affect config, CLI, or scripts are described. Patch releases that only fix bugs or add optional behavior may have minimal notes. Pre-releases (alpha/beta) may have lighter notes; the intent is that users can learn about changes.
 - **Finding them:** From the repo, go to the Releases section or follow the link in the README ([Release notes and stable contract](../README.md#release-notes-and-stable-contract)). After upgrading, check the release notes for the version you moved to.
 

@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/maxdunn/ralph/internal/backend"
-	"github.com/maxdunn/ralph/internal/config"
+	"github.com/jomadu/ralph/internal/backend"
+	"github.com/jomadu/ralph/internal/config"
 )
 
 // RunOptions supplies the inputs for one run-loop execution. Caller must resolve

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/maxdunn/ralph/internal/backend"
-	"github.com/maxdunn/ralph/internal/config"
+	"github.com/jomadu/ralph/internal/backend"
+	"github.com/jomadu/ralph/internal/config"
 )
 
 func TestRun_SuccessOnFirstIteration(t *testing.T) {
