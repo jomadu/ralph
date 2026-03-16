@@ -49,14 +49,16 @@ func loadLayersAndRootLoop(getenv func(string) string, cwd, configPath string) (
 		if err != nil {
 			return nil, LoopSettings{}, err
 		}
-		resolved = MergeLayers(nil, layer)
+		resolved = MergeLayers(nil, "", layer, path)
 		rootLoop = MergeRootLoop(nil, layer)
 	} else {
+		globalPath := GlobalPath(getenv)
+		workspacePath := WorkspacePath(cwd)
 		global, workspace, err := LoadGlobalAndWorkspace(getenv, cwd)
 		if err != nil {
 			return nil, LoopSettings{}, err
 		}
-		resolved = MergeLayers(global, workspace)
+		resolved = MergeLayers(global, globalPath, workspace, workspacePath)
 		rootLoop = MergeRootLoop(global, workspace)
 	}
 	overlay, err := ParseEnvOverlay(getenv)

@@ -204,6 +204,11 @@ prompts:
 	if eff.Loop.LogLevel != "debug" {
 		t.Errorf("Loop.LogLevel = %q, want debug (prompt override)", eff.Loop.LogLevel)
 	}
+	// Prompt path must be resolved relative to the config file that defined it (not cwd).
+	wantPromptPath := filepath.Join(dir, "p.md")
+	if eff.Prompts["myprompt"].Path != wantPromptPath {
+		t.Errorf("Prompts[myprompt].Path = %q, want %q (relative to config file dir)", eff.Prompts["myprompt"].Path, wantPromptPath)
+	}
 
 	// Root (no prompt name) or empty prompt name: root loop only (10, info).
 	root, okRoot, err := ResolveEffectiveForPrompt(getenv, dir, configPath, "")

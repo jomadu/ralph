@@ -78,6 +78,7 @@ Config files are YAML. The following structure is the authoritative shape implem
   - **log_level** (string, optional) — Log verbosity (e.g. debug, info, warn, error).
 - **prompts** (object, optional) — Map of prompt name to prompt definition.
   - Each entry: **path** or **content** (file path or inline); optional **loop** overrides (same keys as root loop).
+  - **Prompt path resolution:** A relative **path** is resolved relative to the **directory containing the config file that defined that prompt** (the layer that supplied the prompt when layers are merged). It is not relative to the current working directory. Absolute paths remain absolute. This allows config files to reference prompt files next to them or in a stable location relative to the config (e.g. `./prompts/build.md` or `prompts/build.md` from the same directory as the config file).
 - **aliases** (object, optional) — Map of alias name to AI command string (or alias definition with **command**).
   - Each entry: **command** (string) — The AI CLI command line (e.g. `claude --non-interactive`).
 
@@ -108,6 +109,16 @@ The following environment variables affect configuration. They are applied in th
 | `RALPH_LOOP_PREAMBLE` | Enable/disable preamble injection | boolean (same parsing as above) |
 
 When a variable is unset, it does not override; the value from a lower layer (file or defaults) is used. For example, when `RALPH_LOOP_STREAMING` is unset, the effective value comes from config or default (typically true for normal runs).
+
+### Prompt path resolution
+
+When a prompt is defined in a config file with a **path** (file-based prompt), relative paths are resolved against the **directory of the config file that defined that prompt**:
+
+- **Single explicit config** (`--config path/to/ralph.yml`): the prompt path is relative to the directory containing that file (e.g. `path/to/`).
+- **Global + workspace merge:** the prompt comes from the layer that won the merge (workspace overrides global for the same name). The path is relative to that layer’s config file directory (global file dir or workspace file dir).
+- Absolute paths are left unchanged. Paths are resolved at merge time so the effective config exposes a resolved (absolute) path for file-based prompts.
+
+This keeps prompt locations tied to the config that defines them and avoids dependence on the process current working directory.
 
 ### Resolution rules
 
