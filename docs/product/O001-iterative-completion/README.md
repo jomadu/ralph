@@ -21,7 +21,7 @@ Without a loop runner, the user manually invokes the AI CLI, reads its output, d
 - The AI works, emits the configured success signal in its output, and exits. Ralph detects the success signal, reports completion, and exits 0.
 - If the AI emits a failure signal instead, Ralph increments the consecutive failure counter and starts a new iteration.
 - If the user runs a task that requires multiple iterations to converge, Ralph executes them without manual intervention.
-- When both success and failure signals appear in the same output, Ralph applies a defined precedence (default). Optionally, the user can enable AI-interpreted precedence: Ralph invokes the AI once with a built-in prompt asking it to interpret the iteration output and decide success or failure; if that run does not yield a clear answer, Ralph applies a defined fallback (e.g. treat as failure or use static precedence).
+- When both success and failure signals appear in the same output, Ralph applies a defined precedence (treat as success). (AI-interpreted precedence was withdrawn; see [R008 archived](archived/R008-ai-interpreted-signal-precedence.md).)
 
 ## Non-outcomes
 
@@ -32,7 +32,7 @@ Without a loop runner, the user manually invokes the AI CLI, reads its output, d
 - Ralph does not modify the user's prompt file on disk. Preamble wrapping happens in memory before piping.
 - Ralph does not re-read the prompt between iterations. The prompt is loaded once at loop start and reused. The preamble may change per iteration (e.g. iteration count), but the underlying prompt content is immutable for the duration of the loop.
 - Ralph does not retry a failed AI CLI process within the same iteration. A crash counts as one iteration.
-- The built-in prompt used for optional AI-interpreted signal precedence is owned by Ralph (not user-editable). When that option is used, exactly one extra AI invocation is made per ambiguous iteration; there are no retries of the interpretation step.
+- *(Withdrawn.)* The built-in prompt used for optional AI-interpreted signal precedence (R008) is no longer offered; see [archived R008](archived/R008-ai-interpreted-signal-precedence.md).
 
 ## Risks
 
@@ -40,7 +40,7 @@ Without a loop runner, the user manually invokes the AI CLI, reads its output, d
 |------|------------------------|
 | AI command missing or invalid; user sees process failure on first iteration | [R001 — Validate AI command before loop](R001-validate-ai-command-before-loop.md) |
 | Prompt source missing or unreadable; loop starts then fails | [R002 — Load prompt once and buffer](R002-load-prompt-once-and-buffer.md) |
-| Success and failure signals both appear in output; outcome ambiguous | [R006 — Signal precedence](R006-signal-precedence.md), [R008 — AI-interpreted signal precedence](R008-ai-interpreted-signal-precedence.md) |
+| Success and failure signals both appear in output; outcome ambiguous | [R006 — Signal precedence](R006-signal-precedence.md) (R008 — AI-interpreted signal precedence withdrawn, see [archived](archived/R008-ai-interpreted-signal-precedence.md)) |
 | Loop runs without bounded exit | [R005 — Detect failure signal and continue or exit](R005-detect-failure-signal-continue-or-exit.md), [R007 — Exit on max iterations](R007-exit-on-max-iterations.md) |
 | AI process crashes or exits without success/failure signal; behavior undefined | [R009 — Process exit without signal](R009-process-exit-without-signal.md) |
 
@@ -55,5 +55,5 @@ Without a loop runner, the user manually invokes the AI CLI, reads its output, d
 | [R005](R005-detect-failure-signal-continue-or-exit.md) | The system detects the configured failure signal, increments the consecutive-failure count, and either starts a new iteration or exits based on the failure threshold. | ready |
 | [R006](R006-signal-precedence.md) | The system applies a defined precedence when both success and failure signals are present in the same output (default behavior). | ready |
 | [R007](R007-exit-on-max-iterations.md) | The system exits when the maximum iteration count is reached. | ready |
-| [R008](R008-ai-interpreted-signal-precedence.md) | The system may optionally resolve signal precedence by invoking the AI once with a built-in Ralph prompt that asks the AI to interpret the iteration output and decide success or failure; if the interpretation run does not yield a clear answer, the system applies a defined fallback (e.g. treat as failure or use static precedence). | ready |
+| [R008](R008-ai-interpreted-signal-precedence.md) | *(Withdrawn/archived.)* Previously: optional AI-interpreted signal precedence. See [archived/R008](archived/R008-ai-interpreted-signal-precedence.md). | withdrawn |
 | [R009](R009-process-exit-without-signal.md) | When the AI process exits without emitting the configured success or failure signal (e.g. crash, kill, abnormal exit), the system treats the iteration as a failure, increments the consecutive-failure count, and continues or exits according to the failure threshold; the user can distinguish this condition from signal-based failure where documented. | ready |

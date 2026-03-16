@@ -28,10 +28,10 @@ type LoopSection struct {
 	TimeoutSeconds   *int        `yaml:"timeout_seconds,omitempty"`
 	SuccessSignal    string      `yaml:"success_signal,omitempty"`
 	FailureSignal    string      `yaml:"failure_signal,omitempty"`
-	SignalPrecedence string      `yaml:"signal_precedence,omitempty"`
 	Preamble         interface{} `yaml:"preamble,omitempty"` // string or bool
 	Streaming        *bool       `yaml:"streaming,omitempty"`
 	LogLevel         string      `yaml:"log_level,omitempty"`
+	MaxOutputBuffer  *int        `yaml:"max_output_buffer,omitempty"`
 }
 
 // Prompt holds a single prompt definition (path or content, optional loop overrides).
@@ -52,10 +52,10 @@ type LoopSettings struct {
 	TimeoutSeconds   int
 	SuccessSignal    string
 	FailureSignal    string
-	SignalPrecedence string
 	Preamble         string // empty = no preamble injection
 	Streaming        bool
 	LogLevel         string
+	MaxOutputBuffer  int // bytes; 0 = unlimited (for backward compat); default from DefaultLoopSettings is 65536
 }
 
 // Alias holds an AI command alias. In YAML, an alias value may be a string

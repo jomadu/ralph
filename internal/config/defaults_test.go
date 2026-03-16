@@ -21,9 +21,6 @@ func TestDefaultLoopSettings(t *testing.T) {
 	if d.FailureSignal != DefaultFailureSignal {
 		t.Errorf("FailureSignal = %q, want %q", d.FailureSignal, DefaultFailureSignal)
 	}
-	if d.SignalPrecedence != "static" {
-		t.Errorf("SignalPrecedence = %q, want static", d.SignalPrecedence)
-	}
 	if d.Preamble != "" {
 		t.Errorf("Preamble = %q, want empty", d.Preamble)
 	}
@@ -32,6 +29,9 @@ func TestDefaultLoopSettings(t *testing.T) {
 	}
 	if d.LogLevel == "" {
 		t.Errorf("LogLevel empty, want e.g. info")
+	}
+	if d.MaxOutputBuffer != DefaultMaxOutputBuffer {
+		t.Errorf("MaxOutputBuffer = %d, want %d (DefaultMaxOutputBuffer)", d.MaxOutputBuffer, DefaultMaxOutputBuffer)
 	}
 }
 

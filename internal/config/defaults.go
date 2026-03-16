@@ -9,6 +9,9 @@ const (
 	DefaultFailureSignal = "<promise>FAILURE</promise>"
 )
 
+// Default max output buffer size in bytes (64 KiB). Used when max_output_buffer is omitted.
+const DefaultMaxOutputBuffer = 65536
+
 // DefaultLoopSettings returns built-in loop settings. Used when no config file
 // is present or when a setting is omitted from all layers.
 func DefaultLoopSettings() LoopSettings {
@@ -18,10 +21,10 @@ func DefaultLoopSettings() LoopSettings {
 		TimeoutSeconds:   0, // no per-iteration timeout
 		SuccessSignal:    DefaultSuccessSignal,
 		FailureSignal:    DefaultFailureSignal,
-		SignalPrecedence: "static",
 		Preamble:         "",
 		Streaming:        true,
 		LogLevel:         "info",
+		MaxOutputBuffer:  DefaultMaxOutputBuffer,
 	}
 }
 

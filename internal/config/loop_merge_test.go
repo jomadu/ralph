@@ -18,6 +18,7 @@ func TestApplyLoopSection_overrides(t *testing.T) {
 		MaxIterations:    intPtr(5),
 		FailureThreshold: intPtr(2),
 		LogLevel:         "debug",
+		MaxOutputBuffer:  intPtr(32768),
 	}
 	got := ApplyLoopSection(base, section)
 	if got.MaxIterations != 5 {
@@ -28,6 +29,9 @@ func TestApplyLoopSection_overrides(t *testing.T) {
 	}
 	if got.LogLevel != "debug" {
 		t.Errorf("LogLevel = %q, want debug", got.LogLevel)
+	}
+	if got.MaxOutputBuffer != 32768 {
+		t.Errorf("MaxOutputBuffer = %d, want 32768", got.MaxOutputBuffer)
 	}
 	if got.SuccessSignal != base.SuccessSignal {
 		t.Errorf("SuccessSignal changed unexpectedly")
@@ -70,8 +74,9 @@ func TestApplyEnvOverlayToLoop_overrides(t *testing.T) {
 	loop := LoopSettings{MaxIterations: 10, FailureThreshold: 3, LogLevel: "info"}
 	warn := "warn"
 	overlay := &EnvOverlay{
-		MaxIterations: intPtr(7),
-		LogLevel:      &warn,
+		MaxIterations:   intPtr(7),
+		LogLevel:        &warn,
+		MaxOutputBuffer: intPtr(8192),
 	}
 	got := ApplyEnvOverlayToLoop(loop, overlay)
 	if got.MaxIterations != 7 {
@@ -79,6 +84,9 @@ func TestApplyEnvOverlayToLoop_overrides(t *testing.T) {
 	}
 	if got.LogLevel != "warn" {
 		t.Errorf("LogLevel = %q, want warn", got.LogLevel)
+	}
+	if got.MaxOutputBuffer != 8192 {
+		t.Errorf("MaxOutputBuffer = %d, want 8192", got.MaxOutputBuffer)
 	}
 	if got.FailureThreshold != 3 {
 		t.Errorf("FailureThreshold = %d, want 3 (unchanged)", got.FailureThreshold)

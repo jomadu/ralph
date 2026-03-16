@@ -19,7 +19,7 @@ The user configures a failure signal (e.g. a string or pattern) that indicates t
 | Failure signal detected; count below threshold | Increment count; start next iteration. |
 | Failure signal detected; count at threshold | Increment count (or after increment equals threshold); exit with the documented failure-threshold exit code. |
 | Success signal detected on a later iteration | Consecutive-failure count resets; next failure starts count from 1. |
-| Both success and failure in same output (on that line) | Precedence (R006 or R008) decides; if failure wins, R005 applies. |
+| Both success and failure in same output (on that line) | Precedence (R006) decides; if failure wins, R005 applies. |
 | Max iterations reached before threshold | R007 applies; exit due to max iterations. |
 | Threshold is 0 or 1 | First failure causes exit (or documented special behavior). |
 
@@ -77,4 +77,4 @@ The user configures a failure signal (e.g. a string or pattern) that indicates t
 ## Dependencies
 
 - R004 — Success detection resets the failure count.
-- R006 (and optionally R008) — Precedence when both signals present; R005 applies when outcome is failure.
+- R006 — Precedence when both signals present; R005 applies when outcome is failure.

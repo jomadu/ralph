@@ -1,7 +1,6 @@
 package runloop
 
 import (
-	"bytes"
 	"context"
 	"io"
 	"os"
@@ -16,7 +15,7 @@ func TestRun_SuccessOnFirstIteration(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	loop.MaxIterations = 3
 	var reported string
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		return []byte("output with <promise>SUCCESS</promise> in it"), 0, nil
 	}
 
@@ -45,7 +44,7 @@ func TestRun_SuccessOnSecondIteration(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	loop.MaxIterations = 5
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		if callCount == 2 {
 			return []byte("<promise>SUCCESS</promise>"), 0, nil
@@ -78,7 +77,7 @@ func TestRun_MaxIterationsWithoutSuccess(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	loop.MaxIterations = 2
 	loop.SuccessSignal = "<promise>SUCCESS</promise>"
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		return []byte("no signal here"), 0, nil
 	}
 	var reported []string
@@ -106,7 +105,7 @@ func TestRun_QuietLogLevel_stillShowsCompletionMessage(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	loop.MaxIterations = 3
 	loop.LogLevel = "error"
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		return []byte("<promise>SUCCESS</promise>"), 0, nil
 	}
 	var reported string
@@ -136,7 +135,7 @@ func TestRun_Streaming_passesStreamWriterToInvoker(t *testing.T) {
 	loop.Streaming = true
 	loop.SuccessSignal = "<promise>SUCCESS</promise>"
 	var receivedStreamTo io.Writer
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, streamTo io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, streamTo io.Writer) ([]byte, int, error) {
 		receivedStreamTo = streamTo
 		return []byte("<promise>SUCCESS</promise>"), 0, nil
 	}
@@ -167,7 +166,7 @@ func TestRun_NoStreaming_invokerReceivesNilStreamTo(t *testing.T) {
 	loop.Streaming = false
 	loop.SuccessSignal = "<promise>SUCCESS</promise>"
 	var receivedStreamTo io.Writer
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, streamTo io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, streamTo io.Writer) ([]byte, int, error) {
 		receivedStreamTo = streamTo
 		return []byte("<promise>SUCCESS</promise>"), 0, nil
 	}
@@ -196,7 +195,7 @@ func TestRun_LogLevelError_suppressesDebugAndInfo(t *testing.T) {
 	loop.MaxIterations = 3
 	loop.LogLevel = "error"
 	loop.SuccessSignal = "<promise>SUCCESS</promise>"
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		return []byte("<promise>SUCCESS</promise>"), 0, nil
 	}
 	var reported []string
@@ -249,7 +248,7 @@ func TestRun_DryRun_PrintsAssembledPromptAndExitsZero(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	loop.Preamble = "You are helpful."
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		return nil, 0, nil
 	}
@@ -297,7 +296,7 @@ func TestRun_FailureSignalBelowThreshold_Continues(t *testing.T) {
 	loop.SuccessSignal = "<promise>SUCCESS</promise>"
 	loop.FailureSignal = "<promise>FAILURE</promise>"
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		if callCount == 1 {
 			return []byte("<promise>FAILURE</promise>"), 0, nil
@@ -335,7 +334,7 @@ func TestRun_FailureThresholdReached_ExitsWithCode(t *testing.T) {
 	loop.FailureThreshold = 2
 	loop.SuccessSignal = "<promise>SUCCESS</promise>"
 	loop.FailureSignal = "<promise>FAILURE</promise>"
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		return []byte("<promise>FAILURE</promise>"), 0, nil
 	}
 	var reported []string
@@ -358,194 +357,6 @@ func TestRun_FailureThresholdReached_ExitsWithCode(t *testing.T) {
 	}
 }
 
-// TestRun_AiInterpreted_BothSignalsPresent_interpreterReturnsSuccess verifies O001/R008:
-// when signal_precedence is ai_interpreted and both signals appear, one interpretation
-// invocation is made; if the AI returns clear success, the iteration is success.
-func TestRun_AiInterpreted_BothSignalsPresent_interpreterReturnsSuccess(t *testing.T) {
-	loop := config.DefaultLoopSettings()
-	loop.MaxIterations = 3
-	loop.SuccessSignal = "DONE"
-	loop.FailureSignal = "FAIL"
-	loop.SignalPrecedence = "ai_interpreted"
-	callCount := 0
-	invoker := func(_ string, prompt []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
-		callCount++
-		if callCount == 1 {
-			// Main iteration: both signals present.
-			return []byte("output FAIL and DONE together"), 0, nil
-		}
-		// Interpretation call: return success so iteration is treated as success.
-		if bytes.Contains(prompt, []byte("--- iteration stdout ---")) {
-			return []byte("DONE"), 0, nil
-		}
-		return []byte("unexpected"), 0, nil
-	}
-	var reported string
-	code, err := Run(RunOptions{
-		Command:     "true",
-		PromptBytes: []byte("p"),
-		Loop:        loop,
-		Invoker:     invokerAdapter(invoker),
-		Reporter:    func(msg string) { reported = msg },
-	})
-	if err != nil {
-		t.Fatalf("Run: %v", err)
-	}
-	if code != ExitSuccess {
-		t.Errorf("exit code = %d, want ExitSuccess (ai_interpreted: interpreter said success)", code)
-	}
-	if callCount != 2 {
-		t.Errorf("invoker called %d times, want 2 (main + one interpretation)", callCount)
-	}
-	if !strings.Contains(reported, "Completed successfully") || !strings.Contains(reported, "1 iteration") {
-		t.Errorf("reported = %q", reported)
-	}
-}
-
-// TestRun_AiInterpreted_BothSignalsPresent_interpreterReturnsFailure verifies O001/R008:
-// when interpreter returns clear failure, the iteration is treated as failure.
-func TestRun_AiInterpreted_BothSignalsPresent_interpreterReturnsFailure(t *testing.T) {
-	loop := config.DefaultLoopSettings()
-	loop.MaxIterations = 3
-	loop.FailureThreshold = 1
-	loop.SuccessSignal = "DONE"
-	loop.FailureSignal = "FAIL"
-	loop.SignalPrecedence = "ai_interpreted"
-	callCount := 0
-	invoker := func(_ string, prompt []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
-		callCount++
-		if callCount == 1 {
-			return []byte("both DONE and FAIL"), 0, nil
-		}
-		if bytes.Contains(prompt, []byte("--- iteration stdout ---")) {
-			return []byte("FAIL"), 0, nil
-		}
-		return []byte("unexpected"), 0, nil
-	}
-	var reported []string
-	code, err := Run(RunOptions{
-		Command:     "true",
-		PromptBytes: []byte("p"),
-		Loop:        loop,
-		Invoker:     invokerAdapter(invoker),
-		Reporter:    func(msg string) { reported = append(reported, msg) },
-	})
-	if err != nil {
-		t.Fatalf("Run: %v", err)
-	}
-	if code != ExitFailureThreshold {
-		t.Errorf("exit code = %d, want ExitFailureThreshold", code)
-	}
-	if callCount != 2 {
-		t.Errorf("invoker called %d times, want 2 (main + interpretation)", callCount)
-	}
-	all := strings.Join(reported, " ")
-	if !strings.Contains(all, "consecutive failure(s)") {
-		t.Errorf("reported = %q", reported)
-	}
-}
-
-// TestRun_AiInterpreted_BothSignalsPresent_interpreterUnclear_fallbackToFailure verifies O001/R008:
-// when interpretation is unclear or interpretation run fails, fallback (treat as failure) is applied.
-func TestRun_AiInterpreted_BothSignalsPresent_interpreterUnclear_fallbackToFailure(t *testing.T) {
-	loop := config.DefaultLoopSettings()
-	loop.MaxIterations = 3
-	loop.FailureThreshold = 1
-	loop.SuccessSignal = "DONE"
-	loop.FailureSignal = "FAIL"
-	loop.SignalPrecedence = "ai_interpreted"
-	callCount := 0
-	invoker := func(_ string, prompt []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
-		callCount++
-		if callCount == 1 {
-			return []byte("both DONE and FAIL"), 0, nil
-		}
-		// Interpretation returns unclear (no parseable marker).
-		if bytes.Contains(prompt, []byte("--- iteration stdout ---")) {
-			return []byte("I'm not sure"), 0, nil
-		}
-		return []byte("unexpected"), 0, nil
-	}
-	var reported []string
-	code, err := Run(RunOptions{
-		Command:     "true",
-		PromptBytes: []byte("p"),
-		Loop:        loop,
-		Invoker:     invokerAdapter(invoker),
-		Reporter:    func(msg string) { reported = append(reported, msg) },
-	})
-	if err != nil {
-		t.Fatalf("Run: %v", err)
-	}
-	if code != ExitFailureThreshold {
-		t.Errorf("exit code = %d, want ExitFailureThreshold (fallback on unclear)", code)
-	}
-	if callCount != 2 {
-		t.Errorf("invoker called %d times, want 2", callCount)
-	}
-}
-
-// TestRun_AiInterpreted_onlySuccessSignal_noInterpretationCall verifies O001/R008:
-// when only one signal is present, no interpretation step is run.
-func TestRun_AiInterpreted_onlySuccessSignal_noInterpretationCall(t *testing.T) {
-	loop := config.DefaultLoopSettings()
-	loop.MaxIterations = 2
-	loop.SuccessSignal = "DONE"
-	loop.FailureSignal = "FAIL"
-	loop.SignalPrecedence = "ai_interpreted"
-	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
-		callCount++
-		return []byte("only DONE here"), 0, nil
-	}
-	code, err := Run(RunOptions{
-		Command:     "true",
-		PromptBytes: []byte("p"),
-		Loop:        loop,
-		Invoker:     invokerAdapter(invoker),
-	})
-	if err != nil {
-		t.Fatalf("Run: %v", err)
-	}
-	if code != ExitSuccess {
-		t.Errorf("exit code = %d, want ExitSuccess", code)
-	}
-	if callCount != 1 {
-		t.Errorf("invoker called %d times, want 1 (no interpretation when only one signal)", callCount)
-	}
-}
-
-// TestRun_AiInterpreted_onlyFailureSignal_noInterpretationCall verifies O001/R008:
-// when only failure signal is present, no interpretation step is run.
-func TestRun_AiInterpreted_onlyFailureSignal_noInterpretationCall(t *testing.T) {
-	loop := config.DefaultLoopSettings()
-	loop.MaxIterations = 2
-	loop.FailureThreshold = 2
-	loop.SuccessSignal = "DONE"
-	loop.FailureSignal = "FAIL"
-	loop.SignalPrecedence = "ai_interpreted"
-	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
-		callCount++
-		return []byte("only FAIL here"), 0, nil
-	}
-	code, err := Run(RunOptions{
-		Command:     "true",
-		PromptBytes: []byte("p"),
-		Loop:        loop,
-		Invoker:     invokerAdapter(invoker),
-	})
-	if err != nil {
-		t.Fatalf("Run: %v", err)
-	}
-	if code != ExitFailureThreshold {
-		t.Errorf("exit code = %d, want ExitFailureThreshold", code)
-	}
-	if callCount != 2 {
-		t.Errorf("invoker called %d times, want 2 (two failures, no interpretation)", callCount)
-	}
-}
-
 // TestRun_StaticPrecedence_BothSignalsPresent verifies T3.6/O001/R006: when both
 // success and failure signals appear in the same output, static precedence applies
 // (success checked first), so the iteration is treated as success.
@@ -555,7 +366,7 @@ func TestRun_StaticPrecedence_BothSignalsPresent(t *testing.T) {
 	loop.SuccessSignal = "DONE"
 	loop.FailureSignal = "FAIL"
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		// Single iteration output contains both signals; success must win.
 		return []byte("output FAIL and DONE together"), 0, nil
@@ -589,7 +400,7 @@ func TestRun_SuccessResetsConsecutiveFailures(t *testing.T) {
 	loop.SuccessSignal = "DONE"
 	loop.FailureSignal = "FAIL"
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		switch callCount {
 		case 1:
@@ -636,7 +447,7 @@ func TestRun_NoSignalTreatedAsFailure(t *testing.T) {
 	loop.SuccessSignal = "<promise>SUCCESS</promise>"
 	loop.FailureSignal = "<promise>FAILURE</promise>"
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		// Iteration 1: no signal (e.g. process exited 0 but no markers).
 		if callCount == 1 {
@@ -680,7 +491,7 @@ func TestRun_NoSignalBelowThreshold_Continues(t *testing.T) {
 	loop.SuccessSignal = "<promise>SUCCESS</promise>"
 	loop.FailureSignal = "<promise>FAILURE</promise>"
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		if callCount == 1 {
 			return []byte("no signal"), 0, nil
@@ -718,7 +529,7 @@ func TestRun_InvocationErrorTreatedAsNoSignal(t *testing.T) {
 	loop.FailureThreshold = 2
 	loop.SuccessSignal = "<promise>SUCCESS</promise>"
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		if callCount == 1 {
 			return nil, -1, backend.ErrTimeout
@@ -758,7 +569,7 @@ func TestRun_InterruptReturnsExitInterrupt(t *testing.T) {
 		Command:     "true",
 		PromptBytes: []byte("p"),
 		Loop:        loop,
-		Invoker: invokerAdapter(func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+		Invoker: invokerAdapter(func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 			return []byte("x"), 0, nil
 		}),
 		InterruptContext: ctx,
@@ -777,7 +588,7 @@ func TestRun_IterationStatistics(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	loop.MaxIterations = 5
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		if callCount == 3 {
 			return []byte("<promise>SUCCESS</promise>"), 0, nil
@@ -825,7 +636,7 @@ func TestRun_IterationStatistics(t *testing.T) {
 func TestRun_SingleIteration_NoIterationStats(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	loop.MaxIterations = 3
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		return []byte("<promise>SUCCESS</promise>"), 0, nil
 	}
 	var reported []string
@@ -858,7 +669,7 @@ func TestRun_SuccessSignalOnlyOnLastLine(t *testing.T) {
 	loop.MaxIterations = 2
 	loop.SuccessSignal = "DONE"
 	// Output: "DONE" on first line, "Still working..." on last line -> last non-empty line has no signal.
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		return []byte("DONE\nStill working..."), 0, nil
 	}
 	var reported []string
@@ -888,7 +699,7 @@ func TestRun_SuccessSignalOnLastLine_detected(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	loop.MaxIterations = 2
 	loop.SuccessSignal = "DONE"
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		return []byte("Still working...\nStatus: DONE"), 0, nil
 	}
 	var reported string
@@ -918,7 +729,7 @@ func TestRun_FailureSignalOnLastLine_detected(t *testing.T) {
 	loop.FailureThreshold = 1
 	loop.SuccessSignal = "DONE"
 	loop.FailureSignal = "FAIL"
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		return []byte("Working...\nFAIL"), 0, nil
 	}
 	var reported []string
@@ -949,7 +760,7 @@ func TestRun_StaticPrecedence_BothSignalsOnLastLine(t *testing.T) {
 	loop.MaxIterations = 3
 	loop.SuccessSignal = "DONE"
 	loop.FailureSignal = "FAIL"
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		// Both on last non-empty line; success must win.
 		return []byte("line one\nFAIL and DONE together"), 0, nil
 	}
@@ -978,7 +789,7 @@ func TestRun_StaticPrecedence_BothSignalsOnLastLine(t *testing.T) {
 func TestRun_InterruptBetweenIterations(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	callCount := 0
-	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
 		if callCount == 1 {
 			return []byte("no signal yet"), 0, nil

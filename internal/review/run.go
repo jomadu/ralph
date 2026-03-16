@@ -38,10 +38,10 @@ var ErrApplyPromptOutputRequired = fmt.Errorf("%w: --apply requires --prompt-out
 var ErrAICommandRequired = fmt.Errorf("%w: review requires an AI command (set loop.ai_cmd_alias or --ai-cmd-alias)", ErrExit2)
 
 // invokerAdapter adapts a function to backend.Invoker (same pattern as runloop).
-type invokerAdapter func(command string, promptBytes []byte, cwd string, env []string, timeoutSec int, streamTo io.Writer) (stdout []byte, exitCode int, err error)
+type invokerAdapter func(command string, promptBytes []byte, cwd string, env []string, timeoutSec int, maxOutputBytes int, streamTo io.Writer) (stdout []byte, exitCode int, err error)
 
-func (f invokerAdapter) Invoke(command string, promptBytes []byte, cwd string, env []string, timeoutSec int, streamTo io.Writer) ([]byte, int, error) {
-	return f(command, promptBytes, cwd, env, timeoutSec, streamTo)
+func (f invokerAdapter) Invoke(command string, promptBytes []byte, cwd string, env []string, timeoutSec int, maxOutputBytes int, streamTo io.Writer) ([]byte, int, error) {
+	return f(command, promptBytes, cwd, env, timeoutSec, maxOutputBytes, streamTo)
 }
 
 // RunOptions holds options for a review run (report path, apply, backend, etc.).
@@ -124,7 +124,7 @@ func Run(promptContent []byte, opts RunOptions) (exitCode int, err error) {
 	}
 
 	reviewPrompt := AssembleReviewPrompt(promptContent, reportDirAbs)
-	stdout, _, invErr := invoker.Invoke(opts.Command, reviewPrompt, opts.Cwd, opts.Env, opts.TimeoutSec, opts.StreamWriter)
+	stdout, _, invErr := invoker.Invoke(opts.Command, reviewPrompt, opts.Cwd, opts.Env, opts.TimeoutSec, 0, opts.StreamWriter)
 	if invErr != nil {
 		return 0, fmt.Errorf("%w: backend invocation failed: %v", ErrExit2, invErr)
 	}

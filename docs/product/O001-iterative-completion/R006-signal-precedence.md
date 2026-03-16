@@ -8,7 +8,7 @@ The system applies a defined precedence when both success and failure signals ar
 
 ## Detail
 
-Ralph scans **only the last non-empty line** of each iteration's output for success and failure signals (see the run-loop component spec for the definition of "last non-empty line"). When both the configured success signal and the configured failure signal appear **on that same line** (the last non-empty line), the outcome is ambiguous without a rule. The system applies a defined precedence (e.g. "success wins" or "failure wins" or "first occurrence wins") so that the iteration is classified as either success or failure, not both. This is the default, static behavior. Signals that appear only on earlier lines are not used for detection; precedence applies only when both signals are present on the last non-empty line. Optional AI-interpreted precedence (R008) can override this for a run when the user enables it; when that option is off or when the interpretation step does not yield a clear answer, this requirement's precedence is used.
+Ralph scans **only the last non-empty line** of each iteration's output for success and failure signals (see the run-loop component spec for the definition of "last non-empty line"). When both the configured success signal and the configured failure signal appear **on that same line** (the last non-empty line), the outcome is ambiguous without a rule. The system applies a defined precedence (e.g. "success wins" or "failure wins" or "first occurrence wins") so that the iteration is classified as either success or failure, not both. Static precedence is the only behavior: when both signals are on that line, the defined rule (e.g. success wins) is applied. Signals that appear only on earlier lines are not used for detection; precedence applies only when both signals are present on the last non-empty line.
 
 ### Edge cases
 
@@ -47,7 +47,7 @@ Ralph scans **only the last non-empty line** of each iteration's output for succ
 - [ ] R006 states that "both present" means both on the last non-empty line (same line); signals only on earlier lines are not used for precedence.
 - [ ] The precedence rule is documented (e.g. success wins, failure wins, or order-based).
 - [ ] No iteration is left ambiguous (both success and failure); exactly one outcome is used for R004/R005/R009.
-- [ ] This behavior is the default when AI-interpreted precedence (R008) is not used or does not yield a clear result.
+- [ ] Static precedence is the only supported behavior; the rule is documented (e.g. success wins).
 
 ## Dependencies
 

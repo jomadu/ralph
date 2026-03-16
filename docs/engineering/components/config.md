@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-The config component resolves configuration from defined layers into a single effective configuration used by the run-loop, review, list, and show paths. It supplies prompt and alias definitions, loop behavior settings (iterations, failure threshold, timeout, signals, precedence mode, preamble, AI command, streaming, log level), and read-only semantics unless the user opts in to writes (e.g. apply). It does not write files unless the user explicitly requests an action that writes (e.g. review `--apply`); config file resolution only reads.
+The config component resolves configuration from defined layers into a single effective configuration used by the run-loop, review, list, and show paths. It supplies prompt and alias definitions, loop behavior settings (iterations, failure threshold, timeout, signals, preamble, AI command, streaming, log level, max output buffer), and read-only semantics unless the user opts in to writes (e.g. apply). It does not write files unless the user explicitly requests an action that writes (e.g. review `--apply`); config file resolution only reads.
 
 Implements the requirements assigned to this component in the [engineering README](../README.md).
 
@@ -53,10 +53,10 @@ When no config file is present or a setting is omitted from all layers, the foll
 | timeout_seconds | 0 (no per-iteration timeout) |
 | success_signal | `<promise>SUCCESS</promise>` |
 | failure_signal | `<promise>FAILURE</promise>` |
-| signal_precedence | `static` |
 | preamble | (empty; no preamble injection) |
 | streaming | true |
 | log_level | `info` |
+| max_output_buffer | 65536 (bytes; 0 = unlimited) |
 
 Built-in AI command aliases (e.g. `claude`, `kiro`, `copilot`, `cursor-agent`) are defined in the config package and merged with user-defined aliases; user aliases override built-ins for the same name.
 
@@ -72,10 +72,10 @@ Config files are YAML. The following structure is the authoritative shape implem
   - **timeout_seconds** (integer, optional) — Per-iteration timeout; 0 or absent = no timeout.
   - **success_signal** (string, optional) — Substring or pattern that indicates success in AI output.
   - **failure_signal** (string, optional) — Substring or pattern that indicates failure.
-  - **signal_precedence** (string, optional) — e.g. `static` (first match wins) or `ai_interpreted` when both signals appear.
   - **preamble** (string or boolean, optional) — Optional preamble injection; or enable/disable.
   - **streaming** (boolean, optional) — Whether to show AI command output in the terminal (default: true). Used by both `ralph run` and `ralph review`. Env: `RALPH_LOOP_STREAMING`. CLI: `--no-stream` only (turns off for that run; no flag to turn on—streaming is the default).
   - **log_level** (string, optional) — Log verbosity (e.g. debug, info, warn, error).
+  - **max_output_buffer** (integer, optional) — Maximum bytes of AI stdout to retain for signal detection; 0 = unlimited. Default: 65536. Env: `RALPH_LOOP_MAX_OUTPUT_BUFFER`. When set, only the last N bytes are kept so the last line is preserved within the cap.
 - **prompts** (object, optional) — Map of prompt name to prompt definition.
   - Each entry: **path** or **content** (file path or inline); optional **loop** overrides (same keys as root loop).
   - **Prompt path resolution:** A relative **path** is resolved relative to the **directory containing the config file that defined that prompt** (the layer that supplied the prompt when layers are merged). It is not relative to the current working directory. Absolute paths remain absolute. This allows config files to reference prompt files next to them or in a stable location relative to the config (e.g. `./prompts/build.md` or `prompts/build.md` from the same directory as the config file).
@@ -107,6 +107,7 @@ The following environment variables affect configuration. They are applied in th
 | `RALPH_LOOP_LOG_LEVEL` | Log level (e.g. `debug`, `info`, `warn`, `error`) | string |
 | `RALPH_LOOP_STREAMING` | Whether to stream AI output to terminal (config key: `loop.streaming`) | boolean: `true`/`1`/`yes`/`on` → true; `false`/`0`/`no`/`off`/empty → false; invalid → error |
 | `RALPH_LOOP_PREAMBLE` | Enable/disable preamble injection | boolean (same parsing as above) |
+| `RALPH_LOOP_MAX_OUTPUT_BUFFER` | Max bytes of AI stdout to retain for signal detection; 0 = unlimited | integer; must be >= 0; invalid → error |
 
 When a variable is unset, it does not override; the value from a lower layer (file or defaults) is used. For example, when `RALPH_LOOP_STREAMING` is unset, the effective value comes from config or default (typically true for normal runs).
 

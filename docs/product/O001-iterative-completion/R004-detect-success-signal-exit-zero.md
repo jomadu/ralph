@@ -17,7 +17,7 @@ The user configures a success signal (e.g. a string, regex, or pattern) that the
 | Success signal appears on the last non-empty line | The system detects it, reports completion, exits with the documented success code. |
 | Success signal appears only on an earlier line (not the last non-empty line) | The system does not treat the iteration as success; continues or exits per R005/R007. |
 | Success signal does not appear | The system does not exit with success for that iteration; continues or exits per R005/R007. |
-| Success and failure signals both present (on that line) | Precedence applies per R006 (or R008 if AI-interpreted); outcome is either success or failure, not undefined. |
+| Success and failure signals both present (on that line) | Precedence applies per R006; outcome is either success or failure, not undefined. |
 | Output is empty (no non-empty line) | No success signal; iteration is not successful. |
 | Signal is configured as case-sensitive vs case-insensitive | Behavior matches configuration. |
 
@@ -56,4 +56,4 @@ The user configures a success signal (e.g. a string, regex, or pattern) that the
 
 ## Dependencies
 
-- R006 (and optionally R008) — When both success and failure signals appear, precedence is defined; R004 applies after precedence resolves to success.
+- R006 — When both success and failure signals appear, precedence is defined; R004 applies after precedence resolves to success.

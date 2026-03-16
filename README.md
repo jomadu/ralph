@@ -139,7 +139,7 @@ Configuration is resolved from layers (lowest to highest priority):
 - **Workspace config:** `./ralph-config.yml` in the current working directory.
 - **Explicit file:** `--config <path>` uses only that file (global and workspace are not loaded). The file must exist or Ralph errors.
 
-Built-in defaults include `max_iterations: 10`, `failure_threshold: 3`, `success_signal: "<promise>SUCCESS</promise>"`, `failure_signal: "<promise>FAILURE</promise>"`, `signal_precedence: static`, `streaming: true`, `log_level: info`. Loop settings can be overridden with `RALPH_LOOP_*` environment variables (see [config spec](docs/engineering/components/config.md)).
+Built-in defaults include `max_iterations: 10`, `failure_threshold: 3`, `success_signal: "<promise>SUCCESS</promise>"`, `failure_signal: "<promise>FAILURE</promise>"`, `streaming: true`, `log_level: info`, `max_output_buffer: 65536` (bytes; 0 = unlimited). When both success and failure signals appear on the last line, success wins (static precedence). Loop settings can be overridden with `RALPH_LOOP_*` environment variables (see [config spec](docs/engineering/components/config.md)).
 
 ### Example `ralph-config.yml`
 
@@ -151,7 +151,6 @@ loop:
   streaming: true
   success_signal: "<promise>SUCCESS</promise>"
   failure_signal: "<promise>FAILURE</promise>"
-  signal_precedence: static
 
 aliases:
   # Custom alias: Claude with a specific model (built-ins like claude, kiro, copilot, cursor-agent already exist)
@@ -180,7 +179,7 @@ Ralph scans **only the last non-empty line** of AI CLI output for configurable s
 
 Your prompt tells the AI what to emit. Ralph’s config (or flags) tell the scanner what to look for.
 
-With `signal_precedence: static` (default), if **both** signals appear on that line, **success wins**. Set `signal_precedence: ai_interpreted` (or `--signal-precedence ai_interpreted`) to have Ralph ask the AI once to interpret the outcome when both appear.
+If **both** signals appear on that line, **success wins** (static precedence). Stdout capture for signal detection is capped by `max_output_buffer` (default 65536 bytes; config or `--max-output-buffer`); the last line is preserved within that limit.
 
 ## CLI
 
@@ -213,7 +212,7 @@ Full spec (all commands and flags): [docs/engineering/components/cli.md](docs/en
 | `--ai-cmd-alias` | — | string | AI command alias name from config for this run. |
 | `--signal-success` | — | string | Success signal string for this run. |
 | `--signal-failure` | — | string | Failure signal string for this run. |
-| `--signal-precedence` | — | string | `static` or `ai_interpreted` when both signals appear. |
+| `--max-output-buffer` | — | int | Max bytes of AI stdout to retain for signal detection (last line preserved within cap). Must be ≥ 0. |
 | `--context` | `-c` | string | Inline context injected into preamble. Repeatable. |
 | `--verbose` | `-v` | — | Log level debug. |
 | `--quiet` | `-q` | — | Minimal output; do not show AI command output. |

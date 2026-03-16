@@ -21,6 +21,7 @@ type EnvOverlay struct {
 	LogLevel         *string
 	Streaming        *bool
 	Preamble         *bool
+	MaxOutputBuffer  *int
 }
 
 // ParseEnvOverlay reads RALPH_LOOP_* from getenv and returns an overlay.
@@ -91,6 +92,17 @@ func ParseEnvOverlay(getenv func(string) string) (*EnvOverlay, error) {
 			return nil, fmt.Errorf("RALPH_LOOP_PREAMBLE: %w", err)
 		}
 		o.Preamble = &b
+	}
+
+	if v := getenv("RALPH_LOOP_MAX_OUTPUT_BUFFER"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil {
+			return nil, fmt.Errorf("RALPH_LOOP_MAX_OUTPUT_BUFFER: invalid integer %q: %w", v, err)
+		}
+		if n < 0 {
+			return nil, fmt.Errorf("RALPH_LOOP_MAX_OUTPUT_BUFFER: must be >= 0, got %d", n)
+		}
+		o.MaxOutputBuffer = &n
 	}
 
 	return o, nil

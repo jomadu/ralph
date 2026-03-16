@@ -4,7 +4,7 @@
 
 ## Requirement
 
-The system allows loop behavior (iterations, failure threshold, timeout, signals, signal precedence mode, preamble, AI command, streaming, log level) to be configured at root and per prompt. Root settings apply to all prompts unless overridden per prompt; resolution follows the layer order in R001.
+The system allows loop behavior (iterations, failure threshold, timeout, signals, preamble, AI command, streaming, log level, max output buffer) to be configured at root and per prompt. Root settings apply to all prompts unless overridden per prompt; resolution follows the layer order in R001.
 
 ## Detail
 
@@ -62,7 +62,7 @@ Configuration can be set at the root (default for all prompts), per prompt in co
 
 ## Acceptance criteria
 
-- [ ] All listed loop behavior settings (iterations, failure threshold, timeout, output limits, success/failure signals, signal precedence mode, preamble, AI command, streaming, log level) are configurable at the root level.
+- [ ] All listed loop behavior settings (iterations, failure threshold, timeout, output limits, success/failure signals, preamble, AI command, streaming, log level, max output buffer) are configurable at the root level.
 - [ ] The same settings can be overridden per prompt in config; when running that prompt, prompt overrides apply over root.
 - [ ] Environment variables and command-line options can override resolved loop settings for that run.
 - [ ] Default values exist for all loop settings so the tool works without a config file.

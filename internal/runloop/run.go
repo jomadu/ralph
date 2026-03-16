@@ -36,10 +36,10 @@ type RunOptions struct {
 }
 
 // invokerAdapter adapts a function with optional streamTo to backend.Invoker.
-type invokerAdapter func(command string, promptBytes []byte, cwd string, env []string, timeoutSec int, streamTo io.Writer) (stdout []byte, exitCode int, err error)
+type invokerAdapter func(command string, promptBytes []byte, cwd string, env []string, timeoutSec int, maxOutputBytes int, streamTo io.Writer) (stdout []byte, exitCode int, err error)
 
-func (f invokerAdapter) Invoke(command string, promptBytes []byte, cwd string, env []string, timeoutSec int, streamTo io.Writer) ([]byte, int, error) {
-	return f(command, promptBytes, cwd, env, timeoutSec, streamTo)
+func (f invokerAdapter) Invoke(command string, promptBytes []byte, cwd string, env []string, timeoutSec int, maxOutputBytes int, streamTo io.Writer) ([]byte, int, error) {
+	return f(command, promptBytes, cwd, env, timeoutSec, maxOutputBytes, streamTo)
 }
 
 // logLevelPriority returns a numeric priority for level comparison (higher = more verbose).
@@ -138,7 +138,7 @@ func Run(opts RunOptions) (exitCode int, err error) {
 		preamble := buildPreamble(opts.Loop.Preamble, i)
 		assembled := AssemblePrompt(preamble, opts.PromptBytes)
 		iterStart := time.Now()
-		stdout, _, invErr := opts.Invoker.Invoke(opts.Command, assembled, opts.Cwd, opts.Env, opts.Loop.TimeoutSeconds, streamTo)
+		stdout, _, invErr := opts.Invoker.Invoke(opts.Command, assembled, opts.Cwd, opts.Env, opts.Loop.TimeoutSeconds, opts.Loop.MaxOutputBuffer, streamTo)
 		iterationDurations = append(iterationDurations, time.Since(iterStart))
 		if ctx.Err() != nil {
 			return ExitInterrupt, nil
@@ -155,34 +155,17 @@ func Run(opts RunOptions) (exitCode int, err error) {
 		lastLine := LastNonEmptyLine(stdout)
 		hasSuccess := ContainsSuccessSignal(lastLine, opts.Loop.SuccessSignal)
 		hasFailure := ContainsFailureSignal(lastLine, opts.Loop.FailureSignal)
-		// Static precedence (O001/R006): when both signals present, success wins unless ai_interpreted.
-		if hasSuccess && (!hasFailure || opts.Loop.SignalPrecedence != "ai_interpreted") {
+		// Static precedence (O001/R006): when both signals present on last line, success wins.
+		if hasSuccess {
 			elapsed := time.Since(start)
 			report(completionMessage(i, elapsed))
 			reportIterationStatsLevel(report, logLevel, iterationDurations)
 			return ExitSuccess, nil
 		}
-		// AI-interpreted precedence (O001/R008): both signals present; invoke AI once to interpret; fallback on unclear.
-		reportAsFailureSignal := hasFailure // for threshold message: "failure(s)" vs "without signal"
-		if hasSuccess && hasFailure && opts.Loop.SignalPrecedence == "ai_interpreted" {
-			interpPrompt := BuildInterpretationPrompt(stdout, opts.Loop.SuccessSignal, opts.Loop.FailureSignal)
-			interpOut, _, interpErr := opts.Invoker.Invoke(opts.Command, interpPrompt, opts.Cwd, opts.Env, opts.Loop.TimeoutSeconds, nil)
-			if interpErr == nil {
-				outcome := ParseInterpretationResponse(interpOut, opts.Loop.SuccessSignal, opts.Loop.FailureSignal)
-				if outcome == InterpretedSuccess {
-					elapsed := time.Since(start)
-					report(completionMessage(i, elapsed))
-					reportIterationStatsLevel(report, logLevel, iterationDurations)
-					return ExitSuccess, nil
-				}
-			}
-			// InterpretedFailure, InterpretedUnclear, or interpretation run error: apply fallback (treat as failure).
-			reportAsFailureSignal = true
-		}
-		// Failure: failure signal present, or no signal (T3.8, O001/R009), or ai_interpreted fallback.
+		// Failure: failure signal present, or no signal (T3.8, O001/R009).
 		consecutiveFailures++
 		if consecutiveFailures >= threshold {
-			if reportAsFailureSignal {
+			if hasFailure {
 				reportLevel(report, logLevel, "error", fmt.Sprintf("Stopped after %d consecutive failure(s) (threshold: %d).", consecutiveFailures, opts.Loop.FailureThreshold))
 			} else {
 				reportLevel(report, logLevel, "error", fmt.Sprintf("Stopped after %d consecutive iteration(s) without success or failure signal (threshold: %d).", consecutiveFailures, opts.Loop.FailureThreshold))

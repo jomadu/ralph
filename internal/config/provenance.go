@@ -26,10 +26,10 @@ type LoopProvenance struct {
 	TimeoutSeconds   string
 	SuccessSignal    string
 	FailureSignal    string
-	SignalPrecedence string
 	Preamble         string
 	Streaming        string
 	LogLevel         string
+	MaxOutputBuffer  string
 }
 
 // RootLoopWithProvenance computes root loop (defaults → global → workspace or explicit → env)
@@ -42,10 +42,10 @@ func RootLoopWithProvenance(getenv func(string) string, cwd, configPath string) 
 		TimeoutSeconds:   ProvenanceDefault,
 		SuccessSignal:    ProvenanceDefault,
 		FailureSignal:    ProvenanceDefault,
-		SignalPrecedence: ProvenanceDefault,
 		Preamble:         ProvenanceDefault,
 		Streaming:        ProvenanceDefault,
 		LogLevel:         ProvenanceDefault,
+		MaxOutputBuffer:  ProvenanceDefault,
 	}
 	loop := DefaultLoopSettings()
 
@@ -108,10 +108,6 @@ func applySectionWithProvenance(base LoopSettings, section *LoopSection, layer s
 		out.FailureSignal = section.FailureSignal
 		prov.FailureSignal = layer
 	}
-	if section.SignalPrecedence != "" {
-		out.SignalPrecedence = section.SignalPrecedence
-		prov.SignalPrecedence = layer
-	}
 	if section.Streaming != nil {
 		out.Streaming = *section.Streaming
 		prov.Streaming = layer
@@ -119,6 +115,10 @@ func applySectionWithProvenance(base LoopSettings, section *LoopSection, layer s
 	if section.LogLevel != "" {
 		out.LogLevel = section.LogLevel
 		prov.LogLevel = layer
+	}
+	if section.MaxOutputBuffer != nil {
+		out.MaxOutputBuffer = *section.MaxOutputBuffer
+		prov.MaxOutputBuffer = layer
 	}
 	if s, ok := section.Preamble.(string); ok && s != "" {
 		out.Preamble = s
@@ -161,6 +161,10 @@ func applyEnvOverlayWithProvenance(loop LoopSettings, overlay *EnvOverlay, prov 
 		out.Preamble = ""
 		prov.Preamble = ProvenanceEnv
 	}
+	if overlay.MaxOutputBuffer != nil {
+		out.MaxOutputBuffer = *overlay.MaxOutputBuffer
+		prov.MaxOutputBuffer = ProvenanceEnv
+	}
 	return out, prov
 }
 
@@ -177,7 +181,6 @@ type CLIOverlay struct {
 	NoPreamble       bool
 	SignalSuccess    string
 	SignalFailure    string
-	SignalPrecedence string
 	Context          []string
 	Verbose          bool
 	Quiet            bool
@@ -214,10 +217,6 @@ func applyCLIOverlayWithProvenance(loop LoopSettings, o *CLIOverlay, prov LoopPr
 	if o.SignalFailure != "" {
 		out.FailureSignal = o.SignalFailure
 		prov.FailureSignal = ProvenanceCLI
-	}
-	if o.SignalPrecedence != "" {
-		out.SignalPrecedence = o.SignalPrecedence
-		prov.SignalPrecedence = ProvenanceCLI
 	}
 	if o.NoPreamble {
 		out.Preamble = ""
