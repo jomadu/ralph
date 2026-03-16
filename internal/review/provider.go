@@ -1,7 +1,7 @@
 package review
 
 import (
-	"github.com/maxdunn/ralph/internal/config"
+	"github.com/jomadu/ralph/internal/config"
 )
 
 // FileLayerProvider adapts a single config file layer to PromptProvider.

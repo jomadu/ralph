@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/maxdunn/ralph/internal/config"
-	"github.com/maxdunn/ralph/internal/review"
-	"github.com/maxdunn/ralph/internal/runloop"
+	"github.com/jomadu/ralph/internal/config"
+	"github.com/jomadu/ralph/internal/review"
+	"github.com/jomadu/ralph/internal/runloop"
 	"github.com/spf13/cobra"
 )
 

@@ -1,7 +1,7 @@
 package runloop
 
 import (
-	"github.com/maxdunn/ralph/internal/review"
+	"github.com/jomadu/ralph/internal/review"
 )
 
 // LoadPromptOnce loads the prompt once from the resolved source (alias → file path,

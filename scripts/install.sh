@@ -5,7 +5,7 @@
 
 set -e
 
-REPO="${RALPH_REPO:-maxdunn/ralph}"
+REPO="${RALPH_REPO:-jomadu/ralph}"
 GITHUB_API="https://api.github.com/repos/${REPO}/releases"
 INSTALL_STATE_DIR="${RALPH_CONFIG_HOME:-$HOME/.config/ralph}"
 INSTALL_STATE_FILE="${INSTALL_STATE_DIR}/install-state"

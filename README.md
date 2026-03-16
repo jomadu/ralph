@@ -70,7 +70,7 @@ Ralph can be installed via the provided script so the `ralph` binary is on your 
    ```bash
    ./scripts/install.sh
    # or
-   curl -fsSL https://raw.githubusercontent.com/maxdunn/ralph/main/scripts/install.sh | sh
+   curl -fsSL https://raw.githubusercontent.com/jomadu/ralph/main/scripts/install.sh | sh
    ```
    **Specific version** (e.g. `1.0.0` or `v1.0.0`):
    ```bash

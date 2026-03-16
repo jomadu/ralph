@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/maxdunn/ralph/internal/backend"
+	"github.com/jomadu/ralph/internal/backend"
 )
 
 // DefaultReportDir is the default report directory name when --report is omitted (O005/R005).

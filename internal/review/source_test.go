@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/maxdunn/ralph/internal/config"
+	"github.com/jomadu/ralph/internal/config"
 )
 
 func TestResolvePromptSource_noSource(t *testing.T) {

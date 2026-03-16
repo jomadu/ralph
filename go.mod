@@ -1,4 +1,4 @@
-module github.com/maxdunn/ralph
+module github.com/jomadu/ralph
 
 go 1.24.5
 
