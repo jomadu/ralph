@@ -41,6 +41,8 @@ Ralph ships with the following AI command aliases (see `internal/config/resolve.
 | `copilot` | `copilot --yolo` |
 | `cursor-agent` | `agent -p --force --output-format stream-json --stream-partial-output` |
 
+For agents that emit structured or noisy output, users can use a wrapper script that sends progress to stderr and assistant text to stdout so Ralph can scan for signals; see [Agent wrapper pattern](../../agent-wrapper-pattern.md). Cursor is one example; that doc links to [Cursor’s headless docs — Real-time progress tracking](https://cursor.com/docs/cli/headless#real-time-progress-tracking).
+
 The backend receives the **resolved** command string (after alias expansion by the config component); it does not resolve alias names itself.
 
 ### Invocation contract

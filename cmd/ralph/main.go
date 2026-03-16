@@ -191,12 +191,9 @@ func runCmd() *cobra.Command {
 			if aliasName == "" && overlay != nil && overlay.AICmdAlias != nil {
 				aliasName = *overlay.AICmdAlias
 			}
-			if directCmd == "" && aliasName == "" {
-				aliasName = "cursor-agent"
-			}
 			command, ok := config.ResolveAICommand(eff, directCmd, aliasName)
 			if !ok {
-				fmt.Fprintln(os.Stderr, "ralph run: AI command not resolved (missing or invalid --ai-cmd / --ai-cmd-alias or config)")
+				fmt.Fprintln(os.Stderr, "ralph run: AI command not resolved (set --ai-cmd or --ai-cmd-alias, or config/env)")
 				os.Exit(runloop.ExitErrorPreLoop)
 			}
 			// Apply CLI overrides to effective loop (cli.md: flags override config for this run).
@@ -638,7 +635,7 @@ func reviewCmd() *cobra.Command {
 				return err
 			}
 
-			// Resolve AI command for review (same precedence as run: config, env overlay, default cursor-agent).
+			// Resolve AI command for review (same precedence as run: config, env overlay; no default).
 			promptName := opts.Alias
 			eff, ok, err := config.Resolve(os.Getenv, cwd, configPath, promptName)
 			if err != nil {
@@ -656,12 +653,9 @@ func reviewCmd() *cobra.Command {
 			if aliasName == "" && overlay != nil && overlay.AICmdAlias != nil {
 				aliasName = *overlay.AICmdAlias
 			}
-			if directCmd == "" && aliasName == "" {
-				aliasName = "cursor-agent"
-			}
 			command, ok := config.ResolveAICommand(eff, directCmd, aliasName)
 			if !ok {
-				fmt.Fprintln(os.Stderr, "ralph review: AI command not resolved (missing or invalid --ai-cmd / --ai-cmd-alias or config)")
+				fmt.Fprintln(os.Stderr, "ralph review: AI command not resolved (set --ai-cmd or --ai-cmd-alias, or config/env)")
 				os.Exit(2)
 			}
 

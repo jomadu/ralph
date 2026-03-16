@@ -1,50 +1,70 @@
 # Ralph
 
-A dumb loop that pipes a prompt to an AI CLI, lets it work, and repeats.
-
-Ralph is a loop runner, not a methodology. You bring the prompt. Ralph runs it in a fresh AI process per iteration, scans for completion signals, and stops when the task is done — or when it isn't going to be.
+A dumb loop that pipes a prompt to an AI CLI, lets it work, and repeats. You bring the prompt; Ralph runs it until a success or failure signal appears—or a limit is reached—so multi-step work can reach verified completion without manual read–judge–re-run cycles.
 
 ## What is Ralph and why use it?
 
-- **What:** Ralph is a loop runner for AI-driven tasks. You give it a prompt (file, alias, or stdin); it invokes your AI CLI with that prompt on each iteration, captures output, and looks for success or failure signals you configure.
-- **Why:** It replaces manual "run the AI, read the output, decide, re-run" with an automated loop that stops when the AI emits a success signal or hits a failure threshold. No conversation history between iterations — state lives on disk; each run is a fresh process.
+Ralph is a **loop runner** for AI-driven tasks, not a methodology. You supply a prompt and choose an AI CLI (e.g. Claude, Cursor). Ralph invokes it in a fresh process per iteration, scans the output for configurable success or failure signals, and stops when the task is done or when it isn’t going to be.
 
-If you're new here: install (below), then follow [Path to first run](#path-to-first-run) to get from "I have Ralph" to a first command that completes successfully.
+Without a loop runner, every iteration is manual: read the output, judge, re-invoke. Ralph closes that gap: you define what “done” looks like (a signal in the prompt), and Ralph handles re-invocation until that signal appears or a limit is reached. State lives on the filesystem—the AI reads and writes files, and the next iteration sees those changes. No conversation history is carried between runs.
 
-## Quick Start
+## Path to first run
+
+After [install](#install-and-uninstall), get to a first successful run as follows.
+
+**1. Create a prompt file**
+
+Example: create `prompts/build.md` from the repo root:
 
 ```bash
-# Define a prompt alias in ralph-config.yml
+mkdir -p prompts
+cat > prompts/build.md << 'EOF'
+1. Study the project rules and workflow (including build/test commands if the project defines them).
+2. Study the project's specifications; use product intent or acceptance criteria when needed for the task.
+3. Get ready work from the issue tracker, pick one task, and claim it.
+4. Complete the task. For code: use test-driven development and implement fully—no partial implementations.
+5. When done: if no work remains in the queue, output `<promise>SUCCESS</promise>`; if blocked, output `<promise>FAILURE</promise>`; otherwise output nothing (loop continues).
+EOF
+```
+
+**2. Define config so Ralph uses this prompt**
+
+Create `ralph-config.yml` in the repo root (or in `~/.config/ralph/`) with a prompt alias:
+
+```bash
+cat > ralph-config.yml << 'EOF'
 prompts:
   build:
     path: "./prompts/build.md"
-
-# Run it
-ralph run build
-
-# Override iteration limit
-ralph run build -n 20
-
-# Run until success or failure threshold
-ralph run build --unlimited
-
-# Preview assembled prompt without executing
-ralph run build --dry-run
-
-# Run a one-off prompt from a file (no alias needed)
-ralph run -f ./prompts/fix-tests.md
-
-# Pipe a prompt via stdin
-cat prompts/build.md | ralph run
+EOF
 ```
+
+**3. Choose your AI backend**
+
+Ralph requires a resolved AI command; if none is set, it exits with code 2 before starting the loop. Either:
+
+- **Use a built-in alias:** `claude`, `kiro`, `copilot`, or `cursor-agent`. Example: `ralph run build --ai-cmd-alias claude`, or set the alias in config or env. If your agent outputs structured or noisy data (e.g. JSON, tool calls), use a wrapper that sends progress to stderr and assistant text to stdout so Ralph can detect signals; see [Agent wrapper pattern](docs/agent-wrapper-pattern.md) (Cursor is one example).
+- **Use your own command:** `--ai-cmd "your-command ..."` or `RALPH_LOOP_AI_CMD`, or define a custom alias under `aliases:` in config and use `--ai-cmd-alias` or `RALPH_LOOP_AI_CMD_ALIAS`.
+
+**4. Run**
+
+```bash
+export RALPH_LOOP_AI_CMD_ALIAS=cursor-agent   # or claude, kiro, copilot
+
+ralph run build --dry-run   # preview assembled prompt, no AI invocation
+ralph run build -n 5        # run with max 5 iterations
+ralph run build --unlimited # run until success signal or failure threshold
+```
+
+Prompt can also come from a file or stdin: `ralph run -f ./prompt.md` or `cat prompt.md | ralph run`. Use `ralph list` to see prompts and aliases from your config; use `ralph run --help` and `ralph --help` for full options.
 
 ## Install and Uninstall
 
-Ralph can be installed with the provided script so the `ralph` binary is on your PATH. Uninstall removes only the binary and install state; your config (e.g. `~/.config/ralph/ralph-config.yml`) is not removed.
+Ralph can be installed via the provided script so the `ralph` binary is on your PATH. Install and uninstall are **documented procedures**, not subcommands (there is no `ralph install` or `ralph uninstall`).
 
-**Prerequisites:** `curl`. The install script **only** installs from release artifacts (no build from source). Supported: Linux, macOS, Windows (amd64, arm64); script runs on macOS/Linux or Windows (e.g. Git Bash).
+**Prerequisites:** `curl`. The install script installs only from release artifacts (no build from source). Supported: Linux, macOS, Windows (amd64, arm64); script runs on macOS/Linux or Windows (e.g. Git Bash).
 
-**Install:**
+**Install**
 
 1. **Latest release** (from repo or one-line):
    ```bash
@@ -58,103 +78,68 @@ Ralph can be installed with the provided script so the `ralph` binary is on your
    ./scripts/install.sh v1.0.0 --dir /usr/local/bin
    ```
    The script installs to `~/bin` by default and records the install location for uninstall.
+
 2. Optional: use a different directory with `RALPH_INSTALL_DIR` or `--dir`:
    ```bash
    ./scripts/install.sh --dir /usr/local/bin
    ```
    If the directory is not writable (e.g. `/usr/local/bin`), run with `sudo` or choose a user directory like `~/bin`.
-3. Ensure the install directory is on your PATH (e.g. add it to your shell profile, or use `~/bin` if it is already on PATH).
-4. Open a new terminal and verify:
+
+3. Ensure the install directory is on your PATH (e.g. add to your shell profile).
+
+4. Verify in a new terminal:
    ```bash
    ralph version
    ```
    You should see version output and exit 0.
 
-## Path to first run
+**Uninstall**
 
-From "I have Ralph" to a first command that completes successfully:
-
-1. **Verify Ralph is on your PATH** — Run `ralph version`; you should see a version string and exit 0.
-2. **Choose a prompt source** — You need exactly one: a prompt alias (from config), a file path, or stdin. With no config, the simplest path is a one-off file or stdin. New to writing prompts? See [Writing Ralph prompts](docs/writing-ralph-prompts.md) or run `ralph show prompt-guide` for guidance.
-3. **Run a first command** — Examples that can complete successfully (your AI CLI must be installed and on PATH; Ralph defaults to the `cursor-agent` alias if you don't set `--ai-cmd` or config):
-   - **From a file:** Create a small prompt file (e.g. `echo 'Say hello and output <promise>SUCCESS</promise>' > /tmp/hello.md`), then run:
-     ```bash
-     ralph run -f /tmp/hello.md -n 1
-     ```
-     On success you'll see the success message and exit 0.
-   - **From stdin:** `echo 'Say OK and output <promise>SUCCESS</promise>' | ralph run -n 1`
-   - **Using an alias:** Add a prompt to your config (see [Example ralph-config.yml](#example-ralph-configyml)), then `ralph run <alias>` (e.g. `ralph run build`).
-4. **Prerequisites:** Your chosen AI CLI (e.g. Cursor agent, Claude CLI) must be installed and on PATH. Ralph does not install it. Use `--ai-cmd-alias` or `--ai-cmd` to select a different command; see Configuration and [config](docs/engineering/components/config.md).
-
-**Uninstall:**
-
-Run from anywhere (the script reads the install location from `~/.config/ralph/install-state`):
+From anywhere (the script reads the install location from `~/.config/ralph/install-state`):
 
 ```bash
 ./scripts/uninstall.sh
 ```
 
-This removes the `ralph` binary from the directory where it was installed and removes the install state file. User config in `~/.config/ralph/` (e.g. `ralph-config.yml`) is **not** removed. No PATH or symlink changes are made by the install script, so uninstall does not leave broken references.
+This removes the `ralph` binary and the install state file. User config (e.g. `~/.config/ralph/ralph-config.yml`) is **not** removed. Install does not modify PATH or symlinks, so uninstall leaves no broken references.
 
-**Upgrade:**
+**Upgrade:** Reinstall over the existing binary (e.g. run `install.sh` with the desired version) or use your package manager. Backward compatibility and any migration for breaking changes are described in [release notes](docs/release-notes.md).
 
-To upgrade or update an existing install:
+## How it works
 
-- **Upgrade to a chosen version** — Re-run the install script with the desired version (same as a fresh install to that version). The script overwrites the binary in the same install directory (recorded in `~/.config/ralph/install-state`). Example:
-  ```bash
-  ./scripts/install.sh 1.2.0
-  # or, to match your current install directory:
-  ./scripts/install.sh 1.2.0 --dir "$(cat ~/.config/ralph/install-state)"
-  ```
-  After upgrade, run `ralph version` to confirm the new version; your config and prompts are unchanged.
-
-- **Update within a non-breaking version** — To get the latest patch or minor release on the same major line (e.g. stay on 1.x), run the install script with no version to fetch the latest release, or with a specific newer tag in the same major:
-  ```bash
-  ./scripts/install.sh
-  ```
-  Within a non-breaking range (same major version), existing config, prompts, and documented commands/exit codes continue to work; no migration is required. Ralph does not rewrite or migrate your config automatically. If a release introduces behavior changes or deprecations, they are described in release notes with migration guidance (see [Release notes and contract](#release-notes-and-stable-contract)).
-
-- **Backward compatibility** — Config and prompt files that worked in an older patch/minor (same major) keep working after update. Documented commands, options, and exit codes remain valid across non-breaking upgrades. Breaking contract or config changes are documented in release notes with migration steps; major version bumps may introduce breaking changes as documented.
-
-**Release notes and stable contract:** For each release, behavior changes and deprecations that affect config or scripts are described in the release notes (e.g. [GitHub Releases](https://github.com/maxdunn/ralph/releases)). See [docs/exit-codes.md](docs/exit-codes.md) for the stable exit-code contract and [docs/release-notes.md](docs/release-notes.md) for where to find release notes and what constitutes the stable contract (exit codes, review result format and report directory layout, config). When that contract or config schema changes, release notes explain the change and how to adapt.
-
-## How It Works
+Before the loop starts, Ralph resolves the AI command from config or `--ai-cmd` / `--ai-cmd-alias`. If it cannot be resolved (e.g. not on PATH), Ralph exits with code 2 and does not start the loop.
 
 Each iteration:
 
-1. Read the prompt file mapped to the alias
-2. Wrap it with a preamble (iteration count, optional context)
-3. Pipe the assembled prompt to the AI CLI's stdin
-4. Capture output, scan for success/failure signals
-5. On success signal → exit 0
-6. On failure signal → increment consecutive failure counter
-7. On consecutive failure threshold → exit 4
-8. On max iterations reached → exit 3
-9. Otherwise → next iteration
+1. Use the prompt from the chosen source (alias → file, file path, or stdin)—loaded **once** at loop start and buffered for all iterations.
+2. Optionally wrap it with a preamble (e.g. iteration count, context).
+3. Pipe the assembled prompt to the AI CLI’s stdin.
+4. Capture stdout and scan for configured success and failure signals.
+5. **Success signal** → report completion, exit 0.
+6. **Failure signal** → increment consecutive-failure count; if count ≥ failure threshold, exit 4; otherwise next iteration.
+7. **Max iterations reached** → exit 3.
+8. **No signal** (e.g. crash, timeout) → treated as failure; same threshold rules.
+9. **Interrupt (e.g. Ctrl+C)** → exit 130.
 
-Fresh process per iteration. No conversation history carried between runs. State continuity comes from the filesystem — the AI reads and writes files, and the next iteration's AI sees those changes.
+Fresh process per iteration. No conversation history between runs. State continuity is via the filesystem—the AI reads and writes files, and the next iteration sees those changes.
 
 ## Configuration
 
-Five layers, highest precedence first:
+Configuration is resolved from layers (lowest to highest priority):
 
-| Layer | Source |
-|-------|--------|
-| CLI flags | `--max-iterations`, `--ai-cmd`, etc. |
-| Environment variables | `RALPH_LOOP_*` |
-| Workspace config | `./ralph-config.yml` |
-| Global config | `~/.config/ralph/ralph-config.yml` |
-| Built-in defaults | Compiled into the binary |
+1. **Defaults** — built-in values
+2. **Global config file** — user-level
+3. **Workspace config file** — project-level in cwd
+4. **Explicit config file** — when you pass `--config` (only this file is used; global and workspace are not loaded)
+5. **Environment variables** — e.g. `RALPH_LOOP_*`
+6. **Prompt-level overrides** — per-prompt `loop` settings in config
+7. **CLI flags** — override all of the above for that run
 
-### Config file schema
+- **Global config:** `$RALPH_CONFIG_HOME/ralph-config.yml` if set; else `$XDG_CONFIG_HOME/ralph/ralph-config.yml` or `~/.config/ralph/ralph-config.yml`.
+- **Workspace config:** `./ralph-config.yml` in the current working directory.
+- **Explicit file:** `--config <path>` uses only that file (global and workspace are not loaded). The file must exist or Ralph errors.
 
-Config files are YAML. The canonical structure (see `docs/engineering/components/config.md`) is:
-
-- **loop** (optional) — Root loop behavior: `max_iterations`, `failure_threshold`, `timeout_seconds`, `success_signal`, `failure_signal`, `signal_precedence`, `preamble`, `streaming`, `log_level`. Per-prompt overrides go under each prompt’s `loop`.
-- **prompts** (optional) — Map of prompt name to definition: `path` or `content`; optional `display_name`, `description`, and `loop` overrides.
-- **aliases** (optional) — Map of alias name to AI command string (or `{ command: "..." }`). Built-in aliases (e.g. `claude`, `cursor-agent`) are merged; user aliases override built-ins for the same name.
-
-The default AI command for `ralph run` is chosen by: `--ai-cmd` or `--ai-cmd-alias` (or env `RALPH_LOOP_AI_CMD` / `RALPH_LOOP_AI_CMD_ALIAS`); if none is set, Ralph uses the `cursor-agent` alias. There is no `loop.ai_cmd_alias` in the file schema; use CLI or env to select an alias.
+Built-in defaults include `max_iterations: 10`, `failure_threshold: 3`, `success_signal: "<promise>SUCCESS</promise>"`, `failure_signal: "<promise>FAILURE</promise>"`, `signal_precedence: static`, `streaming: true`, `log_level: info`. Loop settings can be overridden with `RALPH_LOOP_*` environment variables (see [config spec](docs/engineering/components/config.md)).
 
 ### Example `ralph-config.yml`
 
@@ -163,15 +148,14 @@ loop:
   max_iterations: 5
   failure_threshold: 3
   timeout_seconds: 300
-  streaming: false
+  streaming: true
   success_signal: "<promise>SUCCESS</promise>"
   failure_signal: "<promise>FAILURE</promise>"
+  signal_precedence: static
 
 aliases:
-  claude: "claude -p --dangerously-skip-permissions"
-  kiro: "kiro-cli chat --no-interactive --trust-all-tools"
-  copilot: "copilot --yolo"
-  cursor-agent: "agent -p --force --output-format stream-json --stream-partial-output"
+  # Custom alias: Claude with a specific model (built-ins like claude, kiro, copilot, cursor-agent already exist)
+  claude-sonnet: "claude -p --model claude-sonnet-4 --dangerously-skip-permissions"
 
 prompts:
   build:
@@ -181,137 +165,185 @@ prompts:
     loop:
       max_iterations: 10
       failure_threshold: 5
-
-  bootstrap:
-    path: "./prompts/bootstrap.md"
-    display_name: "Bootstrap"
-    description: "One-shot project setup"
-    loop:
-      max_iterations: 1
-      preamble: false
 ```
 
-Each prompt entry maps a name to a file (or `content`) and can override any loop setting under its `loop` key.
+Each prompt can override loop settings under its `loop` key. The AI command for a run is chosen by config or `--ai-cmd` / `--ai-cmd-alias`; if none is set, Ralph exits 2 with a clear error.
 
 ## Signals
 
-Ralph scans AI CLI output for configurable signal strings to determine iteration outcome.
+Ralph scans AI CLI output for configurable success and failure signal strings.
 
-| Signal | Default | Meaning |
-|--------|---------|---------|
-| Success | `<promise>SUCCESS</promise>` | Task complete, stop looping |
-| Failure | `<promise>FAILURE</promise>` | Blocked, increment failure counter |
+| Signal   | Default                    | Meaning                                      |
+|----------|----------------------------|----------------------------------------------|
+| Success  | `<promise>SUCCESS</promise>` | Task complete; stop looping, exit 0.        |
+| Failure  | `<promise>FAILURE</promise>` | Blocked; increment failure count or exit 4. |
 
-Your prompt tells the AI what to emit. Ralph's signal config tells the scanner what to look for — use whatever strings your prompt expects.
+Your prompt tells the AI what to emit. Ralph’s config (or flags) tell the scanner what to look for.
 
-With default `signal_precedence: static`, if both signals appear in the same output, success is checked first — success wins. See `docs/engineering/components/run-loop.md` for `ai_interpreted` precedence.
+With `signal_precedence: static` (default), if **both** signals appear in the same output, **success wins**. Set `signal_precedence: ai_interpreted` (or `--signal-precedence ai_interpreted`) to have Ralph ask the AI once to interpret the outcome when both appear.
 
-## Subcommands
+## CLI
 
-Ralph has five top-level commands: **run**, **review**, **list**, **show**, **version**. Install, uninstall, and upgrade are documented procedures (scripts or package manager), not subcommands.
+**Global option:** `--config <path>` — use this file as the sole file-based config (global and workspace are not loaded). Applies to run, review, list, and show.
+
+Full spec (all commands and flags): [docs/engineering/components/cli.md](docs/engineering/components/cli.md).
 
 ### ralph run
 
-Run the iteration loop. Prompt source: exactly one of alias, `--file`/`-f` &lt;path&gt;, or stdin. The prompt is read once at loop start and reused for every iteration.
+**Purpose:** Run the iteration loop. Prompt is supplied once (alias, file path, or stdin) and buffered; the run-loop invokes the AI each iteration until a success or failure condition (or a limit).
 
-```
-ralph run [alias] [flags]          Prompt from config alias
-ralph run -f <path> [flags]        Prompt from file
-cat prompt.md | ralph run [flags]  Prompt from stdin
-```
+**Usage:** Exactly one prompt source per run.
 
-Flags (all optional): `-f, --file`, `-n, --max-iterations`, `-u, --unlimited`, `--failure-threshold`, `--iteration-timeout`, `--max-output-buffer`, `--no-preamble`, `-d, --dry-run`, `--ai-cmd`, `--ai-cmd-alias`, `--signal-success`, `--signal-failure`, `--signal-precedence`, `-c, --context` (repeatable), `-v, --verbose`, `-q, --quiet`, `--log-level`, `--no-stream` (do not show AI command output in terminal; default is to show it), `--config`. Use `ralph run --help` for full list.
+- `ralph run <alias> [flags]` — Prompt from the named prompt in resolved config (alias must exist).
+- `ralph run --file <path> [flags]` or `ralph run -f <path> [flags]` — Prompt from file at `<path>` (file must exist).
+- `ralph run [flags]` — Prompt from **stdin** (e.g. `cat prompt.md | ralph run`). Stdin must not be a TTY or Ralph errors with no prompt source.
+
+**Flags**
+
+| Flag | Short | Type | Effect |
+|------|-------|------|--------|
+| `--file` | `-f` | path | Read prompt from this file. Mutually exclusive with alias and stdin. |
+| `--max-iterations` | `-n` | int | Override max iterations for this run. |
+| `--unlimited` | `-u` | — | Run until success signal or failure threshold; no iteration cap. |
+| `--failure-threshold` | — | int | Consecutive failures before exit. Override for this run. |
+| `--iteration-timeout` | — | int | Per-iteration timeout in seconds. 0 = no timeout. |
+| `--no-preamble` | — | — | Disable preamble injection for this run. |
+| `--dry-run` | `-d` | — | Assemble prompt and print it; do not invoke the AI. Exit 0. |
+| `--ai-cmd` | — | string | Direct AI command string for this run. |
+| `--ai-cmd-alias` | — | string | AI command alias name from config for this run. |
+| `--signal-success` | — | string | Success signal string for this run. |
+| `--signal-failure` | — | string | Failure signal string for this run. |
+| `--signal-precedence` | — | string | `static` or `ai_interpreted` when both signals appear. |
+| `--context` | `-c` | string | Inline context injected into preamble. Repeatable. |
+| `--verbose` | `-v` | — | Log level debug. |
+| `--quiet` | `-q` | — | Minimal output; do not show AI command output. |
+| `--log-level` | — | string | `debug`, `info`, `warn`, `error`. |
+| `--no-stream` | — | — | Do not show AI command output in the terminal (default is to show it). |
+
+**Exit codes**
+
+| Code | Meaning |
+|------|--------|
+| 0 | Success signal detected; loop completed. |
+| 2 | Error before loop (invalid or missing AI command, invalid config, or prompt source error). |
+| 3 | Max iterations reached without success. |
+| 4 | Failure threshold reached (consecutive failures). |
+| 130 | Interrupted (e.g. SIGINT/Ctrl+C). |
 
 ### ralph review
 
-Review a prompt (alias, file, or stdin). Produces a report directory (result.json, summary.md, original.md, revision.md, diff.md) and a suggested revision; optionally apply the revision with confirmation (or `--yes` in non-interactive mode).
+**Purpose:** Review a prompt (alias, file, or stdin). Produce a report directory with five files (result.json, summary.md, original.md, revision.md, diff.md) and a suggested revision; optionally write the revision to a path with confirmation (or non-interactive flag).
 
-```
-ralph review [alias] [flags]
-ralph review -f <path> [flags]
-cat prompt.md | ralph review [flags]
-```
+**Usage:** Exactly one prompt source per run.
 
-Flags: `-f, --file`, `--report` (report output directory; default `./ralph-review/`). The report directory path is passed to the AI in the prompt; the AI creates result.json, summary.md, original.md, revision.md, diff.md in that directory. `--prompt-output` (required when using `--apply` with stdin), `--apply`, `--yes`/`-y` (non-interactive apply), `-v, --verbose`, `-q, --quiet`, `--log-level`, `--no-stream` (do not show AI command output in terminal; default is to show it), `--config`. For CI: use exit code 0/1/2 to gate, or read result.json in the report directory for status (see [docs/exit-codes.md](docs/exit-codes.md) and [docs/engineering/components/review.md](docs/engineering/components/review.md)).
+- `ralph review <alias> [flags]` — Prompt from named prompt in resolved config.
+- `ralph review --file <path> [flags]` or `ralph review -f <path> [flags]` — Prompt from file.
+- `ralph review [flags]` — Prompt from **stdin**. When using `--apply`, you must pass `--prompt-output <path>` or Ralph exits 2.
+
+**Flags**
+
+| Flag | Short | Type | Effect |
+|------|-------|------|--------|
+| `--file` | `-f` | path | Read prompt from this file. Mutually exclusive with alias and stdin. |
+| `--report` | — | path | Report directory path (default `./ralph-review/`). AI creates the five files here. Path must be writable; if it does not exist, Ralph creates it. |
+| `--prompt-output` | — | path | When using `--apply`, write the revision to this path. **Required** when prompt is from stdin and `--apply` is set. |
+| `--apply` | — | — | Write the suggested revision to a file. Confirmation required before overwriting unless `--yes`. |
+| `--yes` | `-y` | — | Non-interactive apply: do not prompt for confirmation. If confirmation would be required and `--yes` is not set, exit 2. |
+| `--verbose` | `-v` | — | Log level debug. |
+| `--quiet` | `-q` | — | Minimal output; do not show AI command output. |
+| `--log-level` | — | string | `debug`, `info`, `warn`, `error`. |
+| `--no-stream` | — | — | Do not show AI command output in the terminal. |
+
+**Exit codes**
+
+| Code | Meaning |
+|------|--------|
+| 0 | Review completed; report directory written; no prompt errors (result.json indicates OK). |
+| 1 | Review completed; report directory written; prompt has one or more errors (result.json indicates errors). |
+| 2 | Review or apply did not complete (invalid prompt source, report write failure, stdin + apply without `--prompt-output`, confirmation required without `--yes` in non-interactive mode, or internal error). |
 
 ### ralph list
 
-List prompts and/or AI command aliases from resolved config. Same config resolution as run (global, workspace, or `--config`).
+**Purpose:** List prompts and/or AI command aliases from the resolved config. Read-only; does not run the loop or modify config.
 
-```
-ralph list [prompts|aliases]       List all, or only prompts or only aliases
-```
+**Usage**
+
+- `ralph list [flags]` — List both prompts and aliases from resolved config.
+- `ralph list prompts [flags]` — List only prompts (names and optional display name, description, path).
+- `ralph list aliases [flags]` — List only AI command aliases (names and optional expansion/description).
+
+**Flags**
+
+| Flag | Short | Type | Effect |
+|------|-------|------|--------|
+| `--config` | — | path | Explicit config file (global). |
+| `--help` | `-h` | — | Print list command help and exit. |
+
+**Exit codes:** 0 on success. Parse or usage errors (e.g. invalid subcommand) use a consistent non-zero code (e.g. 1).
 
 ### ralph show
 
-Show effective config or detail for a prompt or alias. Same config resolution as run.
+**Purpose:** Show effective (resolved) config, or detailed information for a single prompt or alias by name, or the full prompt-writing guide.
 
-```
-ralph show config [flags]          Effective (resolved) config
-ralph show prompt <name>           Detail for prompt <name>
-ralph show alias <name>            Detail for alias <name>
-```
+**Usage**
 
-Name is required for `show prompt` and `show alias`. Use `--provenance` with `show config` to see which layer supplied each value.
+- `ralph show config [flags]` — Output the effective config for the current context. Optionally `--provenance` (which layer supplied each value) and `--prompt <name>` (effective config for that prompt).
+- `ralph show prompt <name> [flags]` — Show detail for the prompt named `name`. Name is required; omit → error.
+- `ralph show alias <name> [flags]` — Show detail for the alias named `name`. Name is required; omit → error.
+- `ralph show prompt-guide [flags]` — Output the full [Writing Ralph prompts](docs/writing-ralph-prompts.md) guide verbatim.
+
+**Flags**
+
+| Flag | Short | Type | Effect |
+|------|-------|------|--------|
+| `--config` | — | path | Explicit config file (global). |
+| `--provenance` | — | — | For `show config` only: show which layer supplied each value. |
+| `--prompt` | — | string | For `show config` only: show effective config for the named prompt. |
+| `--markdown` | — | — | For `show prompt-guide` only: output the full guide (for saving or piping to a pager). |
+| `--help` | `-h` | — | Print show command help and exit. |
+
+**Exit codes:** 0 on success. Missing object (e.g. `ralph show` with no config/prompt/alias/prompt-guide), unknown object type, or unknown prompt/alias name → error and non-zero exit.
 
 ### ralph version
 
-Print version string to stdout and exit 0. No arguments required.
+**Purpose:** Print the version string and exit.
 
-## Environment variables
+**Usage:** `ralph version` or `ralph version [flags]`. No arguments required.
 
-- **RALPH_CONFIG_HOME** — Directory for the global config file; actual file is `$RALPH_CONFIG_HOME/ralph-config.yml`. Does not set the explicit config file for the current run; use `--config <path>` for that.
-- **RALPH_LOOP_*** — Override loop settings: `RALPH_LOOP_AI_CMD`, `RALPH_LOOP_AI_CMD_ALIAS`, `RALPH_LOOP_DEFAULT_MAX_ITERATIONS`, `RALPH_LOOP_FAILURE_THRESHOLD`, `RALPH_LOOP_ITERATION_TIMEOUT`, `RALPH_LOOP_LOG_LEVEL`, `RALPH_LOOP_STREAMING`, `RALPH_LOOP_PREAMBLE`, etc. See `docs/engineering/components/config.md` for the full set so that full non-interactive config is possible (e.g. in CI).
+**Flags:** Implementation-defined (e.g. `--short`, `--help`). With no args or `--help`, prints version and exits 0.
 
-## Non-interactive use (scripts and CI)
+**Exit codes:** 0 on success.
 
-- **run:** No confirmation prompts; use `--config`, env vars, and flags to drive behavior. Exit codes are stable (see Exit Codes and [docs/exit-codes.md](docs/exit-codes.md)).
-- **review:** Use `--yes` when applying in non-interactive mode so Ralph does not block on confirmation; without `--yes`, Ralph exits 2 with a clear message. For stdin + apply, you must pass `--prompt-output` or Ralph exits 2.
-- Detection of non-interactive context (e.g. no TTY or `CI=true`) is implementation-defined; `--yes` always suppresses confirmation for `--apply`.
+---
 
-## Exit Codes
+**Stable contract for scripts and CI:** [docs/exit-codes.md](docs/exit-codes.md).
 
-Exit codes for `ralph run` and `ralph review` are stable for scripts and CI. Full semantics and automation guidance: [docs/exit-codes.md](docs/exit-codes.md).
+## Where to look
 
-**ralph run**
-
-| Code | Meaning |
-|------|---------|
-| 0 | Success signal received |
-| 2 | Error before loop (e.g. missing/invalid AI command) |
-| 3 | Max iterations exhausted |
-| 4 | Failure threshold reached |
-| 130 | Interrupted (SIGINT/SIGTERM) |
-
-**ralph review**
-
-| Code | Meaning |
-|------|---------|
-| 0 | Review completed, no prompt errors |
-| 1 | Review completed, prompt has errors |
-| 2 | Review or apply did not complete |
-
-## Where to look (CLI, config, env, exit codes)
-
-- **CLI and flags** — Full command and flag spec: [docs/engineering/components/cli.md](docs/engineering/components/cli.md). User-facing summary is in this README (Subcommands, Configuration, Environment variables, Exit Codes).
-- **Config file and layers** — Schema, layer order, and env overlay: [docs/engineering/components/config.md](docs/engineering/components/config.md). Loop behavior (iterations, signals, timeout, preamble, streaming, log level) is configured there and summarized in README (Configuration, Signals, How It Works). README summarizes in Configuration and Example.
-- **Environment variables** — `RALPH_CONFIG_HOME` and `RALPH_LOOP_*` are listed in [docs/engineering/components/config.md](docs/engineering/components/config.md) (Environment variables). README lists them in Environment variables.
-- **Exit codes** — Stable contract for run and review: [docs/exit-codes.md](docs/exit-codes.md). README summarizes in Exit Codes.
-- **Release notes and stable contract** — Where to find release notes and what scripts/CI can rely on: [docs/release-notes.md](docs/release-notes.md). Upgrade and backward-compatibility procedure is in this README (Install and Uninstall → Upgrade); see [Release notes and stable contract](#release-notes-and-stable-contract) above.
-
-When implementation or contract changes (e.g. new flag, config key, or exit code), update the engineering spec and then this README (and exit-codes.md if needed) so docs stay accurate.
+| Topic | Canonical spec |
+|-------|----------------|
+| **CLI (commands and flags)** | [docs/engineering/components/cli.md](docs/engineering/components/cli.md) |
+| **Config and environment** | [docs/engineering/components/config.md](docs/engineering/components/config.md) |
+| **Agent wrapper (progress vs. signals)** | [docs/agent-wrapper-pattern.md](docs/agent-wrapper-pattern.md) |
+| **Exit codes** | [docs/exit-codes.md](docs/exit-codes.md) |
 
 ## Troubleshooting
 
-Common problems and how to resolve them:
+- **Prompt not found / unknown alias** — Prompt source is exactly one of: alias (from config), `-f`/`--file`, or stdin. Use `ralph list prompts` to see defined prompts; check `--config` and config file locations if your alias isn’t found.
+- **Config file not found** — With `--config <path>`, only that file is used and it must exist. Without it, global and workspace configs are optional (missing files are skipped).
+- **Wrong or unexpected exit code** — See [docs/exit-codes.md](docs/exit-codes.md). Common causes for exit 2: missing AI command, stdin + `--apply` without `--prompt-output`, report path not writable or path is an existing file, or confirmation required in non-interactive mode without `--yes`.
+- **AI command not found** — The AI CLI must be on PATH or set via `--ai-cmd`. Ralph validates before the loop and exits 2 with a clear error.
+- **ralph: command not found** — Ensure the install directory is on your PATH. Check `~/.config/ralph/install-state` for the install path and run `ralph version` to verify.
 
-- **Prompt not found / unknown alias** — You must supply exactly one prompt source: an alias (from config), a file path with `-f`/`--file`, or stdin. If you use an alias (e.g. `ralph run build`), that alias must be defined in your resolved config (global, workspace, or `--config`). Check with `ralph list prompts` and `ralph list aliases`; ensure the config file is where Ralph looks (see [Configuration](#configuration) and `RALPH_CONFIG_HOME`). If you pass `--config <path>`, that file must exist and be readable; Ralph does not fall back to global/workspace when `--config` is set.
-- **Config file not found** — When you pass `--config <path>`, Ralph uses only that file. If the path is wrong or the file is missing, Ralph exits with an error (exit 2). Fix the path or omit `--config` to use global/workspace config. Global config is `$RALPH_CONFIG_HOME/ralph-config.yml` (or `~/.config/ralph/ralph-config.yml` if `RALPH_CONFIG_HOME` is unset); workspace config is `./ralph-config.yml` in the current directory. Missing global or workspace files are skipped without error.
-- **Wrong or unexpected exit code** — Exit codes are stable and documented in [Exit Codes](#exit-codes) and [docs/exit-codes.md](docs/exit-codes.md). **ralph run:** 0 = success signal; 2 = error before loop (e.g. missing AI command); 3 = max iterations; 4 = failure threshold; 130 = interrupted. **ralph review:** 0 = no prompt errors; 1 = prompt has errors; 2 = invocation/apply error. If you get 2, check the error message (e.g. AI command not on PATH, invalid config, or for review: stdin + `--apply` without `--prompt-output`, or non-interactive apply without `--yes`). Report is a directory; check result.json for status and summary.md for narrative. If you get 3 or 4 on run, the loop ended without seeing the success signal — check your prompt’s success/failure signals and that the AI actually emits them.
-- **AI command not found / exit 2 before loop** — Ralph resolves the AI command from config or `--ai-cmd`/`--ai-cmd-alias` and checks that the executable exists (e.g. on PATH) before starting the loop. Install your AI CLI (e.g. Cursor agent, Claude CLI) and ensure it is on your PATH, or set `--ai-cmd` to the full path. Use `ralph list aliases` to see resolved aliases.
-- **ralph: command not found** — The `ralph` binary is not on your PATH. After install, add the install directory (e.g. `~/bin` or the value in `~/.config/ralph/install-state`) to your PATH. Verify with `ralph version`.
+## Writing Ralph prompts
 
-For more detail on config resolution, exit codes, and CLI behavior, see [Where to look (CLI, config, env, exit codes)](#where-to-look-cli-config-env-exit-codes).
+Ralph evaluates prompts along four dimensions: signal and state, iteration awareness, scope and convergence, and subjective completion. For guidance on writing well-formed prompts, run:
+
+```bash
+ralph show prompt-guide
+```
+
+That outputs the full [Writing Ralph prompts](docs/writing-ralph-prompts.md) guide. You can also open the doc directly in the repo.
 
 ## License
 

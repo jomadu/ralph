@@ -45,7 +45,7 @@ Location: `scripts/`, and (when present) any future `cmd/`, `internal/`, or equi
 
 Patterns:
 - `scripts/*.sh` — Scripts and wrappers
-- `scripts/cursor-wrapper.sh` — Optional Cursor Agent wrapper; built-in `cursor-agent` alias is the raw `agent` command
+- **Agent wrapper pattern:** For any agent that outputs structured/noisy data, users can configure a wrapper script (progress → stderr, assistant text → stdout) so Ralph can scan for signals; see [docs/agent-wrapper-pattern.md](docs/agent-wrapper-pattern.md). Cursor is one example; that doc links to Cursor’s headless docs.
 - `testdata/` — Test fixture files (e.g. config YAMLs used only by tests). See O002/R005 for the convention; integration tests use `--config testdata/<fixture>.yml` from repo root.
 - **Review report summary:** Machine-parseable line format and exit code derivation are specified in `docs/engineering/components/review.md` (and product O005/R002, O005/R008, O010/R003); parser in `internal/review/summary.go`.
 
