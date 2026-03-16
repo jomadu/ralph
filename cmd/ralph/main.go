@@ -186,13 +186,19 @@ func runCmd() *cobra.Command {
 			if directCmd == "" && overlay != nil && overlay.AICmd != nil {
 				directCmd = *overlay.AICmd
 			}
+			if directCmd == "" {
+				directCmd = eff.Loop.AICmd
+			}
 			aliasName := aiCmdAlias
 			if aliasName == "" && overlay != nil && overlay.AICmdAlias != nil {
 				aliasName = *overlay.AICmdAlias
 			}
+			if aliasName == "" {
+				aliasName = eff.Loop.AICmdAlias
+			}
 			command, ok := config.ResolveAICommand(eff, directCmd, aliasName)
 			if !ok {
-				fmt.Fprintln(os.Stderr, "ralph run: AI command not resolved (set --ai-cmd or --ai-cmd-alias, or config/env)")
+				fmt.Fprintln(os.Stderr, "ralph run: AI command not resolved (set --ai-cmd or --ai-cmd-alias, or config (loop.ai_cmd / loop.ai_cmd_alias) or env)")
 				os.Exit(runloop.ExitErrorPreLoop)
 			}
 			// Apply CLI overrides to effective loop (cli.md: flags override config for this run).
@@ -410,14 +416,16 @@ func showConfigCmd() *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("config: %w", err)
 				}
-				fmt.Printf("loop:\n  max_iterations: %d  # %s\n  failure_threshold: %d  # %s\n  timeout_seconds: %d  # %s\n  success_signal: %q  # %s\n  failure_signal: %q  # %s\n  preamble: %q  # %s\n  streaming: %t  # %s\n  log_level: %q  # %s\n  max_output_buffer: %d  # %s\n",
+				fmt.Printf("loop:\n  max_iterations: %d  # %s\n  failure_threshold: %d  # %s\n  timeout_seconds: %d  # %s\n  success_signal: %q  # %s\n  failure_signal: %q  # %s\n  preamble: %q  # %s\n  streaming: %t  # %s\n  log_level: %q  # %s\n  max_output_buffer: %d  # %s\n  ai_cmd: %q  # %s\n  ai_cmd_alias: %q  # %s\n",
 					loop.MaxIterations, prov.MaxIterations, loop.FailureThreshold, prov.FailureThreshold, loop.TimeoutSeconds, prov.TimeoutSeconds,
 					loop.SuccessSignal, prov.SuccessSignal, loop.FailureSignal, prov.FailureSignal,
-					loop.Preamble, prov.Preamble, loop.Streaming, prov.Streaming, loop.LogLevel, prov.LogLevel, loop.MaxOutputBuffer, prov.MaxOutputBuffer)
+					loop.Preamble, prov.Preamble, loop.Streaming, prov.Streaming, loop.LogLevel, prov.LogLevel, loop.MaxOutputBuffer, prov.MaxOutputBuffer,
+					loop.AICmd, prov.AICmd, loop.AICmdAlias, prov.AICmdAlias)
 			} else {
-				fmt.Printf("loop:\n  max_iterations: %d\n  failure_threshold: %d\n  timeout_seconds: %d\n  success_signal: %q\n  failure_signal: %q\n  preamble: %q\n  streaming: %t\n  log_level: %q\n  max_output_buffer: %d\n",
+				fmt.Printf("loop:\n  max_iterations: %d\n  failure_threshold: %d\n  timeout_seconds: %d\n  success_signal: %q\n  failure_signal: %q\n  preamble: %q\n  streaming: %t\n  log_level: %q\n  max_output_buffer: %d\n  ai_cmd: %q\n  ai_cmd_alias: %q\n",
 					loop.MaxIterations, loop.FailureThreshold, loop.TimeoutSeconds,
-					loop.SuccessSignal, loop.FailureSignal, loop.Preamble, loop.Streaming, loop.LogLevel, loop.MaxOutputBuffer)
+					loop.SuccessSignal, loop.FailureSignal, loop.Preamble, loop.Streaming, loop.LogLevel, loop.MaxOutputBuffer,
+					loop.AICmd, loop.AICmdAlias)
 			}
 			if len(eff.Prompts) > 0 {
 				fmt.Println("prompts:")
@@ -655,13 +663,19 @@ func reviewCmd() *cobra.Command {
 			if directCmd == "" && overlay != nil && overlay.AICmd != nil {
 				directCmd = *overlay.AICmd
 			}
+			if directCmd == "" {
+				directCmd = eff.Loop.AICmd
+			}
 			aliasName := aiCmdAlias
 			if aliasName == "" && overlay != nil && overlay.AICmdAlias != nil {
 				aliasName = *overlay.AICmdAlias
 			}
+			if aliasName == "" {
+				aliasName = eff.Loop.AICmdAlias
+			}
 			command, ok := config.ResolveAICommand(eff, directCmd, aliasName)
 			if !ok {
-				fmt.Fprintln(os.Stderr, "ralph review: AI command not resolved (set --ai-cmd or --ai-cmd-alias, or config/env)")
+				fmt.Fprintln(os.Stderr, "ralph review: AI command not resolved (set --ai-cmd or --ai-cmd-alias, or config (loop.ai_cmd / loop.ai_cmd_alias) or env)")
 				os.Exit(2)
 			}
 

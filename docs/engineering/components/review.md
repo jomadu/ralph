@@ -11,7 +11,7 @@ Implements the requirements assigned to this component in the [engineering READM
 **Consumes**
 
 - **Prompt source** — Resolved by CLI/config: alias (resolved to prompt content), file path, or stdin. Invalid or missing source must be detected before review runs; the component reports clear error and exit code 2.
-- **Resolved config** — For AI command/alias when review uses the backend; report output directory (or path that denotes the directory), revision output path (when apply is requested), apply/confirmation options, and **streaming** (show AI output). When prompt is from stdin and apply is requested, revision output path is still required.
+- **Resolved config** — For AI command/alias when review uses the backend; report output directory (or path that denotes the directory), revision output path (when apply is requested), apply/confirmation options, and **streaming** (show AI output). AI command/alias may be set in config (root or per-prompt), environment, or CLI; the CLI passes the already-resolved value. When prompt is from stdin and apply is requested, revision output path is still required.
 - **Flags** — e.g. `--apply`, revision output path (`--prompt-output` or equivalent), non-interactive, `--no-stream` (do not show AI command output; default is to show it; same semantics as run). When prompt is from stdin and apply is requested, revision output path is required; if missing, error and exit 2.
 
 **Produces**
@@ -56,7 +56,7 @@ Review **requires** an AI command (no fallback). The component invokes the backe
 - **Embedded review instructions** (Ralph-owned): instruct the AI to evaluate the user’s prompt along the four dimensions (O005/R007) — signal and state (including whether the prompt instructs the AI to emit the outcome signal on the last line), iteration awareness, scope and convergence, subjective completion — and to create the five report files on disk.
 - **User prompt content** (the prompt under review), clearly delimited in the review prompt (e.g. in a fenced block or section).
 
-If no AI command is configured (e.g. missing `loop.ai_cmd_alias` and no `--ai-cmd-alias`) or backend invocation fails, review fails with a clear error and exit 2.
+If no AI command is configured (no value from config, env, or CLI flags such as `loop.ai_cmd`/`loop.ai_cmd_alias`, `RALPH_LOOP_AI_CMD`/`RALPH_LOOP_AI_CMD_ALIAS`, or `--ai-cmd`/`--ai-cmd-alias`) or backend invocation fails, review fails with a clear error and exit 2.
 
 ### Streaming (show AI output)
 

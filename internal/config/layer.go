@@ -32,6 +32,8 @@ type LoopSection struct {
 	Streaming        *bool       `yaml:"streaming,omitempty"`
 	LogLevel         string      `yaml:"log_level,omitempty"`
 	MaxOutputBuffer  *int        `yaml:"max_output_buffer,omitempty"`
+	AiCmd            string      `yaml:"ai_cmd,omitempty"`
+	AiCmdAlias       string      `yaml:"ai_cmd_alias,omitempty"`
 }
 
 // Prompt holds a single prompt definition (path or content, optional loop overrides).
@@ -56,6 +58,8 @@ type LoopSettings struct {
 	Streaming        bool
 	LogLevel         string
 	MaxOutputBuffer  int // bytes; 0 = unlimited (for backward compat); default from DefaultLoopSettings is 65536
+	AICmd            string
+	AICmdAlias       string
 }
 
 // Alias holds an AI command alias. In YAML, an alias value may be a string

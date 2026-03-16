@@ -41,6 +41,12 @@ func ApplyLoopSection(base LoopSettings, section *LoopSection) LoopSettings {
 	if b, ok := section.Preamble.(bool); ok && !b {
 		out.Preamble = ""
 	}
+	if section.AiCmd != "" {
+		out.AICmd = section.AiCmd
+	}
+	if section.AiCmdAlias != "" {
+		out.AICmdAlias = section.AiCmdAlias
+	}
 	return out
 }
 
@@ -87,6 +93,12 @@ func ApplyEnvOverlayToLoop(loop LoopSettings, overlay *EnvOverlay) LoopSettings 
 	}
 	if overlay.MaxOutputBuffer != nil {
 		out.MaxOutputBuffer = *overlay.MaxOutputBuffer
+	}
+	if overlay.AICmd != nil {
+		out.AICmd = *overlay.AICmd
+	}
+	if overlay.AICmdAlias != nil {
+		out.AICmdAlias = *overlay.AICmdAlias
 	}
 	return out
 }

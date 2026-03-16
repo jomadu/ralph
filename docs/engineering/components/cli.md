@@ -86,6 +86,8 @@ Precedence: CLI flags override environment and config (config component layer or
 | `--ai-cmd` | — | string | Direct AI command string for this run (overrides config alias). |
 | `--ai-cmd-alias` | — | string | AI command alias name from config for this run. Overrides config default. |
 
+When `--ai-cmd` or `--ai-cmd-alias` are omitted, the value is taken from the environment overlay (e.g. `RALPH_LOOP_AI_CMD`, `RALPH_LOOP_AI_CMD_ALIAS`) if set; otherwise from resolved config (root loop or per-prompt loop). Thus flags override env and config; env overrides config.
+
 **Signals**
 
 | Flag | Short | Type | Effect |
@@ -151,6 +153,15 @@ Precedence: CLI flags override environment and config (config component layer or
 | `--prompt-output` | — | path | When using `--apply`, write the revision to this path. **Required** when prompt is from stdin and `--apply` is set; if missing in that case, error and exit 2. When prompt is from file/alias, may default to source file (with confirmation) or require path; behavior must be documented. |
 | `--apply` | — | — | Request that the suggested revision be written to a file. In interactive mode, confirmation is required before overwriting (unless `--yes`). In non-interactive mode, use `--yes` to apply without confirmation or error with a clear message if confirmation would be needed. |
 | `--yes` | `-y` | — | Non-interactive apply: do not prompt for confirmation; apply revision when `--apply` is set. If confirmation would be required and session is non-interactive and `--yes` is not set, exit 2 with clear message. |
+
+**AI command**
+
+| Flag | Short | Type | Effect |
+|------|-------|------|--------|
+| `--ai-cmd` | — | string | Direct AI command for this review (overrides config and env). |
+| `--ai-cmd-alias` | — | string | AI command alias name for this review (overrides config and env). |
+
+When omitted, the AI command/alias is taken from the environment overlay if set; otherwise from resolved config (root or per-prompt loop). Flags override env and config; env overrides config.
 
 **Output and observability**
 

@@ -17,7 +17,7 @@ Loop execution adapts to the user's constraints without changing the prompt file
 - **Success and failure signal strings** — Strings the system looks for to classify iteration success or failure.
 - **Signal precedence mode** — Static default vs optional AI-interpreted when both success and failure signals appear.
 - **Preamble** — Whether to inject a preamble (e.g. for bootstrap vs long loops).
-- **AI command / alias** — Which AI CLI command or alias to use.
+- **AI command / alias** — Which AI CLI command or alias to use. AI command and alias can be set in the config file (global, workspace, or per-prompt loop), as well as via environment variables and command-line options.
 - **Streaming** — Whether to stream AI output to the terminal.
 - **Log level** — Log verbosity.
 
