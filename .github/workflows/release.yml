@@ -8,7 +8,7 @@ on:
 
 jobs:
   commitlint:
-    name: Commit messages
+    name: commitlint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,7 +54,7 @@ jobs:
   release:
     name: Semantic Release
     runs-on: ubuntu-latest
-    needs: [test, lint]
+    needs: [test, lint, commitlint]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/rc' || github.ref == 'refs/heads/alpha' || github.ref == 'refs/heads/beta')
     permissions:
       contents: write
