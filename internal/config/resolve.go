@@ -1,7 +1,26 @@
 // Package config: merge file layers into effective prompts and aliases for list/show.
 // Uses same resolution as review: explicit file only, or global + workspace (workspace overrides global).
+// Prompt paths in config are resolved relative to the directory of the config file that defined them.
 
 package config
+
+import "path/filepath"
+
+// resolvePromptPath makes a prompt path absolute when it is relative, using the
+// directory of the config file that defined the prompt. Absolute paths are returned cleaned.
+// configFilePath is the full path to the config file; empty is not used (path is left as-is).
+func resolvePromptPath(configFilePath, promptPath string) string {
+	if promptPath == "" {
+		return ""
+	}
+	if filepath.IsAbs(promptPath) {
+		return filepath.Clean(promptPath)
+	}
+	if configFilePath == "" {
+		return promptPath
+	}
+	return filepath.Join(filepath.Dir(configFilePath), promptPath)
+}
 
 // Effective is the full effective config for a run: loop settings, prompts, and aliases.
 // Used by run-loop, CLI, and show config when a single merged config is needed.
@@ -20,14 +39,20 @@ type Resolved struct {
 
 // MergeLayers merges global and workspace layers into a single Resolved config.
 // Workspace keys override global for the same name. Either or both may be nil.
-func MergeLayers(global, workspace *FileLayer) *Resolved {
+// globalPath and workspacePath are the full paths to the config files; they are used
+// to resolve relative prompt paths relative to the defining config file's directory.
+func MergeLayers(global *FileLayer, globalPath string, workspace *FileLayer, workspacePath string) *Resolved {
 	r := &Resolved{
 		Prompts: make(map[string]Prompt),
 		Aliases: make(map[string]Alias),
 	}
 	if global != nil {
 		for k, v := range global.Prompts {
-			r.Prompts[k] = v
+			p := v
+			if p.Path != "" {
+				p.Path = resolvePromptPath(globalPath, p.Path)
+			}
+			r.Prompts[k] = p
 		}
 		for k, v := range global.Aliases {
 			r.Aliases[k] = v
@@ -35,7 +60,11 @@ func MergeLayers(global, workspace *FileLayer) *Resolved {
 	}
 	if workspace != nil {
 		for k, v := range workspace.Prompts {
-			r.Prompts[k] = v
+			p := v
+			if p.Path != "" {
+				p.Path = resolvePromptPath(workspacePath, p.Path)
+			}
+			r.Prompts[k] = p
 		}
 		for k, v := range workspace.Aliases {
 			r.Aliases[k] = v
