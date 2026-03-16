@@ -73,13 +73,16 @@ detect_platform() {
   echo "${GOOS} ${GOARCH} ${SUF}"
 }
 
-# Resolve version: latest or specific tag (GitHub tag may be v1.0.0 or 1.0.0)
+# Resolve version: latest or specific tag (GitHub tag may be v1.0.0 or 1.0.0).
+# Output is trimmed (no CR/LF or surrounding whitespace) so it is safe for URLs.
 get_version() {
+  local raw
   if [ -z "$VERSION" ]; then
-    curl -sSfL "${GITHUB_API}/latest" | grep '"tag_name"' | sed -E 's/.*"tag_name":\s*"([^"]+)".*/\1/' | tr -d '\r'
+    raw="$(curl -sSfL "${GITHUB_API}/latest" | grep '"tag_name"' | sed -E 's/.*"tag_name":\s*"([^"]+)".*/\1/')"
   else
-    normalize_tag "$VERSION"
+    raw="$(normalize_tag "$VERSION")"
   fi
+  echo "$raw" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
 
 # Artifact filename for a given tag and platform (matches Makefile build-multi output)
