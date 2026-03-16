@@ -32,7 +32,7 @@ User-facing documentation includes guidance for common problems—for example: p
 
 **Input:** User installed Ralph but the shell cannot find `ralph`.
 
-**Expected output:** Documentation states that the install directory must be on PATH and suggests verifying with `ralph version` and checking `~/.config/ralph/install-state` for the install path. It reminds the user to add that directory to PATH (e.g. in shell profile).
+**Expected output:** Documentation states that the install directory must be on PATH and suggests verifying with `ralph version`. It reminds the user that standard install locations are `/usr/local/bin`, `~/.local/bin`, and `~/bin`, and to add the chosen directory to PATH (e.g. in shell profile).
 
 **Verification:** User can add the install directory to PATH and run `ralph version` successfully.
 

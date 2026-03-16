@@ -1,37 +1,47 @@
 #!/usr/bin/env sh
-# Uninstall Ralph by removing the binary from the directory recorded at install time
-# and removing the install state file. Run from anywhere; uses ~/.config/ralph/install-state.
+# Uninstall Ralph by removing the binary from the first standard location that contains it.
+# Checks (in order): /usr/local/bin, ~/.local/bin, ~/bin (same as install.sh defaults).
+# If you installed with --dir to a custom path, remove that binary manually.
 # User config (e.g. ~/.config/ralph/ralph-config.yml) is not removed.
-# No PATH or symlink changes are made by the install script, so uninstall leaves no broken references.
 
 set -e
 
-INSTALL_STATE_DIR="${RALPH_CONFIG_HOME:-$HOME/.config/ralph}"
-INSTALL_STATE_FILE="${INSTALL_STATE_DIR}/install-state"
+# Candidate directories in same order as install.sh defaults (FHS/XDG + fallbacks).
+# Uninstall removes from the first candidate that contains ralph or ralph.exe.
+get_candidate_dirs() {
+  if [ -d /usr/local/bin ]; then
+    echo "/usr/local/bin"
+  fi
+  if [ -n "$HOME" ] && [ -d "${HOME}/.local/bin" ]; then
+    echo "${HOME}/.local/bin"
+  fi
+  if [ -n "$HOME" ] && [ -d "${HOME}/bin" ]; then
+    echo "${HOME}/bin"
+  fi
+}
 
-if [ ! -f "$INSTALL_STATE_FILE" ]; then
-  echo "No install state found at ${INSTALL_STATE_FILE}. Nothing to uninstall." >&2
+FOUND=""
+for DIR in $(get_candidate_dirs); do
+  if [ -f "${DIR}/ralph" ] || [ -f "${DIR}/ralph.exe" ]; then
+    FOUND="$DIR"
+    break
+  fi
+done
+
+if [ -z "$FOUND" ]; then
+  echo "ralph binary not found in standard locations (/usr/local/bin, ~/.local/bin, ~/bin)." >&2
+  echo "If you installed with --dir to a custom path, remove that binary manually." >&2
   exit 1
 fi
 
-INSTALL_DIR="$(cat "$INSTALL_STATE_FILE" | head -1)"
-if [ -z "$INSTALL_DIR" ] || [ ! -d "$INSTALL_DIR" ]; then
-  echo "Invalid or missing install directory in state file. Removing state file." >&2
-  rm -f "$INSTALL_STATE_FILE"
-  exit 1
+if [ -f "${FOUND}/ralph" ]; then
+  rm -f "${FOUND}/ralph"
+  echo "Removed ${FOUND}/ralph"
+fi
+if [ -f "${FOUND}/ralph.exe" ]; then
+  rm -f "${FOUND}/ralph.exe"
+  echo "Removed ${FOUND}/ralph.exe"
 fi
 
-# Remove binary (ralph or ralph.exe)
-if [ -f "${INSTALL_DIR}/ralph" ]; then
-  rm -f "${INSTALL_DIR}/ralph"
-  echo "Removed ${INSTALL_DIR}/ralph"
-fi
-if [ -f "${INSTALL_DIR}/ralph.exe" ]; then
-  rm -f "${INSTALL_DIR}/ralph.exe"
-  echo "Removed ${INSTALL_DIR}/ralph.exe"
-fi
-
-# Remove install state so future uninstall does not fail
-rm -f "$INSTALL_STATE_FILE"
-echo "Removed install state. Uninstall complete."
-echo "User config in ${INSTALL_STATE_DIR}/ (e.g. ralph-config.yml) was not removed."
+echo "Uninstall complete."
+echo "User config in ${RALPH_CONFIG_HOME:-$HOME/.config/ralph}/ (e.g. ralph-config.yml) was not removed."

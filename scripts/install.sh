@@ -1,27 +1,60 @@
 #!/usr/bin/env sh
 # Install Ralph from a GitHub release. Usage: install.sh [VERSION] [--dir DIR]
-# Default: latest release, install to ~/bin. Records install location for uninstall.
+# Default: latest release; install directory is platform- and privilege-dependent (see default_install_dir).
+# Uninstall looks for the binary in the same standard locations (no state file).
 # Requires: curl, jq. Supported: Linux, macOS, Windows (Git Bash); amd64, arm64.
+#
+# Default install locations (when RALPH_INSTALL_DIR and --dir are not set):
+#   Linux:   /usr/local/bin if writable (e.g. sudo), else ~/.local/bin (XDG)
+#   macOS:   /usr/local/bin if writable, else ~/bin
+#   Windows: $HOME/bin
 
 set -e
 
 REPO="${RALPH_REPO:-jomadu/ralph}"
 GITHUB_API="https://api.github.com/repos/${REPO}/releases"
-INSTALL_STATE_DIR="${RALPH_CONFIG_HOME:-$HOME/.config/ralph}"
-INSTALL_STATE_FILE="${INSTALL_STATE_DIR}/install-state"
 BINARY_NAME="ralph"
 
 usage() {
   echo "Usage: $0 [VERSION] [--dir DIR]"
   echo "  VERSION  Optional. Tag name (e.g. 1.0.0 or v1.0.0). Default: latest release."
-  echo "  --dir    Optional. Install directory. Default: \$HOME/bin (or RALPH_INSTALL_DIR)."
-  echo "Env: RALPH_REPO, RALPH_INSTALL_DIR, RALPH_CONFIG_HOME"
+  echo "  --dir    Optional. Install directory. Default: platform-dependent (see below) or RALPH_INSTALL_DIR."
+  echo "  Default dir: Linux: /usr/local/bin if writable else ~/.local/bin; macOS: /usr/local/bin if writable else ~/bin; Windows: ~/bin."
+  echo "Env: RALPH_REPO, RALPH_INSTALL_DIR"
   exit 0
 }
 
-# Parse args
+# Default install directory by platform and privilege (FHS/XDG conventions).
+# Use /usr/local/bin when it exists and is writable (system-wide); else user-local.
+default_install_dir() {
+  OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  case "$OS" in
+    linux)
+      if [ -d /usr/local/bin ] && [ -w /usr/local/bin ] 2>/dev/null; then
+        echo "/usr/local/bin"
+      else
+        echo "${HOME}/.local/bin"
+      fi
+      ;;
+    darwin)
+      if [ -d /usr/local/bin ] && [ -w /usr/local/bin ] 2>/dev/null; then
+        echo "/usr/local/bin"
+      else
+        echo "${HOME}/bin"
+      fi
+      ;;
+    mingw*|msys*|cygwin*)
+      echo "${HOME}/bin"
+      ;;
+    *)
+      echo "${HOME}/.local/bin"
+      ;;
+  esac
+}
+
+# Parse args (INSTALL_DIR from env or --dir; if unset after parsing, use default_install_dir)
 VERSION=""
-INSTALL_DIR="${RALPH_INSTALL_DIR:-$HOME/bin}"
+INSTALL_DIR="${RALPH_INSTALL_DIR:-}"
 while [ $# -gt 0 ]; do
   case "$1" in
     -h|--help) usage ;;
@@ -41,6 +74,9 @@ while [ $# -gt 0 ]; do
       ;;
   esac
 done
+if [ -z "$INSTALL_DIR" ]; then
+  INSTALL_DIR="$(default_install_dir)"
+fi
 
 # Normalize version tag (add v if missing). No trailing newline (safe for URLs).
 normalize_tag() {
@@ -123,7 +159,5 @@ if ! curl -sSfL -o "${INSTALL_DIR}/ralph${SUF}" "$URL"; then
 fi
 chmod +x "${INSTALL_DIR}/ralph${SUF}"
 
-mkdir -p "$INSTALL_STATE_DIR"
-printf '%s\n' "$(cd "$INSTALL_DIR" && pwd)" > "$INSTALL_STATE_FILE"
 echo "Install complete. Binary: ${INSTALL_DIR}/ralph${SUF}"
 echo "Ensure ${INSTALL_DIR} is on your PATH, then run: ralph version"
