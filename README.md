@@ -171,7 +171,7 @@ Each prompt can override loop settings under its `loop` key. The AI command for 
 
 ## Signals
 
-Ralph scans AI CLI output for configurable success and failure signal strings.
+Ralph scans **only the last non-empty line** of AI CLI output for configurable success and failure signal strings; earlier lines are not used for detection. See [Writing Ralph prompts](docs/writing-ralph-prompts.md) (or `ralph show prompt-guide`) and [docs/exit-codes.md](docs/exit-codes.md) for the full contract.
 
 | Signal   | Default                    | Meaning                                      |
 |----------|----------------------------|----------------------------------------------|
@@ -180,7 +180,7 @@ Ralph scans AI CLI output for configurable success and failure signal strings.
 
 Your prompt tells the AI what to emit. Ralph’s config (or flags) tell the scanner what to look for.
 
-With `signal_precedence: static` (default), if **both** signals appear in the same output, **success wins**. Set `signal_precedence: ai_interpreted` (or `--signal-precedence ai_interpreted`) to have Ralph ask the AI once to interpret the outcome when both appear.
+With `signal_precedence: static` (default), if **both** signals appear on that line, **success wins**. Set `signal_precedence: ai_interpreted` (or `--signal-precedence ai_interpreted`) to have Ralph ask the AI once to interpret the outcome when both appear.
 
 ## CLI
 

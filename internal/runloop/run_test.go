@@ -850,6 +850,128 @@ func TestRun_SingleIteration_NoIterationStats(t *testing.T) {
 	}
 }
 
+// TestRun_SuccessSignalOnlyOnLastLine verifies R004: success is detected only when
+// the signal appears on the last non-empty line. When the signal is only on an
+// earlier line, the iteration is not successful.
+func TestRun_SuccessSignalOnlyOnLastLine(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 2
+	loop.SuccessSignal = "DONE"
+	// Output: "DONE" on first line, "Still working..." on last line -> last non-empty line has no signal.
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+		return []byte("DONE\nStill working..."), 0, nil
+	}
+	var reported []string
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+		Reporter:    func(msg string) { reported = append(reported, msg) },
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	// Should exit with max iterations (no success detected; signal was not on last line).
+	if code != ExitMaxIterations {
+		t.Errorf("exit code = %d, want %d (ExitMaxIterations); success signal only on earlier line must not count", code, ExitMaxIterations)
+	}
+	all := strings.Join(reported, " ")
+	if !strings.Contains(all, "without success signal") || !strings.Contains(all, "max: 2") {
+		t.Errorf("reported = %q", reported)
+	}
+}
+
+// TestRun_SuccessSignalOnLastLine_detected verifies R004: when the success signal
+// is on the last non-empty line, the run completes successfully.
+func TestRun_SuccessSignalOnLastLine_detected(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 2
+	loop.SuccessSignal = "DONE"
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+		return []byte("Still working...\nStatus: DONE"), 0, nil
+	}
+	var reported string
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+		Reporter:    func(msg string) { reported = msg },
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitSuccess {
+		t.Errorf("exit code = %d, want ExitSuccess (signal on last line)", code)
+	}
+	if !strings.Contains(reported, "Completed successfully") || !strings.Contains(reported, "1 iteration") {
+		t.Errorf("reported = %q", reported)
+	}
+}
+
+// TestRun_FailureSignalOnLastLine_detected verifies R005: when the failure signal
+// appears on the last non-empty line, the iteration is treated as failure.
+func TestRun_FailureSignalOnLastLine_detected(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 2
+	loop.FailureThreshold = 1
+	loop.SuccessSignal = "DONE"
+	loop.FailureSignal = "FAIL"
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+		return []byte("Working...\nFAIL"), 0, nil
+	}
+	var reported []string
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+		Reporter:    func(msg string) { reported = append(reported, msg) },
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitFailureThreshold {
+		t.Errorf("exit code = %d, want ExitFailureThreshold (failure on last line)", code)
+	}
+	all := strings.Join(reported, " ")
+	if !strings.Contains(all, "consecutive failure(s)") {
+		t.Errorf("reported = %q", reported)
+	}
+}
+
+// TestRun_StaticPrecedence_BothSignalsOnLastLine verifies R006: when both success
+// and failure signals appear on the same (last non-empty) line, static precedence
+// applies (success wins).
+func TestRun_StaticPrecedence_BothSignalsOnLastLine(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 3
+	loop.SuccessSignal = "DONE"
+	loop.FailureSignal = "FAIL"
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+		// Both on last non-empty line; success must win.
+		return []byte("line one\nFAIL and DONE together"), 0, nil
+	}
+	var reported string
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+		Reporter:    func(msg string) { reported = msg },
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitSuccess {
+		t.Errorf("exit code = %d, want ExitSuccess (static precedence when both on last line)", code)
+	}
+	if !strings.Contains(reported, "Completed successfully") || !strings.Contains(reported, "1 iteration") {
+		t.Errorf("reported = %q", reported)
+	}
+}
+
 // TestRun_InterruptBetweenIterations verifies that if the interrupt context is
 // cancelled after the first iteration completes, Run returns ExitInterrupt
 // (checked at start of next iteration and after Invoke returns).

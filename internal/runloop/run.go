@@ -152,8 +152,9 @@ func Run(opts RunOptions) (exitCode int, err error) {
 			}
 			continue
 		}
-		hasSuccess := ContainsSuccessSignal(stdout, opts.Loop.SuccessSignal)
-		hasFailure := ContainsFailureSignal(stdout, opts.Loop.FailureSignal)
+		lastLine := LastNonEmptyLine(stdout)
+		hasSuccess := ContainsSuccessSignal(lastLine, opts.Loop.SuccessSignal)
+		hasFailure := ContainsFailureSignal(lastLine, opts.Loop.FailureSignal)
 		// Static precedence (O001/R006): when both signals present, success wins unless ai_interpreted.
 		if hasSuccess && (!hasFailure || opts.Loop.SignalPrecedence != "ai_interpreted") {
 			elapsed := time.Since(start)
