@@ -8,14 +8,9 @@ import (
 
 func TestLoadGlobalAndWorkspace_bothMissing(t *testing.T) {
 	// No files exist at global or workspace paths; skip without error (O002/R001).
-	dir := t.TempDir()
-	getenv := func(k string) string {
-		if k == "RALPH_CONFIG_HOME" {
-			return dir
-		}
-		return ""
-	}
-	global, workspace, err := LoadGlobalAndWorkspace(getenv, dir)
+	globalPath := filepath.Join(t.TempDir(), ConfigFileName)
+	workspacePath := filepath.Join(t.TempDir(), ConfigFileName)
+	global, workspace, err := LoadGlobalAndWorkspace(globalPath, workspacePath)
 	if err != nil {
 		t.Fatalf("LoadGlobalAndWorkspace(both missing) err = %v, want nil", err)
 	}
@@ -25,19 +20,13 @@ func TestLoadGlobalAndWorkspace_bothMissing(t *testing.T) {
 }
 
 func TestLoadGlobalAndWorkspace_globalPresent(t *testing.T) {
-	dir := t.TempDir()
-	globalPath := filepath.Join(dir, ConfigFileName)
+	globalDir := t.TempDir()
+	globalPath := filepath.Join(globalDir, ConfigFileName)
 	if err := os.WriteFile(globalPath, []byte("loop:\n  max_iterations: 7\n"), 0644); err != nil {
 		t.Fatal(err)
 	}
-	getenv := func(k string) string {
-		if k == "RALPH_CONFIG_HOME" {
-			return dir
-		}
-		return ""
-	}
-	cwd := t.TempDir() // workspace path is cwd/ralph-config.yml which does not exist
-	global, workspace, err := LoadGlobalAndWorkspace(getenv, cwd)
+	workspacePath := filepath.Join(t.TempDir(), ConfigFileName) // missing
+	global, workspace, err := LoadGlobalAndWorkspace(globalPath, workspacePath)
 	if err != nil {
 		t.Fatalf("LoadGlobalAndWorkspace(global present) err = %v", err)
 	}
@@ -50,19 +39,13 @@ func TestLoadGlobalAndWorkspace_globalPresent(t *testing.T) {
 }
 
 func TestLoadGlobalAndWorkspace_workspacePresent(t *testing.T) {
-	globalDir := t.TempDir() // no file there
+	globalPath := filepath.Join(t.TempDir(), ConfigFileName) // missing
 	workspaceDir := t.TempDir()
 	workspacePath := filepath.Join(workspaceDir, ConfigFileName)
 	if err := os.WriteFile(workspacePath, []byte("prompts:\n  p1:\n    path: p1.md\n"), 0644); err != nil {
 		t.Fatal(err)
 	}
-	getenv := func(k string) string {
-		if k == "RALPH_CONFIG_HOME" {
-			return globalDir
-		}
-		return ""
-	}
-	global, workspace, err := LoadGlobalAndWorkspace(getenv, workspaceDir)
+	global, workspace, err := LoadGlobalAndWorkspace(globalPath, workspacePath)
 	if err != nil {
 		t.Fatalf("LoadGlobalAndWorkspace(workspace present) err = %v", err)
 	}
@@ -75,8 +58,8 @@ func TestLoadGlobalAndWorkspace_workspacePresent(t *testing.T) {
 }
 
 func TestLoadGlobalAndWorkspace_bothPresent(t *testing.T) {
-	dir := t.TempDir()
-	globalPath := filepath.Join(dir, ConfigFileName)
+	globalDir := t.TempDir()
+	globalPath := filepath.Join(globalDir, ConfigFileName)
 	if err := os.WriteFile(globalPath, []byte("loop:\n  max_iterations: 3\n"), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -85,13 +68,7 @@ func TestLoadGlobalAndWorkspace_bothPresent(t *testing.T) {
 	if err := os.WriteFile(workspacePath, []byte("loop:\n  max_iterations: 5\nprompts:\n  w: { path: w.md }\n"), 0644); err != nil {
 		t.Fatal(err)
 	}
-	getenv := func(k string) string {
-		if k == "RALPH_CONFIG_HOME" {
-			return dir
-		}
-		return ""
-	}
-	global, workspace, err := LoadGlobalAndWorkspace(getenv, workspaceDir)
+	global, workspace, err := LoadGlobalAndWorkspace(globalPath, workspacePath)
 	if err != nil {
 		t.Fatalf("LoadGlobalAndWorkspace(both present) err = %v", err)
 	}

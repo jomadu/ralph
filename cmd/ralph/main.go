@@ -349,13 +349,15 @@ func promptProviderForCmd(cmd *cobra.Command, configPath, cwd string) (review.Pr
 		if err != nil {
 			return nil, err
 		}
-		return &review.FileLayerProvider{Layer: layer}, nil
+		return &review.FileLayerProvider{Layer: layer, ConfigPath: path}, nil
 	}
-	global, workspace, err := config.LoadGlobalAndWorkspace(os.Getenv, cwd)
+	globalPath := config.GlobalPath(os.Getenv)
+	workspacePath := config.WorkspacePath(cwd)
+	global, workspace, err := config.LoadGlobalAndWorkspace(globalPath, workspacePath)
 	if err != nil {
 		return nil, err
 	}
-	return &mergedPromptProvider{global: global, workspace: workspace}, nil
+	return &mergedPromptProvider{global: global, workspace: workspace, globalPath: globalPath, workspacePath: workspacePath}, nil
 }
 
 func versionCmd() *cobra.Command {
@@ -544,19 +546,29 @@ func showPromptGuideCmd() *cobra.Command {
 }
 
 // mergedPromptProvider implements review.PromptProvider by checking workspace then global.
+// Prompt paths are resolved relative to the config file that defined each prompt.
 type mergedPromptProvider struct {
-	global, workspace *config.FileLayer
+	global, workspace         *config.FileLayer
+	globalPath, workspacePath string
 }
 
 func (m *mergedPromptProvider) PromptByName(name string) (path, content string, ok bool) {
 	if m.workspace != nil && m.workspace.Prompts != nil {
 		if p, ok := m.workspace.Prompts[name]; ok {
-			return p.Path, p.Content, true
+			path := p.Path
+			if path != "" && m.workspacePath != "" {
+				path = config.ResolvePromptPath(m.workspacePath, path)
+			}
+			return path, p.Content, true
 		}
 	}
 	if m.global != nil && m.global.Prompts != nil {
 		if p, ok := m.global.Prompts[name]; ok {
-			return p.Path, p.Content, true
+			path := p.Path
+			if path != "" && m.globalPath != "" {
+				path = config.ResolvePromptPath(m.globalPath, path)
+			}
+			return path, p.Content, true
 		}
 	}
 	return "", "", false

@@ -6,10 +6,10 @@ package config
 
 import "path/filepath"
 
-// resolvePromptPath makes a prompt path absolute when it is relative, using the
+// ResolvePromptPath makes a prompt path absolute when it is relative, using the
 // directory of the config file that defined the prompt. Absolute paths are returned cleaned.
 // configFilePath is the full path to the config file; empty is not used (path is left as-is).
-func resolvePromptPath(configFilePath, promptPath string) string {
+func ResolvePromptPath(configFilePath, promptPath string) string {
 	if promptPath == "" {
 		return ""
 	}
@@ -50,7 +50,7 @@ func MergeLayers(global *FileLayer, globalPath string, workspace *FileLayer, wor
 		for k, v := range global.Prompts {
 			p := v
 			if p.Path != "" {
-				p.Path = resolvePromptPath(globalPath, p.Path)
+				p.Path = ResolvePromptPath(globalPath, p.Path)
 			}
 			r.Prompts[k] = p
 		}
@@ -62,7 +62,7 @@ func MergeLayers(global *FileLayer, globalPath string, workspace *FileLayer, wor
 		for k, v := range workspace.Prompts {
 			p := v
 			if p.Path != "" {
-				p.Path = resolvePromptPath(workspacePath, p.Path)
+				p.Path = ResolvePromptPath(workspacePath, p.Path)
 			}
 			r.Prompts[k] = p
 		}

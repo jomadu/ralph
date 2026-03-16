@@ -60,7 +60,9 @@ func RootLoopWithProvenance(getenv func(string) string, cwd, configPath string) 
 		}
 		loop = applySectionWithProvenance(loop, layer.Loop, ProvenanceExplicit, &provenance)
 	} else {
-		global, workspace, err := LoadGlobalAndWorkspace(getenv, cwd)
+		globalPath := GlobalPath(getenv)
+		workspacePath := WorkspacePath(cwd)
+		global, workspace, err := LoadGlobalAndWorkspace(globalPath, workspacePath)
 		if err != nil {
 			return LoopSettings{}, LoopProvenance{}, err
 		}

@@ -69,9 +69,10 @@ aliases:
 }
 
 func TestLoadGlobalAndWorkspace_skip_missing(t *testing.T) {
-	dir := t.TempDir()
-	getenv := func(string) string { return "" } // no RALPH_CONFIG_HOME or XDG
-	global, workspace, err := LoadGlobalAndWorkspace(getenv, dir)
+	// Pass paths that don't exist; no getenv/cwd, so test is independent of dev machine state.
+	globalPath := filepath.Join(t.TempDir(), ConfigFileName)
+	workspacePath := filepath.Join(t.TempDir(), ConfigFileName)
+	global, workspace, err := LoadGlobalAndWorkspace(globalPath, workspacePath)
 	if err != nil {
 		t.Fatalf("LoadGlobalAndWorkspace() err = %v", err)
 	}
@@ -84,20 +85,13 @@ func TestLoadGlobalAndWorkspace_skip_missing(t *testing.T) {
 }
 
 func TestLoadGlobalAndWorkspace_read_workspace(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, ConfigFileName)
-	if err := os.WriteFile(path, []byte("loop:\n  max_iterations: 3\n"), 0644); err != nil {
+	workspaceDir := t.TempDir()
+	workspacePath := filepath.Join(workspaceDir, ConfigFileName)
+	if err := os.WriteFile(workspacePath, []byte("loop:\n  max_iterations: 3\n"), 0644); err != nil {
 		t.Fatal(err)
 	}
-	// Use a nonexistent global config dir so only workspace is loaded
-	globalDir := t.TempDir()
-	getenv := func(k string) string {
-		if k == "RALPH_CONFIG_HOME" {
-			return globalDir
-		}
-		return ""
-	}
-	global, workspace, err := LoadGlobalAndWorkspace(getenv, dir)
+	globalPath := filepath.Join(t.TempDir(), ConfigFileName) // missing
+	global, workspace, err := LoadGlobalAndWorkspace(globalPath, workspacePath)
 	if err != nil {
 		t.Fatalf("LoadGlobalAndWorkspace() err = %v", err)
 	}
