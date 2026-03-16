@@ -7,17 +7,15 @@ package config
 
 import "path/filepath"
 
-// LoadGlobalAndWorkspace loads the global and workspace config file layers.
-// getenv is typically os.Getenv; cwd is the current working directory.
+// LoadGlobalAndWorkspace loads the global and workspace config file layers from the
+// given paths. Callers resolve paths via GlobalPath(getenv) and WorkspacePath(cwd).
 // Missing files are skipped without error (returns nil for that layer).
 // Returns (globalLayer, workspaceLayer, error). Error is only for read/parse failure.
-func LoadGlobalAndWorkspace(getenv func(string) string, cwd string) (global, workspace *FileLayer, err error) {
-	globalPath := GlobalPath(getenv)
+func LoadGlobalAndWorkspace(globalPath, workspacePath string) (global, workspace *FileLayer, err error) {
 	global, err = ReadLayer(globalPath)
 	if err != nil {
 		return nil, nil, err
 	}
-	workspacePath := WorkspacePath(cwd)
 	workspace, err = ReadLayer(workspacePath)
 	if err != nil {
 		return nil, nil, err
@@ -54,7 +52,7 @@ func loadLayersAndRootLoop(getenv func(string) string, cwd, configPath string) (
 	} else {
 		globalPath := GlobalPath(getenv)
 		workspacePath := WorkspacePath(cwd)
-		global, workspace, err := LoadGlobalAndWorkspace(getenv, cwd)
+		global, workspace, err := LoadGlobalAndWorkspace(globalPath, workspacePath)
 		if err != nil {
 			return nil, LoopSettings{}, err
 		}
