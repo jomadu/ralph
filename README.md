@@ -62,7 +62,7 @@ Prompt can also come from a file or stdin: `ralph run -f ./prompt.md` or `cat pr
 
 Ralph can be installed via the provided script so the `ralph` binary is on your PATH. Install and uninstall are **documented procedures**, not subcommands (there is no `ralph install` or `ralph uninstall`).
 
-**Prerequisites:** `curl`. The install script installs only from release artifacts (no build from source). Supported: Linux, macOS, Windows (amd64, arm64); script runs on macOS/Linux or Windows (e.g. Git Bash).
+**Prerequisites:** `curl`, `jq`. The install script installs only from release artifacts (no build from source). Supported: Linux, macOS, Windows (amd64, arm64); script runs on macOS/Linux or Windows (e.g. Git Bash).
 
 **Install**
 

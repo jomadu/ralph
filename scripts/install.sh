@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Install Ralph from a GitHub release. Usage: install.sh [VERSION] [--dir DIR]
 # Default: latest release, install to ~/bin. Records install location for uninstall.
-# Requires: curl. Supported: Linux, macOS, Windows (Git Bash); amd64, arm64.
+# Requires: curl, jq. Supported: Linux, macOS, Windows (Git Bash); amd64, arm64.
 
 set -e
 
@@ -42,11 +42,11 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# Normalize version tag (add v if missing for API)
+# Normalize version tag (add v if missing). No trailing newline (safe for URLs).
 normalize_tag() {
   case "$1" in
-    v*) echo "$1" ;;
-    *)  echo "v$1" ;;
+    v*) printf '%s' "$1" ;;
+    *)  printf '%s' "v$1" ;;
   esac
 }
 
@@ -74,15 +74,13 @@ detect_platform() {
 }
 
 # Resolve version: latest or specific tag (GitHub tag may be v1.0.0 or 1.0.0).
-# Output is trimmed (no CR/LF or surrounding whitespace) so it is safe for URLs.
+# Uses release tag_name (not name) for download URL.
 get_version() {
-  local raw
   if [ -z "$VERSION" ]; then
-    raw="$(curl -sSfL "${GITHUB_API}/latest" | grep '"tag_name"' | sed -E 's/.*"tag_name":\s*"([^"]+)".*/\1/')"
+    curl -sSfL "${GITHUB_API}/latest" | jq -r '.tag_name' | tr -d '\n'
   else
-    raw="$(normalize_tag "$VERSION")"
+    normalize_tag "$VERSION"
   fi
-  echo "$raw" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
 
 # Artifact filename for a given tag and platform (matches Makefile build-multi output)
