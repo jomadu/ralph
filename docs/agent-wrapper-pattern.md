@@ -19,7 +19,7 @@ This pattern applies to **any** agent whose CLI outputs structured or multi-chan
    - The wrapper must be invocable as a single command (script path or `bash /path/to/script.sh`).
 
 2. **Wire the wrapper in Ralph**
-   - **Config:** In `ralph-config.yml`, add an alias whose command is your script, e.g. `"/path/to/my-wrapper.sh"` or `"bash /path/to/my-wrapper.sh"`. Use `--ai-cmd-alias <name>` or `RALPH_LOOP_AI_CMD_ALIAS`.
+   - **Config:** In `ralph-config.yml`, set `loop.ai_cmd_alias` to an alias whose command is your script, or `loop.ai_cmd` to the script path (e.g. `"/path/to/my-wrapper.sh"`). You can also use `--ai-cmd-alias <name>` or `RALPH_LOOP_AI_CMD_ALIAS`, or `--ai-cmd` / `RALPH_LOOP_AI_CMD`.
    - **CLI:** `ralph run build --ai-cmd "/path/to/my-wrapper.sh"`.
 
 Ralph pipes the assembled prompt to the wrapper’s stdin and reads the wrapper’s stdout for signal scanning; stderr is your progress output.

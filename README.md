@@ -44,7 +44,7 @@ EOF
 Ralph requires a resolved AI command; if none is set, it exits with code 2 before starting the loop. Either:
 
 - **Use a built-in alias:** `claude`, `kiro`, `copilot`, or `cursor-agent`. Example: `ralph run build --ai-cmd-alias claude`, or set the alias in config or env. If your agent outputs structured or noisy data (e.g. JSON, tool calls), use a wrapper that sends progress to stderr and assistant text to stdout so Ralph can detect signals; see [Agent wrapper pattern](docs/agent-wrapper-pattern.md) (Cursor is one example).
-- **Use your own command:** `--ai-cmd "your-command ..."` or `RALPH_LOOP_AI_CMD`, or define a custom alias under `aliases:` in config and use `--ai-cmd-alias` or `RALPH_LOOP_AI_CMD_ALIAS`.
+- **Use your own command:** `--ai-cmd "your-command ..."` or `RALPH_LOOP_AI_CMD`, or define a custom alias under `aliases:` in config and use `--ai-cmd-alias` or `RALPH_LOOP_AI_CMD_ALIAS`. You can also set `loop.ai_cmd` (direct command) or `loop.ai_cmd_alias` in config (global, workspace, or per-prompt) so run/review use them when flags and env are not set.
 
 **4. Run**
 

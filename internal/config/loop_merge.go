@@ -41,6 +41,12 @@ func ApplyLoopSection(base LoopSettings, section *LoopSection) LoopSettings {
 	if b, ok := section.Preamble.(bool); ok && !b {
 		out.Preamble = ""
 	}
+	if section.AiCmd != "" {
+		out.AICmd = section.AiCmd
+	}
+	if section.AiCmdAlias != "" {
+		out.AICmdAlias = section.AiCmdAlias
+	}
 	return out
 }
 
@@ -84,6 +90,12 @@ func ApplyEnvOverlayToLoop(loop LoopSettings, overlay *EnvOverlay) LoopSettings 
 		if !*overlay.Preamble {
 			out.Preamble = ""
 		}
+	}
+	if overlay.AICmd != nil {
+		out.AICmd = *overlay.AICmd
+	}
+	if overlay.AICmdAlias != nil {
+		out.AICmdAlias = *overlay.AICmdAlias
 	}
 	return out
 }

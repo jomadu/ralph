@@ -32,6 +32,8 @@ type LoopSection struct {
 	Preamble         interface{} `yaml:"preamble,omitempty"` // string or bool
 	Streaming        *bool       `yaml:"streaming,omitempty"`
 	LogLevel         string      `yaml:"log_level,omitempty"`
+	AiCmd            string      `yaml:"ai_cmd,omitempty"`
+	AiCmdAlias       string      `yaml:"ai_cmd_alias,omitempty"`
 }
 
 // Prompt holds a single prompt definition (path or content, optional loop overrides).
@@ -56,6 +58,8 @@ type LoopSettings struct {
 	Preamble         string // empty = no preamble injection
 	Streaming        bool
 	LogLevel         string
+	AICmd            string
+	AICmdAlias       string
 }
 
 // Alias holds an AI command alias. In YAML, an alias value may be a string

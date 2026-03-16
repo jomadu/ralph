@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -74,5 +76,58 @@ func TestResolveAICommand_userAliasOverridesBuiltin(t *testing.T) {
 	}
 	if cmd != "claude-custom --my-flag" {
 		t.Errorf("ResolveAICommand(user override) = %q; want \"claude-custom --my-flag\"", cmd)
+	}
+}
+
+// TestResolveAICommand_configAliasName documents that the caller passes config-derived
+// alias (e.g. eff.Loop.AICmdAlias) into ResolveAICommand as aliasName.
+func TestResolveAICommand_configAliasName(t *testing.T) {
+	resolved := &Resolved{
+		Prompts: map[string]Prompt{},
+		Aliases: map[string]Alias{"my-alias": {Command: "custom-ai --batch"}},
+	}
+	rootLoop := DefaultLoopSettings()
+	rootLoop.AICmdAlias = "my-alias"
+	eff := EffectiveWithBuiltins(RootEffective(resolved, rootLoop))
+	aliasName := eff.Loop.AICmdAlias
+	cmd, ok := ResolveAICommand(eff, "", aliasName)
+	if !ok {
+		t.Fatalf("ResolveAICommand(eff, \"\", eff.Loop.AICmdAlias) ok = false")
+	}
+	if cmd != "custom-ai --batch" {
+		t.Errorf("ResolveAICommand(..., aliasName) = %q; want \"custom-ai --batch\"", cmd)
+	}
+}
+
+// TestResolveAICommand_fromConfigFile asserts that when config is resolved from a file
+// with loop.ai_cmd_alias set and no flags or env, the resolved command is the alias expansion
+// (run/review use this path: Resolve → eff.Loop.AICmdAlias → ResolveAICommand).
+func TestResolveAICommand_fromConfigFile(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "ralph-config.yml")
+	cfg := "loop:\n  ai_cmd_alias: cursor-agent\n"
+	if err := os.WriteFile(configPath, []byte(cfg), 0644); err != nil {
+		t.Fatal(err)
+	}
+	getenv := func(string) string { return "" }
+	eff, ok, err := Resolve(getenv, dir, configPath, "")
+	if err != nil {
+		t.Fatalf("Resolve() err = %v", err)
+	}
+	if !ok || eff == nil {
+		t.Fatalf("Resolve() = ok=%v eff=%v, want effective config", ok, eff)
+	}
+	if eff.Loop.AICmdAlias != "cursor-agent" {
+		t.Fatalf("eff.Loop.AICmdAlias = %q, want cursor-agent (from config file)", eff.Loop.AICmdAlias)
+	}
+	directCmd := ""
+	aliasName := eff.Loop.AICmdAlias
+	command, ok := ResolveAICommand(eff, directCmd, aliasName)
+	if !ok {
+		t.Fatalf("ResolveAICommand(eff, \"\", eff.Loop.AICmdAlias) ok = false")
+	}
+	want := "agent -p --force --output-format stream-json --stream-partial-output"
+	if command != want {
+		t.Errorf("ResolveAICommand(from config file) = %q; want %q", command, want)
 	}
 }

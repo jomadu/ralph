@@ -10,7 +10,7 @@ Implements the requirements assigned to this component in the [engineering READM
 
 **Consumes**
 
-- Resolved config from the config component: prompt source (alias, file path, or stdin), loop settings (max iterations, failure threshold, timeout, success/failure signals, signal precedence mode, preamble, AI command/alias, streaming, log level).
+- Resolved config from the config component: prompt source (alias, file path, or stdin), loop settings (max iterations, failure threshold, timeout, success/failure signals, signal precedence mode, preamble, AI command/alias, streaming, log level). AI command/alias may come from config (root or per-prompt), environment, or CLI; the CLI passes the already-resolved value.
 - Optional CLI overrides for the run (e.g. dry-run, log level, config file already applied by config).
 
 **Produces**

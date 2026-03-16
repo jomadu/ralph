@@ -58,6 +58,47 @@ func TestMergeRootLoop_workspaceOverridesGlobal(t *testing.T) {
 	}
 }
 
+func TestMergeRootLoop_aiCmdAliasGlobalThenWorkspace(t *testing.T) {
+	global := &FileLayer{
+		Loop: &LoopSection{AiCmdAlias: "claude"},
+	}
+	workspace := &FileLayer{
+		Loop: &LoopSection{AiCmdAlias: "cursor-agent"},
+	}
+	got := MergeRootLoop(global, workspace)
+	if got.AICmdAlias != "cursor-agent" {
+		t.Errorf("AICmdAlias = %q, want cursor-agent (workspace overrides global)", got.AICmdAlias)
+	}
+}
+
+func TestEffectiveLoopForPrompt_aiCmdAliasPromptOverride(t *testing.T) {
+	root := DefaultLoopSettings()
+	root.AICmdAlias = "claude"
+	prompt := &Prompt{
+		Path: "p.md",
+		Loop: &LoopSection{AiCmdAlias: "cursor-agent"},
+	}
+	got := EffectiveLoopForPrompt(root, prompt)
+	if got.AICmdAlias != "cursor-agent" {
+		t.Errorf("AICmdAlias = %q, want cursor-agent (prompt overrides root)", got.AICmdAlias)
+	}
+}
+
+func TestApplyLoopSection_aiCmdAndAlias(t *testing.T) {
+	base := DefaultLoopSettings()
+	section := &LoopSection{
+		AiCmd:      "claude --non-interactive",
+		AiCmdAlias: "my-alias",
+	}
+	got := ApplyLoopSection(base, section)
+	if got.AICmd != "claude --non-interactive" {
+		t.Errorf("AICmd = %q, want claude --non-interactive", got.AICmd)
+	}
+	if got.AICmdAlias != "my-alias" {
+		t.Errorf("AICmdAlias = %q, want my-alias", got.AICmdAlias)
+	}
+}
+
 func TestApplyEnvOverlayToLoop_nil(t *testing.T) {
 	loop := DefaultLoopSettings()
 	got := ApplyEnvOverlayToLoop(loop, nil)
@@ -82,6 +123,27 @@ func TestApplyEnvOverlayToLoop_overrides(t *testing.T) {
 	}
 	if got.FailureThreshold != 3 {
 		t.Errorf("FailureThreshold = %d, want 3 (unchanged)", got.FailureThreshold)
+	}
+}
+
+func TestApplyEnvOverlayToLoop_aiCmdAndAlias(t *testing.T) {
+	loop := DefaultLoopSettings()
+	cmd := "claude --non-interactive"
+	alias := "my-alias"
+	overlay := &EnvOverlay{
+		AICmd:      &cmd,
+		AICmdAlias: &alias,
+	}
+	got := ApplyEnvOverlayToLoop(loop, overlay)
+	if got.AICmd != "claude --non-interactive" {
+		t.Errorf("AICmd = %q, want claude --non-interactive", got.AICmd)
+	}
+	if got.AICmdAlias != "my-alias" {
+		t.Errorf("AICmdAlias = %q, want my-alias", got.AICmdAlias)
+	}
+	// Other loop fields unchanged when not in overlay
+	if got.MaxIterations != loop.MaxIterations {
+		t.Errorf("MaxIterations changed unexpectedly")
 	}
 }
 

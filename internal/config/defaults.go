@@ -22,6 +22,8 @@ func DefaultLoopSettings() LoopSettings {
 		Preamble:         "",
 		Streaming:        true,
 		LogLevel:         "info",
+		AICmd:            "",
+		AICmdAlias:       "",
 	}
 }
 
