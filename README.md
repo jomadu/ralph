@@ -345,6 +345,10 @@ ralph show prompt-guide
 
 That outputs the full [Writing Ralph prompts](docs/writing-ralph-prompts.md) guide. You can also open the doc directly in the repo.
 
+## Development
+
+This repo uses **conventional commits** (e.g. `feat:`, `fix:`, `docs:`) for semantic-release. Enforcement is via the **commit-msg hook** (husky + commitlint). Run `npm install` once to install the hook; after that, invalid commit messages are rejected at commit time. CI also runs commitlint on the server (PR: commits in the PR; push: commits in the push range, or the latest commit for a new-branch push).
+
 ## License
 
 GPL-3.0. See [LICENSE](LICENSE).

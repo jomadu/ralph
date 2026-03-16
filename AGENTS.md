@@ -25,7 +25,7 @@ Use the Makefile from the repository root:
 
 All: `make all` (default target is build). Clean: `make clean`.
 
-**Release:** Conventional commits + semantic-release. Commit messages are checked with commitlint (CI and optional local hook via husky). Branches `main` (stable), `rc`, `alpha`, `beta` (pre-releases). Run `npm run semantic-release` for a dry-run; CI runs semantic-release on push to those branches. Release process: conventional commits and semantic-release on push to main/rc/alpha/beta.
+**Release:** Conventional commits + semantic-release. Commit messages are enforced by the local commit-msg hook (husky + commitlint); run `npm install` to install the hook. CI runs commitlint on PR and push (commit range: PR = base..head, push = before..after; new-branch push uses --last). Branches `main` (stable), `rc`, `alpha`, `beta` (pre-releases). Run `npm run semantic-release` for a dry-run; CI runs semantic-release on push to those branches. Release process: conventional commits and semantic-release on push to main/rc/alpha/beta.
 
 Keep this section in sync with the Makefile.
 
