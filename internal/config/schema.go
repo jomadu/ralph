@@ -13,18 +13,11 @@ var (
 	ErrInvalidMaxIterations     = errors.New("max_iterations must be >= 0")
 	ErrInvalidFailureThreshold  = errors.New("failure_threshold must be >= 0")
 	ErrInvalidTimeoutSeconds    = errors.New("timeout_seconds must be >= 0")
-	ErrInvalidSignalPrecedence  = errors.New("signal_precedence must be empty, \"static\", or \"ai_interpreted\"")
+	ErrInvalidMaxOutputBuffer   = errors.New("max_output_buffer must be >= 0")
 	ErrInvalidLogLevel          = errors.New("log_level must be empty, \"debug\", \"info\", \"warn\", or \"error\"")
 	ErrPromptNeedsPathOrContent = errors.New("prompt must have path or content")
 	ErrAliasCommandEmpty        = errors.New("alias command must be non-empty")
 )
-
-// Valid signal_precedence values (empty = use default).
-var validSignalPrecedence = map[string]bool{
-	"":               true,
-	"static":         true,
-	"ai_interpreted": true,
-}
 
 // Valid log_level values (empty = use default).
 var validLogLevel = map[string]bool{
@@ -73,8 +66,8 @@ func validateLoop(loop *LoopSection) error {
 	if loop.TimeoutSeconds != nil && *loop.TimeoutSeconds < 0 {
 		return fmt.Errorf("%w (got %d)", ErrInvalidTimeoutSeconds, *loop.TimeoutSeconds)
 	}
-	if loop.SignalPrecedence != "" && !validSignalPrecedence[loop.SignalPrecedence] {
-		return fmt.Errorf("%w (got %q)", ErrInvalidSignalPrecedence, loop.SignalPrecedence)
+	if loop.MaxOutputBuffer != nil && *loop.MaxOutputBuffer < 0 {
+		return fmt.Errorf("%w (got %d)", ErrInvalidMaxOutputBuffer, *loop.MaxOutputBuffer)
 	}
 	if loop.LogLevel != "" && !validLogLevel[loop.LogLevel] {
 		return fmt.Errorf("%w (got %q)", ErrInvalidLogLevel, loop.LogLevel)

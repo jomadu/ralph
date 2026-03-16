@@ -32,7 +32,7 @@ Configuration is merged from multiple layers. Later layers override earlier ones
 
 ## Configuration scope
 
-**Loop behavior** — Maximum iterations, iteration mode (bounded vs unlimited), consecutive failure threshold, per-iteration timeout, output limits, success and failure signal strings, signal precedence mode (static default vs optional AI-interpreted when both signals appear), whether to inject a preamble, which AI command or AI command alias to use, whether to stream AI output to the terminal, and log level. Configurable at the root (default for all prompts), per prompt in config files, and overridable by environment variables and CLI for a run.
+**Loop behavior** — Maximum iterations, iteration mode (bounded vs unlimited), consecutive failure threshold, per-iteration timeout, output limits, success and failure signal strings, whether to inject a preamble, which AI command or AI command alias to use, whether to stream AI output to the terminal, log level, and max output buffer. Configurable at the root (default for all prompts), per prompt in config files, and overridable by environment variables and CLI for a run.
 
 **Prompts** — The user defines named prompts in config files: a name used when running or listing, the path to the prompt file, optional display name and description for listing, and optional loop overrides so one prompt can have different limits or signals than another. Prompt file paths in config are **relative to the config file that defines them** (not the current working directory). Prompt definitions and their overrides live only in config files; they are not overridable by environment or CLI (the run still uses the chosen prompt’s resolved settings, which may then be overridden by env/CLI for loop-wide settings).
 
@@ -48,7 +48,6 @@ Configuration is merged from multiple layers. Later layers override earlier ones
 - User points Ralph at a specific config file. Only that file is used; global and workspace config are not loaded. If the file is missing, Ralph reports an error.
 - User runs the list command and sees available prompts and AI commands with names and descriptions; they can list all, only prompts, or only aliases as the product allows.
 - User can view the effective (resolved) config for the current context, including which layer supplied each value when supported.
-- User enables AI-interpreted signal precedence (e.g. via config or CLI). When both success and failure signals appear in an iteration, the loop uses that mode according to the resolved setting.
 
 ## Non-outcomes
 
@@ -71,7 +70,7 @@ Configuration is merged from multiple layers. Later layers override earlier ones
 | ID | Requirement | Status |
 |----|-------------|--------|
 | [R001](R001-config-layer-resolution.md) | The system resolves configuration from defined layers (defaults, global file, workspace file, explicit file, environment, prompt-level overrides, CLI flags) with a defined override order. | ready |
-| [R002](R002-loop-behavior-configurable.md) | The system allows loop behavior (iterations, failure threshold, timeout, signals, signal precedence mode, preamble, AI command, streaming, log level) to be configured at root and per prompt. | ready |
+| [R002](R002-loop-behavior-configurable.md) | The system allows loop behavior (iterations, failure threshold, timeout, signals, preamble, AI command, streaming, log level, max output buffer) to be configured at root and per prompt. | ready |
 | [R003](R003-named-prompts-with-overrides.md) | The system supports named prompts in config with path, optional display name and description, and optional loop overrides. | ready |
 | [R004](R004-ai-command-aliases-configurable.md) | The system supports configurable AI command aliases. | ready |
 | [R005](R005-explicit-config-file-only.md) | When the user specifies an explicit config file, the system uses only that file and reports an error if it is missing. | ready |

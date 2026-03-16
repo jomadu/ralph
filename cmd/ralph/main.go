@@ -98,7 +98,6 @@ func runCmd() *cobra.Command {
 		noPreamble       bool
 		signalSuccess    string
 		signalFailure    string
-		signalPrecedence string
 		contextStrings   []string
 		verbose          bool
 		quiet            bool
@@ -206,7 +205,6 @@ func runCmd() *cobra.Command {
 				noPreamble:       noPreamble,
 				signalSuccess:    signalSuccess,
 				signalFailure:    signalFailure,
-				signalPrecedence: signalPrecedence,
 				context:          contextStrings,
 				verbose:          verbose,
 				quiet:            quiet,
@@ -250,7 +248,6 @@ func runCmd() *cobra.Command {
 	// Signals
 	cmd.Flags().StringVar(&signalSuccess, "signal-success", "", "Success signal string for this run")
 	cmd.Flags().StringVar(&signalFailure, "signal-failure", "", "Failure signal string for this run")
-	cmd.Flags().StringVar(&signalPrecedence, "signal-precedence", "", "When both signals appear: static or ai_interpreted")
 	// Context / preamble
 	cmd.Flags().StringArrayVarP(&contextStrings, "context", "c", nil, "Inline context injected into preamble (repeatable)")
 	// Output and observability (cli.md ralph run)
@@ -271,7 +268,6 @@ type runLoopOverrides struct {
 	noPreamble       bool
 	signalSuccess    string
 	signalFailure    string
-	signalPrecedence string
 	context          []string
 	verbose          bool
 	quiet            bool
@@ -303,9 +299,6 @@ func applyRunLoopOverrides(base config.LoopSettings, o runLoopOverrides) config.
 	if o.signalFailure != "" {
 		out.FailureSignal = o.signalFailure
 	}
-	if o.signalPrecedence != "" {
-		out.SignalPrecedence = o.signalPrecedence
-	}
 	if o.noPreamble {
 		out.Preamble = ""
 	} else if len(o.context) > 0 {
@@ -333,8 +326,9 @@ func applyRunLoopOverrides(base config.LoopSettings, o runLoopOverrides) config.
 	if o.noStream {
 		out.Streaming = false
 	}
-	// maxOutputBuffer: parsed and validated but run-loop/backend do not yet use it; no field on LoopSettings.
-	_ = o.maxOutputBuffer
+	if o.maxOutputBuffer >= 0 {
+		out.MaxOutputBuffer = o.maxOutputBuffer
+	}
 	return out
 }
 
@@ -416,14 +410,14 @@ func showConfigCmd() *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("config: %w", err)
 				}
-				fmt.Printf("loop:\n  max_iterations: %d  # %s\n  failure_threshold: %d  # %s\n  timeout_seconds: %d  # %s\n  success_signal: %q  # %s\n  failure_signal: %q  # %s\n  signal_precedence: %q  # %s\n  preamble: %q  # %s\n  streaming: %t  # %s\n  log_level: %q  # %s\n",
+				fmt.Printf("loop:\n  max_iterations: %d  # %s\n  failure_threshold: %d  # %s\n  timeout_seconds: %d  # %s\n  success_signal: %q  # %s\n  failure_signal: %q  # %s\n  preamble: %q  # %s\n  streaming: %t  # %s\n  log_level: %q  # %s\n  max_output_buffer: %d  # %s\n",
 					loop.MaxIterations, prov.MaxIterations, loop.FailureThreshold, prov.FailureThreshold, loop.TimeoutSeconds, prov.TimeoutSeconds,
-					loop.SuccessSignal, prov.SuccessSignal, loop.FailureSignal, prov.FailureSignal, loop.SignalPrecedence, prov.SignalPrecedence,
-					loop.Preamble, prov.Preamble, loop.Streaming, prov.Streaming, loop.LogLevel, prov.LogLevel)
+					loop.SuccessSignal, prov.SuccessSignal, loop.FailureSignal, prov.FailureSignal,
+					loop.Preamble, prov.Preamble, loop.Streaming, prov.Streaming, loop.LogLevel, prov.LogLevel, loop.MaxOutputBuffer, prov.MaxOutputBuffer)
 			} else {
-				fmt.Printf("loop:\n  max_iterations: %d\n  failure_threshold: %d\n  timeout_seconds: %d\n  success_signal: %q\n  failure_signal: %q\n  signal_precedence: %q\n  preamble: %q\n  streaming: %t\n  log_level: %q\n",
+				fmt.Printf("loop:\n  max_iterations: %d\n  failure_threshold: %d\n  timeout_seconds: %d\n  success_signal: %q\n  failure_signal: %q\n  preamble: %q\n  streaming: %t\n  log_level: %q\n  max_output_buffer: %d\n",
 					loop.MaxIterations, loop.FailureThreshold, loop.TimeoutSeconds,
-					loop.SuccessSignal, loop.FailureSignal, loop.SignalPrecedence, loop.Preamble, loop.Streaming, loop.LogLevel)
+					loop.SuccessSignal, loop.FailureSignal, loop.Preamble, loop.Streaming, loop.LogLevel, loop.MaxOutputBuffer)
 			}
 			if len(eff.Prompts) > 0 {
 				fmt.Println("prompts:")

@@ -6,6 +6,8 @@ This document is the **stable contract** for Ralph’s exit codes. Scripts and C
 
 ## ralph run
 
+Ralph scans **only the last non-empty line** of AI output for success and failure signals; earlier lines are not used for detection. See the [run-loop component](engineering/components/run-loop.md) and [Writing Ralph prompts](writing-ralph-prompts.md) for how to structure prompts and signals.
+
 | Exit code | Meaning |
 |-----------|---------|
 | **0** | Success — success signal detected; loop completed. |

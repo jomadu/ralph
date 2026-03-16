@@ -10,7 +10,7 @@ The review evaluates the prompt along four dimensions: signal and state, iterati
 
 The reviewer assesses the prompt so that users get actionable feedback for Ralph's execution model. The four dimensions are:
 
-1. **Signal and state** — Whether the prompt defines clear success and failure signals that Ralph can detect, and whether statefulness (e.g. filesystem, work-tracking) is compatible with the loop model (fresh process per iteration).
+1. **Signal and state** — Whether the prompt defines clear success and failure signals that Ralph can detect, and whether statefulness (e.g. filesystem, work-tracking) is compatible with the loop model (fresh process per iteration). Whether the prompt instructs the AI to emit the success or failure marker **on the last line** of its response (so Ralph’s last-line-only detection correctly treats it as the outcome). Review feedback should note if this is missing or unclear.
 2. **Iteration awareness** — Whether the prompt acknowledges that execution is multi-iteration with a fresh process each time, so the AI can re-read state, emit signals, and avoid assuming a single run. The prompt should not prescribe behavior that depends on which iteration or pass the run is (to avoid iteration artifacts such as pass counters or iteration logs in the repo).
 3. **Scope and convergence** — Whether the task has a defined scope and completion criteria that are checkable in practice, so the loop can converge rather than run indefinitely.
 4. **Subjective completion criteria** — When "done" is subjective (e.g. "good enough," "reads well"), whether the prompt includes techniques to escape local optima: variation, creative exploration, or stepping back (e.g. consider alternatives and the existing version, then pick the best). These should be phrased as per-run behavior (e.g. "consider two alternatives and the existing structure; pick the best, which may be keeping the current one") rather than conditional on pass or iteration count, to avoid iteration artifacts and unnecessary churn.
@@ -25,6 +25,7 @@ The report (R002) structures or reflects feedback along these dimensions so the 
 | Prompt addresses none explicitly | Report still structured by dimension; each dimension gets feedback (e.g. "missing" or "unclear"). |
 | Very short prompt | All dimensions may be "needs improvement"; report is still dimensioned. |
 | Prompt has strong signals but weak scope | Feedback reflects strength on signal/state and weakness on scope/convergence. |
+| Prompt has clear signals but does not say to put them on the last line | Feedback under "Signal and state" suggests adding that the AI should emit the outcome on the last line (so Ralph’s last-line-only detection treats it as the final outcome). |
 | Subjective "done" with no escape techniques | Dimension 4 feedback suggests adding variation or stepping-back techniques. |
 
 ### Examples
@@ -44,6 +45,14 @@ The report (R002) structures or reflects feedback along these dimensions so the 
 **Expected output:** Report indicates iteration awareness is present or adequate; other dimensions may still have feedback. Revision may not change this part.
 
 **Verification:** Feedback is dimension-specific; no false negative on iteration awareness.
+
+#### Prompt has clear signals but does not say to put them on the last line
+
+**Input:** User runs review on a prompt that defines success/failure markers (e.g. `<promise>SUCCESS</promise>`) but never instructs the AI to emit the outcome on the last line of its response.
+
+**Expected output:** Report includes feedback under "Signal and state" that the prompt should instruct the AI to emit the outcome signal on the last line (so Ralph’s last-line-only detection correctly treats it as the outcome). Suggested revision adds or implies "emit the outcome on the last line" (or equivalent).
+
+**Verification:** User can read narrative and understand the gap; revision text addresses it.
 
 ## Acceptance criteria
 

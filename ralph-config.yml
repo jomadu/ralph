@@ -1,9 +1,0 @@
-# Ralph workspace config
-# See docs/intent and AGENTS.md for spec and usage.
-
-prompts:
-  build:
-    path: prompts/build.md
-
-loop:
-  ai_cmd_alias: cursor-agent

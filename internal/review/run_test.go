@@ -17,7 +17,7 @@ import (
 // It writes result.json and, when revisionContent is non-empty, revision.md into the directory
 // found after "**Directory where you must create the files:**" in the prompt, then returns a short confirmation.
 func mockInvoker(revisionContent string) backend.Invoker {
-	return invokerAdapter(func(_ string, prompt []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	return invokerAdapter(func(_ string, prompt []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		reportDir := extractReportDirFromPrompt(prompt)
 		if reportDir == "" {
 			return []byte("error: no report dir in prompt"), 1, nil

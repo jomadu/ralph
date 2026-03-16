@@ -50,25 +50,16 @@ func TestValidateFileLayer_negativeTimeoutSeconds(t *testing.T) {
 	}
 }
 
-func TestValidateFileLayer_invalidSignalPrecedence(t *testing.T) {
+func TestValidateFileLayer_negativeMaxOutputBuffer(t *testing.T) {
 	layer := &FileLayer{
-		Loop: &LoopSection{SignalPrecedence: "unknown"},
+		Loop: &LoopSection{MaxOutputBuffer: intPtr(-1)},
 	}
 	err := ValidateFileLayer(layer)
 	if err == nil {
-		t.Fatal("ValidateFileLayer(invalid signal_precedence) err = nil, want error")
+		t.Fatal("ValidateFileLayer(negative max_output_buffer) err = nil, want error")
 	}
-	if !errors.Is(err, ErrInvalidSignalPrecedence) {
-		t.Errorf("err = %v, want ErrInvalidSignalPrecedence", err)
-	}
-}
-
-func TestValidateFileLayer_validSignalPrecedence(t *testing.T) {
-	for _, v := range []string{"", "static", "ai_interpreted"} {
-		layer := &FileLayer{Loop: &LoopSection{SignalPrecedence: v}}
-		if err := ValidateFileLayer(layer); err != nil {
-			t.Errorf("ValidateFileLayer(signal_precedence=%q) err = %v", v, err)
-		}
+	if !errors.Is(err, ErrInvalidMaxOutputBuffer) {
+		t.Errorf("err = %v, want ErrInvalidMaxOutputBuffer", err)
 	}
 }
 

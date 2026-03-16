@@ -80,7 +80,7 @@ func TestRun_exitCodeMatchesResultJSON(t *testing.T) {
 	dir := t.TempDir()
 	reportDir := filepath.Join(dir, "report")
 	// Mock invoker writes result.json (status=ok) so exit code is 0.
-	mock := invokerAdapter(func(_ string, prompt []byte, _ string, _ []string, _ int, _ io.Writer) ([]byte, int, error) {
+	mock := invokerAdapter(func(_ string, prompt []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		reportDir := extractReportDirFromPrompt(prompt)
 		if reportDir != "" {
 			_ = os.MkdirAll(reportDir, 0755)

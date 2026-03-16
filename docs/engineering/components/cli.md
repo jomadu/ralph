@@ -75,7 +75,7 @@ Precedence: CLI flags override environment and config (config component layer or
 | `--unlimited` | `-u` | — | Run until success signal or failure threshold; no iteration cap. Overrides max-iterations for this run. |
 | `--failure-threshold` | — | int | Consecutive failures before exit. Override for this run. |
 | `--iteration-timeout` | — | int | Per-iteration timeout in seconds. 0 = no timeout. Override for this run. |
-| `--max-output-buffer` | — | int | Max output buffer in bytes for capturing AI stdout. Override for this run. |
+| `--max-output-buffer` | — | int | Max bytes of AI stdout to retain for signal detection; the last line is preserved within this cap. Override for this run. Must be ≥ 0 when provided. |
 | `--no-preamble` | — | — | Disable preamble injection for this run. |
 | `--dry-run` | `-d` | — | Do not invoke the AI. Assemble prompt (with preamble if enabled) and print it; then exit 0. No backend invocation. |
 
@@ -92,7 +92,6 @@ Precedence: CLI flags override environment and config (config component layer or
 |------|-------|------|--------|
 | `--signal-success` | — | string | Success signal string for this run (substring or pattern in AI output). |
 | `--signal-failure` | — | string | Failure signal string for this run. |
-| `--signal-precedence` | — | string | When both signals appear: `static` (e.g. first match wins) or `ai_interpreted` (one extra AI invocation to decide). Override for this run. |
 
 **Context / preamble**
 

@@ -17,7 +17,7 @@ Implements the requirements assigned to this component in the [engineering READM
 
 **Produces**
 
-- **Stdout** — Full stdout of the AI process, captured for the caller (run-loop for signal scanning, review for report generation).
+- **Stdout** — Stdout of the AI process, captured for the caller (run-loop for signal scanning, review for report generation). When `max_output_buffer` is set, only the last N bytes are retained (sliding window) so the last line is preserved within the cap.
 - **Exit code** — The AI process exit code (for optional use by run-loop or review; Ralph's exit code is determined by run-loop or review logic, not necessarily the AI's exit code).
 - **Error** — When the process could not be started (e.g. command not found, permission denied), or when the invocation fails in a way the caller must handle.
 

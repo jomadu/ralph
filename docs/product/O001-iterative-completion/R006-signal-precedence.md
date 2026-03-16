@@ -4,29 +4,30 @@
 
 ## Requirement
 
-The system applies a defined precedence when both success and failure signals are present in the same output (default behavior).
+The system applies a defined precedence when both success and failure signals are present on the same line (default behavior).
 
 ## Detail
 
-When a single iteration's output contains both the configured success signal and the configured failure signal, the outcome is ambiguous without a rule. The system applies a defined precedence (e.g. "success wins" or "failure wins" or "first occurrence wins") so that the iteration is classified as either success or failure, not both. This is the default, static behavior. Optional AI-interpreted precedence (R008) can override this for a run when the user enables it; when that option is off or when the interpretation step does not yield a clear answer, this requirement's precedence is used.
+Ralph scans **only the last non-empty line** of each iteration's output for success and failure signals (see the run-loop component spec for the definition of "last non-empty line"). When both the configured success signal and the configured failure signal appear **on that same line** (the last non-empty line), the outcome is ambiguous without a rule. The system applies a defined precedence (e.g. "success wins" or "failure wins" or "first occurrence wins") so that the iteration is classified as either success or failure, not both. Static precedence is the only behavior: when both signals are on that line, the defined rule (e.g. success wins) is applied. Signals that appear only on earlier lines are not used for detection; precedence applies only when both signals are present on the last non-empty line.
 
 ### Edge cases
 
 | Condition | Expected Behavior |
 |-----------|-------------------|
-| Only success signal present | Iteration is success (R004). |
-| Only failure signal present | Iteration is failure (R005). |
-| Both present | Apply defined precedence; iteration is either success or failure. |
-| Neither present | R009 applies (process exit without signal). |
-| Precedence "success wins" | Both present → treat as success. |
-| Precedence "failure wins" | Both present → treat as failure. |
-| Order-dependent rule (e.g. first wins) | Document and apply consistently. |
+| Only success signal present (on last non-empty line) | Iteration is success (R004). |
+| Only failure signal present (on last non-empty line) | Iteration is failure (R005). |
+| Both present on the last non-empty line | Apply defined precedence; iteration is either success or failure. |
+| Both present only on earlier lines (not on last non-empty line) | No signal detected for the iteration; R009 applies (process exit without signal). |
+| Neither present (on last non-empty line) | R009 applies (process exit without signal). |
+| Precedence "success wins" | Both on that line → treat as success. |
+| Precedence "failure wins" | Both on that line → treat as failure. |
+| Order-dependent rule (e.g. first wins) | Document and apply consistently for that line. |
 
 ### Examples
 
 #### Success wins (example policy)
 
-**Input:** Precedence = success wins. Output contains both "DONE" and "FAIL".
+**Input:** Precedence = success wins. The last non-empty line of the output contains both "DONE" and "FAIL".
 
 **Expected output:** The system treats the iteration as success; exits with the documented success code per R004.
 
@@ -34,7 +35,7 @@ When a single iteration's output contains both the configured success signal and
 
 #### Failure wins (example policy)
 
-**Input:** Precedence = failure wins. Output contains both "DONE" and "FAIL".
+**Input:** Precedence = failure wins. The last non-empty line of the output contains both "DONE" and "FAIL".
 
 **Expected output:** The system treats the iteration as failure; increments count and continues or exits per R005.
 
@@ -42,10 +43,11 @@ When a single iteration's output contains both the configured success signal and
 
 ## Acceptance criteria
 
-- [ ] When both success and failure signals appear in the same iteration output, The system classifies the iteration as either success or failure according to the defined precedence rule.
+- [ ] When both success and failure signals appear on the last non-empty line of the iteration output, the system classifies the iteration as either success or failure according to the defined precedence rule.
+- [ ] R006 states that "both present" means both on the last non-empty line (same line); signals only on earlier lines are not used for precedence.
 - [ ] The precedence rule is documented (e.g. success wins, failure wins, or order-based).
 - [ ] No iteration is left ambiguous (both success and failure); exactly one outcome is used for R004/R005/R009.
-- [ ] This behavior is the default when AI-interpreted precedence (R008) is not used or does not yield a clear result.
+- [ ] Static precedence is the only supported behavior; the rule is documented (e.g. success wins).
 
 ## Dependencies
 

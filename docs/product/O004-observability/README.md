@@ -34,8 +34,6 @@ Two separate controls govern what the user sees:
 - User runs dry-run and sees the fully assembled prompt (preamble + prompt) printed without spawning an AI process.
 - After a multi-iteration run, Ralph reports iteration statistics (e.g. min/max/mean duration).
 - For review: exit code and report make it clear whether the review completed, the prompt had errors, or the run failed; the user can see what to do next.
-- When AI-interpreted signal precedence is used and both signals appear in an iteration, the user can see (e.g. via logs or summary) that an interpretation run occurred and what outcome was used (success, failure, or fallback applied), so they can diagnose why the loop treated that iteration as it did.
-
 ## Non-outcomes
 
 - Operational messages and the AI command stream go to stdout (the run's log). stderr is reserved for fatal or startup errors only. Ralph does not provide persistent log files.

@@ -13,7 +13,7 @@ const PlaceholderReportDir = "{{REPORT_DIR}}"
 const reviewInstructionsTemplate = `You are a prompt reviewer for Ralph, an iterative AI execution loop. Evaluate the user prompt below and create five files in the directory we specify. Do not put the file contents in your response. Create the files on disk, then respond briefly that you have created the files and where they are.
 
 **Dimensions to evaluate:**
-1. **Signal and state** — Does the prompt define clear success and failure signals Ralph can detect? Is statefulness compatible with a fresh process per iteration?
+1. **Signal and state** — Does the prompt define clear success and failure signals Ralph can detect? Does it instruct the AI to emit the outcome signal on the last line of its response (so Ralph’s last-line-only detection treats it as the outcome)? Is statefulness compatible with a fresh process per iteration?
 2. **Iteration awareness** — Does the prompt acknowledge multi-iteration execution with a fresh process each time, so the AI re-reads state and emits signals each run?
 3. **Scope and convergence** — Does the task have defined scope and checkable completion criteria so the loop can converge?
 4. **Subjective completion criteria** — If "done" is subjective (e.g. "good enough"), does the prompt include escape techniques (variation, step back, challenge assumptions) to avoid getting stuck?

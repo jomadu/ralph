@@ -25,14 +25,14 @@ func ApplyLoopSection(base LoopSettings, section *LoopSection) LoopSettings {
 	if section.FailureSignal != "" {
 		out.FailureSignal = section.FailureSignal
 	}
-	if section.SignalPrecedence != "" {
-		out.SignalPrecedence = section.SignalPrecedence
-	}
 	if section.Streaming != nil {
 		out.Streaming = *section.Streaming
 	}
 	if section.LogLevel != "" {
 		out.LogLevel = section.LogLevel
+	}
+	if section.MaxOutputBuffer != nil {
+		out.MaxOutputBuffer = *section.MaxOutputBuffer
 	}
 	// Preamble: string or bool in YAML; we store string. If section has a string, use it.
 	if s, ok := section.Preamble.(string); ok && s != "" {
@@ -84,6 +84,9 @@ func ApplyEnvOverlayToLoop(loop LoopSettings, overlay *EnvOverlay) LoopSettings 
 		if !*overlay.Preamble {
 			out.Preamble = ""
 		}
+	}
+	if overlay.MaxOutputBuffer != nil {
+		out.MaxOutputBuffer = *overlay.MaxOutputBuffer
 	}
 	return out
 }

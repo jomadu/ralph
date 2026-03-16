@@ -6,9 +6,11 @@ This guide explains how to write prompts that work well with Ralph's execution m
 
 Ralph runs your AI command in a loop. To know when to stop, it needs **clear success and failure signals** it can detect (e.g. exit codes, or markers in stdout). Your prompt should tell the AI how to signal "task done" and "task failed" in a way Ralph can read.
 
+**Emit the success or failure signal on the last line of your response.** Ralph only scans the **last non-empty line** of the AI output for these signals. If the outcome appears earlier (e.g. the AI explains the protocol or echoes a marker in the middle of the output), Ralph will not treat it as the final outcome. Putting the real outcome on the last line avoids false positives and ensures the loop stops or continues correctly.
+
 State (files, work-tracking) should be **compatible with a fresh process each iteration**. Ralph starts a new process for each loop iteration; the AI does not keep in-memory state between runs. So the prompt should assume the AI will re-read files or state from disk each time.
 
-**Strong:** "When the task is complete, exit 0. If you cannot complete it (e.g. blocked or invalid input), exit 1. Persist progress in `./state.json` and re-read it at the start of each run."
+**Strong:** "When the task is complete, exit 0. If you cannot complete it (e.g. blocked or invalid input), exit 1. Persist progress in `./state.json` and re-read it at the start of each run. Put your final outcome (success or failure) on the last line of your output so Ralph can detect it."
 
 **Weak:** "Finish the task." (No exit code or marker; Ralph cannot tell when to stop.)
 
@@ -52,7 +54,7 @@ Keep these techniques **iteration-agnostic**: describe what to do in a given run
 
 | Dimension | What to address |
 |-----------|------------------|
-| **Signal and state** | Clear success/failure signals Ralph can detect; state that works with a fresh process each iteration. |
+| **Signal and state** | Clear success/failure signals Ralph can detect; emit the outcome signal on the last line (Ralph scans only the last non-empty line); state that works with a fresh process each iteration. |
 | **Iteration awareness** | Prompt assumes multi-iteration and fresh process; re-read state each run, emit signals. Do not prescribe behavior by iteration or pass count (avoids iteration artifacts in the repo). |
 | **Scope and convergence** | Defined scope and checkable completion criteria so the loop can converge. |
 | **Subjective completion** | When "done" is subjective, add variation or stepping-back techniques that are per-run (not "after N passes") to avoid getting stuck and avoid artifacts. |

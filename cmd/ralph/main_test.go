@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+
+	"github.com/jomadu/ralph/internal/config"
 )
 
 // TestShowPromptGuide_success verifies that "ralph show prompt-guide" exits 0 and stdout
@@ -82,5 +84,26 @@ func TestShowPromptGuide_invalidUsage(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "unexpected argument") {
 		t.Errorf("error should mention unexpected argument; got %q", err.Error())
+	}
+}
+
+// TestApplyRunLoopOverrides_maxOutputBuffer verifies that --max-output-buffer
+// override is applied when >= 0 and left unchanged when -1 (not set).
+func TestApplyRunLoopOverrides_maxOutputBuffer(t *testing.T) {
+	base := config.LoopSettings{MaxOutputBuffer: 99999}
+	// Not set (-1): base value unchanged.
+	out := applyRunLoopOverrides(base, runLoopOverrides{maxOutputBuffer: -1})
+	if out.MaxOutputBuffer != 99999 {
+		t.Errorf("maxOutputBuffer -1: MaxOutputBuffer = %d, want 99999 (base)", out.MaxOutputBuffer)
+	}
+	// Set to 4096: override applied.
+	out2 := applyRunLoopOverrides(base, runLoopOverrides{maxOutputBuffer: 4096})
+	if out2.MaxOutputBuffer != 4096 {
+		t.Errorf("maxOutputBuffer 4096: MaxOutputBuffer = %d, want 4096", out2.MaxOutputBuffer)
+	}
+	// Set to 0: override applied (explicit cap).
+	out3 := applyRunLoopOverrides(base, runLoopOverrides{maxOutputBuffer: 0})
+	if out3.MaxOutputBuffer != 0 {
+		t.Errorf("maxOutputBuffer 0: MaxOutputBuffer = %d, want 0", out3.MaxOutputBuffer)
 	}
 }

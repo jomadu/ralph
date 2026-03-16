@@ -13,8 +13,8 @@ func TestParseEnvOverlay_empty(t *testing.T) {
 	if o == nil {
 		t.Fatal("ParseEnvOverlay() returned nil overlay")
 	}
-	if o.AICmd != nil || o.MaxIterations != nil || o.Streaming != nil {
-		t.Errorf("expected all nil when no env set, got AICmd=%v MaxIterations=%v Streaming=%v", o.AICmd, o.MaxIterations, o.Streaming)
+	if o.AICmd != nil || o.MaxIterations != nil || o.Streaming != nil || o.MaxOutputBuffer != nil {
+		t.Errorf("expected all nil when no env set, got AICmd=%v MaxIterations=%v Streaming=%v MaxOutputBuffer=%v", o.AICmd, o.MaxIterations, o.Streaming, o.MaxOutputBuffer)
 	}
 }
 
@@ -165,5 +165,47 @@ func TestParseEnvOverlay_iteration_timeout_zero(t *testing.T) {
 	}
 	if o.IterationTimeout == nil || *o.IterationTimeout != 0 {
 		t.Errorf("IterationTimeout = %v (0 = no timeout)", o.IterationTimeout)
+	}
+}
+
+func TestParseEnvOverlay_max_output_buffer(t *testing.T) {
+	getenv := func(k string) string {
+		if k == "RALPH_LOOP_MAX_OUTPUT_BUFFER" {
+			return "65536"
+		}
+		return ""
+	}
+	o, err := ParseEnvOverlay(getenv)
+	if err != nil {
+		t.Fatalf("ParseEnvOverlay() err = %v", err)
+	}
+	if o.MaxOutputBuffer == nil || *o.MaxOutputBuffer != 65536 {
+		t.Errorf("MaxOutputBuffer = %v, want 65536", o.MaxOutputBuffer)
+	}
+}
+
+func TestParseEnvOverlay_max_output_buffer_negative(t *testing.T) {
+	getenv := func(k string) string {
+		if k == "RALPH_LOOP_MAX_OUTPUT_BUFFER" {
+			return "-1"
+		}
+		return ""
+	}
+	_, err := ParseEnvOverlay(getenv)
+	if err == nil {
+		t.Fatal("expected error for negative RALPH_LOOP_MAX_OUTPUT_BUFFER")
+	}
+}
+
+func TestParseEnvOverlay_max_output_buffer_invalid(t *testing.T) {
+	getenv := func(k string) string {
+		if k == "RALPH_LOOP_MAX_OUTPUT_BUFFER" {
+			return "not-a-number"
+		}
+		return ""
+	}
+	_, err := ParseEnvOverlay(getenv)
+	if err == nil {
+		t.Fatal("expected error for invalid RALPH_LOOP_MAX_OUTPUT_BUFFER")
 	}
 }
