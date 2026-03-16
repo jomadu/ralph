@@ -95,13 +95,13 @@ Ralph can be installed via the provided script so the `ralph` binary is on your 
 
 **Uninstall**
 
-From anywhere (the script reads the install location from `~/.config/ralph/install-state`):
+From anywhere:
 
 ```bash
 ./scripts/uninstall.sh
 ```
 
-This removes the `ralph` binary and the install state file. User config (e.g. `~/.config/ralph/ralph-config.yml`) is **not** removed. Install does not modify PATH or symlinks, so uninstall leaves no broken references.
+This looks for the `ralph` binary in standard locations (`/usr/local/bin`, `~/.local/bin`, `~/bin`) and removes it from the first found. If you installed with `--dir` to a custom path, remove that binary manually. User config (e.g. `~/.config/ralph/ralph-config.yml`) is **not** removed. Install does not modify PATH or symlinks, so uninstall leaves no broken references.
 
 **Upgrade:** Reinstall over the existing binary (e.g. run `install.sh` with the desired version) or use your package manager. Backward compatibility and any migration for breaking changes are described in [release notes](docs/release-notes.md).
 
@@ -333,7 +333,7 @@ Full spec (all commands and flags): [docs/engineering/components/cli.md](docs/en
 - **Config file not found** — With `--config <path>`, only that file is used and it must exist. Without it, global and workspace configs are optional (missing files are skipped).
 - **Wrong or unexpected exit code** — See [docs/exit-codes.md](docs/exit-codes.md). Common causes for exit 2: missing AI command, stdin + `--apply` without `--prompt-output`, report path not writable or path is an existing file, or confirmation required in non-interactive mode without `--yes`.
 - **AI command not found** — The AI CLI must be on PATH or set via `--ai-cmd`. Ralph validates before the loop and exits 2 with a clear error.
-- **ralph: command not found** — Ensure the install directory is on your PATH. Check `~/.config/ralph/install-state` for the install path and run `ralph version` to verify.
+- **ralph: command not found** — Ensure the install directory is on your PATH (e.g. `/usr/local/bin`, `~/.local/bin`, or `~/bin`). Run `ralph version` to verify.
 
 ## Writing Ralph prompts
 
