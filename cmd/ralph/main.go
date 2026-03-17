@@ -306,15 +306,11 @@ func applyRunLoopOverrides(base config.LoopSettings, o runLoopOverrides) config.
 		out.FailureSignal = o.signalFailure
 	}
 	if o.noPreamble {
-		out.Preamble = ""
-	} else if len(o.context) > 0 {
-		// -c/--context: inject as CONTEXT section into preamble (repeatable; join with newlines).
-		contextBlock := "CONTEXT\n" + strings.Join(o.context, "\n")
-		if out.Preamble != "" {
-			out.Preamble = out.Preamble + "\n" + contextBlock
-		} else {
-			out.Preamble = contextBlock
-		}
+		out.Preamble = false
+	}
+	if len(o.context) > 0 {
+		// -c/--context: invoker-provided context; stored as raw text, injected into CONTEXT section with a label in the run-loop.
+		out.Context = strings.Join(o.context, "\n")
 	}
 	// Output and observability (cli.md: --verbose/-v, --quiet/-q, --log-level, --no-stream). Default is streaming on.
 	// Apply shortcuts first; explicit --log-level overrides; only --no-stream turns off AI output (no enable flag).
@@ -416,15 +412,15 @@ func showConfigCmd() *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("config: %w", err)
 				}
-				fmt.Printf("loop:\n  max_iterations: %d  # %s\n  failure_threshold: %d  # %s\n  timeout_seconds: %d  # %s\n  success_signal: %q  # %s\n  failure_signal: %q  # %s\n  preamble: %q  # %s\n  streaming: %t  # %s\n  log_level: %q  # %s\n  max_output_buffer: %d  # %s\n  ai_cmd: %q  # %s\n  ai_cmd_alias: %q  # %s\n",
+				fmt.Printf("loop:\n  max_iterations: %d  # %s\n  failure_threshold: %d  # %s\n  timeout_seconds: %d  # %s\n  success_signal: %q  # %s\n  failure_signal: %q  # %s\n  preamble: %t  # %s\n  context: %q  # %s\n  streaming: %t  # %s\n  log_level: %q  # %s\n  max_output_buffer: %d  # %s\n  ai_cmd: %q  # %s\n  ai_cmd_alias: %q  # %s\n",
 					loop.MaxIterations, prov.MaxIterations, loop.FailureThreshold, prov.FailureThreshold, loop.TimeoutSeconds, prov.TimeoutSeconds,
 					loop.SuccessSignal, prov.SuccessSignal, loop.FailureSignal, prov.FailureSignal,
-					loop.Preamble, prov.Preamble, loop.Streaming, prov.Streaming, loop.LogLevel, prov.LogLevel, loop.MaxOutputBuffer, prov.MaxOutputBuffer,
+					loop.Preamble, prov.Preamble, loop.Context, prov.Context, loop.Streaming, prov.Streaming, loop.LogLevel, prov.LogLevel, loop.MaxOutputBuffer, prov.MaxOutputBuffer,
 					loop.AICmd, prov.AICmd, loop.AICmdAlias, prov.AICmdAlias)
 			} else {
-				fmt.Printf("loop:\n  max_iterations: %d\n  failure_threshold: %d\n  timeout_seconds: %d\n  success_signal: %q\n  failure_signal: %q\n  preamble: %q\n  streaming: %t\n  log_level: %q\n  max_output_buffer: %d\n  ai_cmd: %q\n  ai_cmd_alias: %q\n",
+				fmt.Printf("loop:\n  max_iterations: %d\n  failure_threshold: %d\n  timeout_seconds: %d\n  success_signal: %q\n  failure_signal: %q\n  preamble: %t\n  context: %q\n  streaming: %t\n  log_level: %q\n  max_output_buffer: %d\n  ai_cmd: %q\n  ai_cmd_alias: %q\n",
 					loop.MaxIterations, loop.FailureThreshold, loop.TimeoutSeconds,
-					loop.SuccessSignal, loop.FailureSignal, loop.Preamble, loop.Streaming, loop.LogLevel, loop.MaxOutputBuffer,
+					loop.SuccessSignal, loop.FailureSignal, loop.Preamble, loop.Context, loop.Streaming, loop.LogLevel, loop.MaxOutputBuffer,
 					loop.AICmd, loop.AICmdAlias)
 			}
 			if len(eff.Prompts) > 0 {

@@ -246,7 +246,8 @@ func TestRun_InvalidCommand(t *testing.T) {
 
 func TestRun_DryRun_PrintsAssembledPromptAndExitsZero(t *testing.T) {
 	loop := config.DefaultLoopSettings()
-	loop.Preamble = "You are helpful."
+	loop.Preamble = true
+	loop.MaxIterations = 10
 	callCount := 0
 	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
@@ -281,12 +282,51 @@ func TestRun_DryRun_PrintsAssembledPromptAndExitsZero(t *testing.T) {
 		t.Errorf("dry-run must not invoke backend; invoker was called %d times", callCount)
 	}
 	out, _ := io.ReadAll(r)
-	if !strings.Contains(string(out), "Iteration 1") || !strings.Contains(string(out), "You are helpful.") || !strings.Contains(string(out), "actual prompt content") {
-		t.Errorf("dry-run stdout = %q; expected preamble + prompt content", out)
+	outStr := string(out)
+	if !strings.Contains(outStr, "---\nCONTEXT\n---") || !strings.Contains(outStr, ralphLoopDescription) || !strings.Contains(outStr, "Iteration 1") || !strings.Contains(outStr, "of max 10") {
+		t.Errorf("dry-run stdout missing CONTEXT section or content; got %q", out)
+	}
+	if !strings.Contains(outStr, "---\nPROMPT\n---") || !strings.Contains(outStr, "actual prompt content") {
+		t.Errorf("dry-run stdout missing PROMPT section or content; got %q", out)
 	}
 	if !strings.Contains(reported, "Dry-run") || !strings.Contains(reported, "no run was performed") {
 		t.Errorf("reported = %q", reported)
 	}
+}
+
+func TestRun_DryRun_WithInvokerContext_ShowsLabelNoDuplicate(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.Preamble = true
+	loop.MaxIterations = 10
+	loop.Context = "Hello world"
+	r, w, _ := os.Pipe()
+	oldStdout := os.Stdout
+	os.Stdout = w
+	defer func() { os.Stdout = oldStdout }()
+
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("prompt"),
+		Loop:        loop,
+		DryRun:      true,
+	})
+	w.Close()
+	if err != nil || code != ExitSuccess {
+		t.Fatalf("Run: err=%v code=%d", err, code)
+	}
+	outStr := string(mustReadAll(r))
+	if !strings.Contains(outStr, invokerContextLabel) || !strings.Contains(outStr, "Hello world") {
+		t.Errorf("dry-run with -c should show invoker label and content; got %q", outStr)
+	}
+	// No duplicate: body must not contain "CONTEXT\nHello" (section header is "---\nCONTEXT\n---", not "CONTEXT" as a line in the body).
+	if strings.Contains(outStr, "CONTEXT\nHello world") {
+		t.Errorf("dry-run should not duplicate CONTEXT in body; use invoker label only; got %q", outStr)
+	}
+}
+
+func mustReadAll(r *os.File) []byte {
+	b, _ := io.ReadAll(r)
+	return b
 }
 
 func TestRun_FailureSignalBelowThreshold_Continues(t *testing.T) {

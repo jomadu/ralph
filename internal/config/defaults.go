@@ -21,7 +21,8 @@ func DefaultLoopSettings() LoopSettings {
 		TimeoutSeconds:   0, // no per-iteration timeout
 		SuccessSignal:    DefaultSuccessSignal,
 		FailureSignal:    DefaultFailureSignal,
-		Preamble:         "",
+		Preamble:         true, // include system preamble (iteration N of M) by default
+		Context:          "",
 		Streaming:        true,
 		LogLevel:         "info",
 		MaxOutputBuffer:  DefaultMaxOutputBuffer,

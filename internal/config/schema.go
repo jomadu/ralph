@@ -72,7 +72,7 @@ func validateLoop(loop *LoopSection) error {
 	if loop.LogLevel != "" && !validLogLevel[loop.LogLevel] {
 		return fmt.Errorf("%w (got %q)", ErrInvalidLogLevel, loop.LogLevel)
 	}
-	// preamble: string or bool — no extra validation
+	// preamble: bool — no extra validation
 	// streaming: *bool — no extra validation
 	return nil
 }
