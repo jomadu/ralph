@@ -68,6 +68,29 @@ aliases:
 	}
 }
 
+func TestParseLayer_loopAiCmdAndAlias(t *testing.T) {
+	yaml := `
+loop:
+  ai_cmd: "claude --non-interactive"
+  ai_cmd_alias: "cursor-agent"
+prompts: {}
+aliases: {}
+`
+	layer, err := ParseLayer([]byte(yaml))
+	if err != nil {
+		t.Fatalf("ParseLayer() err = %v", err)
+	}
+	if layer == nil || layer.Loop == nil {
+		t.Fatal("ParseLayer() layer or layer.Loop = nil")
+	}
+	if layer.Loop.AiCmd != "claude --non-interactive" {
+		t.Errorf("loop.ai_cmd = %q, want claude --non-interactive", layer.Loop.AiCmd)
+	}
+	if layer.Loop.AiCmdAlias != "cursor-agent" {
+		t.Errorf("loop.ai_cmd_alias = %q, want cursor-agent", layer.Loop.AiCmdAlias)
+	}
+}
+
 func TestLoadGlobalAndWorkspace_skip_missing(t *testing.T) {
 	// Pass paths that don't exist; no getenv/cwd, so test is independent of dev machine state.
 	globalPath := filepath.Join(t.TempDir(), ConfigFileName)

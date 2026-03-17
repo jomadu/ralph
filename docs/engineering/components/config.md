@@ -76,8 +76,10 @@ Config files are YAML. The following structure is the authoritative shape implem
   - **streaming** (boolean, optional) — Whether to show AI command output in the terminal (default: true). Used by both `ralph run` and `ralph review`. Env: `RALPH_LOOP_STREAMING`. CLI: `--no-stream` only (turns off for that run; no flag to turn on—streaming is the default).
   - **log_level** (string, optional) — Log verbosity (e.g. debug, info, warn, error).
   - **max_output_buffer** (integer, optional) — Maximum bytes of AI stdout to retain for signal detection; 0 = unlimited. Default: 65536. Env: `RALPH_LOOP_MAX_OUTPUT_BUFFER`. When set, only the last N bytes are kept so the last line is preserved within the cap.
+  - **ai_cmd** (string, optional) — Direct AI command string (e.g. a full CLI invocation). When both **ai_cmd** and **ai_cmd_alias** are set, the direct command takes precedence over the alias.
+  - **ai_cmd_alias** (string, optional) — AI command alias name; must be a name from **aliases** or a built-in alias (e.g. `claude`, `cursor-agent`).
 - **prompts** (object, optional) — Map of prompt name to prompt definition.
-  - Each entry: **path** or **content** (file path or inline); optional **loop** overrides (same keys as root loop).
+  - Each entry: **path** or **content** (file path or inline); optional **loop** overrides (same keys as root loop, including **ai_cmd** and **ai_cmd_alias**).
   - **Prompt path resolution:** A relative **path** is resolved relative to the **directory containing the config file that defined that prompt** (the layer that supplied the prompt when layers are merged). It is not relative to the current working directory. Absolute paths remain absolute. This allows config files to reference prompt files next to them or in a stable location relative to the config (e.g. `./prompts/build.md` or `prompts/build.md` from the same directory as the config file).
 - **aliases** (object, optional) — Map of alias name to AI command string (or alias definition with **command**).
   - Each entry: **command** (string) — The AI CLI command line (e.g. `claude --non-interactive`).
@@ -124,6 +126,11 @@ This keeps prompt locations tied to the config that defines them and avoids depe
 ### Resolution rules
 
 - For each setting, the effective value is the one from the highest-priority layer that supplies that setting.
+- **AI command and alias:** **ai_cmd** and **ai_cmd_alias** use the same layer order as other loop settings. The effective value is the highest-priority layer that supplies it (root or prompt loop, then env, then CLI flags). When both a direct command and an alias are supplied, the direct command overrides the alias.
 - When explicit config path is supplied, only that file is read; global and workspace are not read. Missing explicit file → error.
 - Missing global or workspace file → skip that layer; no error.
 - Prompt-level loop overrides apply when running or listing that prompt; env and CLI overrides still apply for that run.
+
+### Show config and provenance
+
+`ralph show config` prints the effective (resolved) config. With `--provenance`, it also reports which layer supplied each loop value. For **ai_cmd** and **ai_cmd_alias**, the reported layer is one of: **default** (no layer set it), **global**, **workspace**, **explicit**, **env**, or **prompt** (when the value came from a prompt’s loop override).

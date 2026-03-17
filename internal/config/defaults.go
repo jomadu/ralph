@@ -25,6 +25,8 @@ func DefaultLoopSettings() LoopSettings {
 		Streaming:        true,
 		LogLevel:         "info",
 		MaxOutputBuffer:  DefaultMaxOutputBuffer,
+		AICmd:            "",
+		AICmdAlias:       "",
 	}
 }
 

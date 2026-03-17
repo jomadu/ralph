@@ -30,6 +30,8 @@ type LoopProvenance struct {
 	Streaming        string
 	LogLevel         string
 	MaxOutputBuffer  string
+	AICmd            string
+	AICmdAlias       string
 }
 
 // RootLoopWithProvenance computes root loop (defaults → global → workspace or explicit → env)
@@ -46,6 +48,8 @@ func RootLoopWithProvenance(getenv func(string) string, cwd, configPath string) 
 		Streaming:        ProvenanceDefault,
 		LogLevel:         ProvenanceDefault,
 		MaxOutputBuffer:  ProvenanceDefault,
+		AICmd:            ProvenanceDefault,
+		AICmdAlias:       ProvenanceDefault,
 	}
 	loop := DefaultLoopSettings()
 
@@ -128,6 +132,14 @@ func applySectionWithProvenance(base LoopSettings, section *LoopSection, layer s
 		out.Preamble = ""
 		prov.Preamble = layer
 	}
+	if section.AiCmd != "" {
+		out.AICmd = section.AiCmd
+		prov.AICmd = layer
+	}
+	if section.AiCmdAlias != "" {
+		out.AICmdAlias = section.AiCmdAlias
+		prov.AICmdAlias = layer
+	}
 	return out
 }
 
@@ -164,6 +176,14 @@ func applyEnvOverlayWithProvenance(loop LoopSettings, overlay *EnvOverlay, prov 
 	if overlay.MaxOutputBuffer != nil {
 		out.MaxOutputBuffer = *overlay.MaxOutputBuffer
 		prov.MaxOutputBuffer = ProvenanceEnv
+	}
+	if overlay.AICmd != nil {
+		out.AICmd = *overlay.AICmd
+		prov.AICmd = ProvenanceEnv
+	}
+	if overlay.AICmdAlias != nil {
+		out.AICmdAlias = *overlay.AICmdAlias
+		prov.AICmdAlias = ProvenanceEnv
 	}
 	return out, prov
 }
