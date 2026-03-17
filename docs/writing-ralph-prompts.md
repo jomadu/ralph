@@ -61,21 +61,3 @@ Keep these techniques **iteration-agnostic**: describe what to do in a given run
 | **Subjective completion** | When "done" is subjective, add variation or stepping-back techniques that are per-run (not "after N passes") to avoid getting stuck and avoid artifacts. |
 
 These are the same four dimensions **`ralph review`** uses. You can run `ralph review` on your prompt to get AI-generated feedback and a suggested revision along these dimensions. For a short reminder in the terminal, run `ralph show prompt-guide`.
-
----
-
-## Tailoring the build prompt to this repo
-
-The build prompt (`prompts/build.md`) is kept **tight and repo-specific** so the agent spends tokens on the task, not on rediscovering layout. Tailoring choices:
-
-1. **Bake in the layout** — Instead of "read AGENTS.md and extract work tracking, docs, implementation," the prompt states: work tracking is bd with specific commands; spec is `docs/engineering/` + components, product via O/R links; implementation is `cmd/`, `internal/`, `scripts/`. The agent still uses AGENTS.md for build/test/lint details and session rules, but no longer re-derives the map every run.
-
-2. **One source of truth for signals** — Success/failure/continue and the `<promise>` format are defined once at the top; later sections only say when to emit which signal. Keeps the prompt consistent with the four dimensions (signal and state, iteration awareness: avoid pass-count logic).
-
-3. **Phases collapsed into three steps** — (1) Get the next task from bd, load only the context needed for that task. (2) Plan and implement; run quality gates and close the task in bd. (3) Emit the correct signal. No separate OBSERVE/ORIENT/DECIDE/ACT phases; the flow is "pull task → do task → signal."
-
-4. **Task selection is explicit** — "Next highest-priority ready item," "exactly one task per run," and "re-query bd if unsure" keep scope and convergence clear and avoid iteration-count logic.
-
-5. **No sub-agent instructions** — Optional parallelization is omitted from the streamlined prompt; the agent can still use tools as needed, but the procedure does not prescribe when to delegate.
-
-When you change the repo (e.g. new tooling, new doc structure), update the repo layout block in `prompts/build.md` so the prompt stays accurate.
