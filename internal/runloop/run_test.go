@@ -283,13 +283,16 @@ func TestRun_DryRun_PrintsAssembledPromptAndExitsZero(t *testing.T) {
 	}
 	out, _ := io.ReadAll(r)
 	outStr := string(out)
+	if !strings.Contains(outStr, "---\nLOOP CONFIG\n---") || !strings.Contains(outStr, "max_iterations: 10") || !strings.Contains(outStr, "failure_threshold: 3") {
+		t.Errorf("dry-run stdout missing LOOP CONFIG section or content; got %q", out)
+	}
 	if !strings.Contains(outStr, "---\nCONTEXT\n---") || !strings.Contains(outStr, ralphLoopDescription) || !strings.Contains(outStr, "Iteration 1") || !strings.Contains(outStr, "of max 10") {
 		t.Errorf("dry-run stdout missing CONTEXT section or content; got %q", out)
 	}
-	if !strings.Contains(outStr, "---\nPROMPT\n---") || !strings.Contains(outStr, "actual prompt content") {
-		t.Errorf("dry-run stdout missing PROMPT section or content; got %q", out)
+	if !strings.Contains(outStr, "---\nINSTRUCTIONS\n---") || !strings.Contains(outStr, "actual prompt content") {
+		t.Errorf("dry-run stdout missing INSTRUCTIONS section or content; got %q", out)
 	}
-	if !strings.Contains(reported, "Dry-run") || !strings.Contains(reported, "no run was performed") {
+	if !strings.Contains(reported, "Dry-run") || !strings.Contains(reported, "loop config") || !strings.Contains(reported, "no run was performed") {
 		t.Errorf("reported = %q", reported)
 	}
 }
