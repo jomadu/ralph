@@ -3,10 +3,7 @@
 
 package config
 
-import (
-	"path/filepath"
-	"strings"
-)
+import "strings"
 
 // Layer names for provenance (cli.md: default, global, workspace, explicit file, env, cli, prompt).
 const (
@@ -18,6 +15,17 @@ const (
 	ProvenanceCLI       = "cli"
 	ProvenancePrompt    = "prompt"
 )
+
+// RootLoopInput holds all inputs needed to compute root loop and provenance. The caller
+// constructs this (e.g. via NewRootLoopInput) so that RootLoopWithProvenance does no I/O
+// or env reads—making it a pure merge. When Explicit is non-nil, only Explicit and
+// EnvOverlay are used; otherwise Global and Workspace are merged, then EnvOverlay applied.
+type RootLoopInput struct {
+	Explicit   *FileLayer  // when set, only this layer is used (no global/workspace)
+	Global     *FileLayer  // used when Explicit is nil
+	Workspace  *FileLayer  // used when Explicit is nil
+	EnvOverlay *EnvOverlay // applied after file layers; may be nil
+}
 
 // LoopProvenance records which layer supplied each loop setting (for show config --provenance).
 type LoopProvenance struct {
@@ -35,10 +43,10 @@ type LoopProvenance struct {
 	AICmdAlias       string
 }
 
-// RootLoopWithProvenance computes root loop (defaults → global → workspace or explicit → env)
-// and per-field provenance. When configPath is non-empty, only that file is used (explicit);
-// otherwise global and workspace are used. Used by CLI show config --provenance.
-func RootLoopWithProvenance(getenv func(string) string, cwd, configPath string) (LoopSettings, LoopProvenance, error) {
+// RootLoopWithProvenance computes root loop and provenance from pre-loaded inputs. It does
+// no I/O or env reads. Order: defaults → explicit (if set) or global → workspace → env overlay.
+// Used by CLI show config --provenance. Call NewRootLoopInput to build the input from getenv/cwd/configPath.
+func RootLoopWithProvenance(input RootLoopInput) (LoopSettings, LoopProvenance) {
 	provenance := LoopProvenance{
 		MaxIterations:    ProvenanceDefault,
 		FailureThreshold: ProvenanceDefault,
@@ -55,37 +63,19 @@ func RootLoopWithProvenance(getenv func(string) string, cwd, configPath string) 
 	}
 	loop := DefaultLoopSettings()
 
-	if configPath != "" {
-		path := configPath
-		if !filepath.IsAbs(path) {
-			path = filepath.Join(cwd, path)
-		}
-		layer, err := LoadExplicit(path)
-		if err != nil {
-			return LoopSettings{}, LoopProvenance{}, err
-		}
-		loop = applySectionWithProvenance(loop, layer.Loop, ProvenanceExplicit, &provenance)
+	if input.Explicit != nil {
+		loop = applySectionWithProvenance(loop, input.Explicit.Loop, ProvenanceExplicit, &provenance)
 	} else {
-		globalPath := GlobalPath(getenv)
-		workspacePath := WorkspacePath(cwd)
-		global, workspace, err := LoadGlobalAndWorkspace(globalPath, workspacePath)
-		if err != nil {
-			return LoopSettings{}, LoopProvenance{}, err
+		if input.Global != nil && input.Global.Loop != nil {
+			loop = applySectionWithProvenance(loop, input.Global.Loop, ProvenanceGlobal, &provenance)
 		}
-		if global != nil && global.Loop != nil {
-			loop = applySectionWithProvenance(loop, global.Loop, ProvenanceGlobal, &provenance)
-		}
-		if workspace != nil && workspace.Loop != nil {
-			loop = applySectionWithProvenance(loop, workspace.Loop, ProvenanceWorkspace, &provenance)
+		if input.Workspace != nil && input.Workspace.Loop != nil {
+			loop = applySectionWithProvenance(loop, input.Workspace.Loop, ProvenanceWorkspace, &provenance)
 		}
 	}
 
-	overlay, err := ParseEnvOverlay(getenv)
-	if err != nil {
-		return LoopSettings{}, LoopProvenance{}, err
-	}
-	loop, provenance = applyEnvOverlayWithProvenance(loop, overlay, provenance)
-	return loop, provenance, nil
+	loop, provenance = applyEnvOverlayWithProvenance(loop, input.EnvOverlay, provenance)
+	return loop, provenance
 }
 
 // applySectionWithProvenance applies a file layer's loop section and updates provenance for overridden fields.
@@ -267,29 +257,27 @@ func applyCLIOverlayWithProvenance(loop LoopSettings, o *CLIOverlay, prov LoopPr
 	return out, prov
 }
 
-// LoopWithProvenance returns the effective loop and provenance for the given context, including
-// optional prompt overrides and CLI overlay (T7.3, O002/R007). Order: root (defaults → layers → env)
-// then prompt overrides (if promptName is set and the prompt has loop overrides), then CLI overlay.
-// When promptName is empty or the prompt has no loop section, prompt layer is skipped.
-// When cli is nil, CLI layer is skipped.
-func LoopWithProvenance(getenv func(string) string, cwd, configPath, promptName string, cli *CLIOverlay) (LoopSettings, LoopProvenance, error) {
-	rootLoop, prov, err := RootLoopWithProvenance(getenv, cwd, configPath)
-	if err != nil {
-		return LoopSettings{}, LoopProvenance{}, err
-	}
-	loop := rootLoop
+// LoopWithProvenanceInput holds all inputs for LoopWithProvenance. The caller builds this
+// (Root from NewRootLoopInput; Resolved from the same call for prompt lookup). Pure options.
+type LoopWithProvenanceInput struct {
+	Root       RootLoopInput
+	Resolved   *Resolved // used when PromptName is set to apply prompt loop overrides; may be nil
+	PromptName string
+	CLI        *CLIOverlay
+}
 
-	if promptName != "" {
-		resolved, _, err := loadLayersAndRootLoop(getenv, cwd, configPath)
-		if err != nil {
-			return LoopSettings{}, LoopProvenance{}, err
-		}
-		prompt, ok := resolved.Prompts[promptName]
-		if ok && prompt.Loop != nil {
+// LoopWithProvenance returns the effective loop and provenance from the given options. It does
+// no I/O or env reads. Order: root (from opts.Root) → prompt overrides (if opts.PromptName
+// and opts.Resolved) → CLI overlay (if opts.CLI). Call NewRootLoopInput to build opts.Root and opts.Resolved.
+func LoopWithProvenance(opts LoopWithProvenanceInput) (LoopSettings, LoopProvenance) {
+	loop, prov := RootLoopWithProvenance(opts.Root)
+
+	if opts.PromptName != "" && opts.Resolved != nil {
+		if prompt, ok := opts.Resolved.Prompts[opts.PromptName]; ok && prompt.Loop != nil {
 			loop = applySectionWithProvenance(loop, prompt.Loop, ProvenancePrompt, &prov)
 		}
 	}
 
-	loop, prov = applyCLIOverlayWithProvenance(loop, cli, prov)
-	return loop, prov, nil
+	loop, prov = applyCLIOverlayWithProvenance(loop, opts.CLI, prov)
+	return loop, prov
 }

@@ -408,10 +408,13 @@ func showConfigCmd() *cobra.Command {
 			}
 			loop := eff.Loop
 			if provenance {
-				loop, prov, err := config.LoopWithProvenance(os.Getenv, cwd, configPath, promptName, nil)
+				rootInput, resolved, err := config.NewRootLoopInput(os.Getenv, cwd, configPath)
 				if err != nil {
 					return fmt.Errorf("config: %w", err)
 				}
+				loop, prov := config.LoopWithProvenance(config.LoopWithProvenanceInput{
+					Root: rootInput, Resolved: resolved, PromptName: promptName, CLI: nil,
+				})
 				fmt.Printf("loop:\n  max_iterations: %d  # %s\n  failure_threshold: %d  # %s\n  timeout_seconds: %d  # %s\n  success_signal: %q  # %s\n  failure_signal: %q  # %s\n  preamble: %t  # %s\n  context: %q  # %s\n  streaming: %t  # %s\n  log_level: %q  # %s\n  max_output_buffer: %d  # %s\n  ai_cmd: %q  # %s\n  ai_cmd_alias: %q  # %s\n",
 					loop.MaxIterations, prov.MaxIterations, loop.FailureThreshold, prov.FailureThreshold, loop.TimeoutSeconds, prov.TimeoutSeconds,
 					loop.SuccessSignal, prov.SuccessSignal, loop.FailureSignal, prov.FailureSignal,

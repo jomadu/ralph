@@ -23,17 +23,17 @@ type FileLayer struct {
 
 // LoopSection holds loop behavior settings from a config file.
 type LoopSection struct {
-	MaxIterations    *int        `yaml:"max_iterations,omitempty"`
-	FailureThreshold *int        `yaml:"failure_threshold,omitempty"`
-	TimeoutSeconds   *int        `yaml:"timeout_seconds,omitempty"`
-	SuccessSignal    string      `yaml:"success_signal,omitempty"`
-	FailureSignal    string      `yaml:"failure_signal,omitempty"`
+	MaxIterations    *int   `yaml:"max_iterations,omitempty"`
+	FailureThreshold *int   `yaml:"failure_threshold,omitempty"`
+	TimeoutSeconds   *int   `yaml:"timeout_seconds,omitempty"`
+	SuccessSignal    string `yaml:"success_signal,omitempty"`
+	FailureSignal    string `yaml:"failure_signal,omitempty"`
 	Preamble         *bool  `yaml:"preamble,omitempty"` // whether to inject system preamble (Ralph loop description + iteration) in CONTEXT
-	Streaming        *bool       `yaml:"streaming,omitempty"`
-	LogLevel         string      `yaml:"log_level,omitempty"`
-	MaxOutputBuffer  *int        `yaml:"max_output_buffer,omitempty"`
-	AiCmd            string      `yaml:"ai_cmd,omitempty"`
-	AiCmdAlias       string      `yaml:"ai_cmd_alias,omitempty"`
+	Streaming        *bool  `yaml:"streaming,omitempty"`
+	LogLevel         string `yaml:"log_level,omitempty"`
+	MaxOutputBuffer  *int   `yaml:"max_output_buffer,omitempty"`
+	AiCmd            string `yaml:"ai_cmd,omitempty"`
+	AiCmdAlias       string `yaml:"ai_cmd_alias,omitempty"`
 }
 
 // Prompt holds a single prompt definition (path or content, optional loop overrides).
