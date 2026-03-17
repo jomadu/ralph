@@ -81,6 +81,18 @@ const unlimitedIterationsThreshold = 1_000_000_000
 // invokerContextLabel is the line that introduces user-provided context (-c) inside the CONTEXT section.
 const invokerContextLabel = "Context provided by the invoker of this Ralph run:"
 
+// formatLoopConfig returns a human-readable summary of loop settings for dry-run output.
+func formatLoopConfig(loop config.LoopSettings) string {
+	timeout := strconv.Itoa(loop.TimeoutSeconds)
+	if loop.TimeoutSeconds == 0 {
+		timeout = "0 (no limit)"
+	}
+	return fmt.Sprintf("max_iterations: %d\nfailure_threshold: %d\ntimeout_seconds: %s\nsuccess_signal: %q\nfailure_signal: %q\npreamble: %t\nlog_level: %s\nstreaming: %t\nmax_output_buffer: %d",
+		loop.MaxIterations, loop.FailureThreshold, timeout,
+		loop.SuccessSignal, loop.FailureSignal,
+		loop.Preamble, loop.LogLevel, loop.Streaming, loop.MaxOutputBuffer)
+}
+
 // Run validates the AI command, then runs the loop: for each iteration invokes
 // the backend with the assembled prompt, captures stdout, and scans for the
 // configured success and failure signals. On success: reports completion and
@@ -112,12 +124,15 @@ func Run(opts RunOptions) (exitCode int, err error) {
 		streamTo = opts.StreamWriter
 	}
 
-	// Dry-run: assemble prompt (single CONTEXT section + PROMPT section with --- headers), print to stdout, exit 0. No backend (T3.10, O004/R007).
+	// Dry-run: print LOOP CONFIG, then assembled prompt (CONTEXT + INSTRUCTIONS sections), exit 0. No backend (T3.10, O004/R007).
 	if opts.DryRun {
+		configSection := sectionHeader("LOOP CONFIG") + "\n\n" + formatLoopConfig(opts.Loop)
 		contextBody := buildContextBody(opts.Loop.Preamble, 1, opts.Loop.MaxIterations, opts.Loop.Context)
 		assembled := assembleWithSectionHeaders(contextBody, opts.PromptBytes)
+		os.Stdout.Write([]byte(configSection + "\n\n"))
 		os.Stdout.Write(assembled)
-		reportLevel(report, logLevel, "info", "Dry-run: assembled prompt printed; no run was performed.")
+		os.Stdout.Write([]byte("\n"))
+		reportLevel(report, logLevel, "info", "Dry-run: loop config and assembled prompt printed; no run was performed.")
 		return ExitSuccess, nil
 	}
 
@@ -248,13 +263,13 @@ func buildContextBody(injectPreamble bool, iteration, maxIterations int, invoker
 }
 
 // assembleWithSectionHeaders builds the full prompt with titled section separators (---\nNAME\n---).
-// Single CONTEXT section (when non-empty) then PROMPT. Sections are separated by a blank line.
+// Single CONTEXT section (when non-empty) then INSTRUCTIONS. Sections are separated by a blank line.
 func assembleWithSectionHeaders(contextBody string, promptBytes []byte) []byte {
 	var parts []string
 	if contextBody != "" {
 		parts = append(parts, sectionHeader("CONTEXT")+"\n\n"+contextBody)
 	}
-	parts = append(parts, sectionHeader("PROMPT")+"\n\n"+string(promptBytes))
+	parts = append(parts, sectionHeader("INSTRUCTIONS")+"\n\n"+string(promptBytes))
 	return []byte(strings.Join(parts, "\n\n"))
 }
 
