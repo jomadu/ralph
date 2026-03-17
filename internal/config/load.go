@@ -32,6 +32,46 @@ func LoadExplicit(path string) (*FileLayer, error) {
 	return ReadLayerRequired(path)
 }
 
+// NewRootLoopInput loads config layers and parses env into a RootLoopInput and Resolved.
+// The caller passes this to RootLoopWithProvenance and LoopWithProvenance so those
+// functions stay pure (no I/O or getenv). getenv is typically os.Getenv; cwd and
+// configPath are used to resolve the explicit path or global/workspace paths.
+// Returns (input, resolved for prompt lookup, error). Resolved is needed when
+// applying prompt overrides in LoopWithProvenance.
+func NewRootLoopInput(getenv func(string) string, cwd, configPath string) (RootLoopInput, *Resolved, error) {
+	var input RootLoopInput
+	overlay, err := ParseEnvOverlay(getenv)
+	if err != nil {
+		return input, nil, err
+	}
+	input.EnvOverlay = overlay
+
+	if configPath != "" {
+		path := configPath
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(cwd, path)
+		}
+		layer, err := LoadExplicit(path)
+		if err != nil {
+			return input, nil, err
+		}
+		input.Explicit = layer
+		resolved := MergeLayers(nil, "", layer, path)
+		return input, resolved, nil
+	}
+
+	globalPath := GlobalPath(getenv)
+	workspacePath := WorkspacePath(cwd)
+	global, workspace, err := LoadGlobalAndWorkspace(globalPath, workspacePath)
+	if err != nil {
+		return input, nil, err
+	}
+	input.Global = global
+	input.Workspace = workspace
+	resolved := MergeLayers(global, globalPath, workspace, workspacePath)
+	return input, resolved, nil
+}
+
 // loadLayersAndRootLoop loads file layers and applies env overlay, returning
 // merged resolved config and root loop (defaults → layers → env). Used by
 // ResolveEffective and ResolveEffectiveForPrompt.

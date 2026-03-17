@@ -7,12 +7,8 @@ import (
 )
 
 func TestRootLoopWithProvenance_defaults(t *testing.T) {
-	cwd := t.TempDir()
-	getenv := func(string) string { return "" }
-	loop, prov, err := RootLoopWithProvenance(getenv, cwd, "")
-	if err != nil {
-		t.Fatalf("RootLoopWithProvenance() err = %v", err)
-	}
+	input := RootLoopInput{}
+	loop, prov := RootLoopWithProvenance(input)
 	if loop.MaxIterations != 10 || loop.LogLevel != "info" {
 		t.Errorf("loop = %+v, want default values", loop)
 	}
@@ -25,7 +21,6 @@ func TestRootLoopWithProvenance_defaults(t *testing.T) {
 }
 
 func TestRootLoopWithProvenance_envOverlay(t *testing.T) {
-	cwd := t.TempDir()
 	getenv := func(k string) string {
 		switch k {
 		case "RALPH_LOOP_DEFAULT_MAX_ITERATIONS":
@@ -36,10 +31,12 @@ func TestRootLoopWithProvenance_envOverlay(t *testing.T) {
 			return ""
 		}
 	}
-	loop, prov, err := RootLoopWithProvenance(getenv, cwd, "")
+	overlay, err := ParseEnvOverlay(getenv)
 	if err != nil {
-		t.Fatalf("RootLoopWithProvenance(env) err = %v", err)
+		t.Fatalf("ParseEnvOverlay: %v", err)
 	}
+	input := RootLoopInput{EnvOverlay: overlay}
+	loop, prov := RootLoopWithProvenance(input)
 	if loop.MaxIterations != 5 || loop.LogLevel != "debug" {
 		t.Errorf("loop = max_iterations=%d log_level=%q, want 5, debug", loop.MaxIterations, loop.LogLevel)
 	}
@@ -57,11 +54,13 @@ func TestRootLoopWithProvenance_explicitFile(t *testing.T) {
 	if err := os.WriteFile(configPath, []byte("loop:\n  max_iterations: 2\n  log_level: warn\n"), 0644); err != nil {
 		t.Fatal(err)
 	}
-	getenv := func(string) string { return "" }
-	loop, prov, err := RootLoopWithProvenance(getenv, dir, configPath)
+	layer, err := LoadExplicit(configPath)
 	if err != nil {
-		t.Fatalf("RootLoopWithProvenance(explicit) err = %v", err)
+		t.Fatal(err)
 	}
+	overlay, _ := ParseEnvOverlay(func(string) string { return "" })
+	input := RootLoopInput{Explicit: layer, EnvOverlay: overlay}
+	loop, prov := RootLoopWithProvenance(input)
 	if loop.MaxIterations != 2 || loop.LogLevel != "warn" {
 		t.Errorf("loop = max_iterations=%d log_level=%q, want 2, warn", loop.MaxIterations, loop.LogLevel)
 	}
@@ -77,11 +76,13 @@ func TestRootLoopWithProvenance_explicitFile_aiCmd(t *testing.T) {
 	if err := os.WriteFile(configPath, []byte(cfg), 0644); err != nil {
 		t.Fatal(err)
 	}
-	getenv := func(string) string { return "" }
-	loop, prov, err := RootLoopWithProvenance(getenv, dir, configPath)
+	layer, err := LoadExplicit(configPath)
 	if err != nil {
-		t.Fatalf("RootLoopWithProvenance(explicit ai_cmd) err = %v", err)
+		t.Fatal(err)
 	}
+	overlay, _ := ParseEnvOverlay(func(string) string { return "" })
+	input := RootLoopInput{Explicit: layer, EnvOverlay: overlay}
+	loop, prov := RootLoopWithProvenance(input)
 	if loop.AICmd != "claude --non-interactive" || loop.AICmdAlias != "cursor-agent" {
 		t.Errorf("loop = AICmd=%q AICmdAlias=%q, want explicit values", loop.AICmd, loop.AICmdAlias)
 	}
@@ -91,7 +92,6 @@ func TestRootLoopWithProvenance_explicitFile_aiCmd(t *testing.T) {
 }
 
 func TestRootLoopWithProvenance_envOverlay_aiCmd(t *testing.T) {
-	cwd := t.TempDir()
 	getenv := func(k string) string {
 		switch k {
 		case "RALPH_LOOP_AI_CMD":
@@ -102,10 +102,12 @@ func TestRootLoopWithProvenance_envOverlay_aiCmd(t *testing.T) {
 			return ""
 		}
 	}
-	loop, prov, err := RootLoopWithProvenance(getenv, cwd, "")
+	overlay, err := ParseEnvOverlay(getenv)
 	if err != nil {
-		t.Fatalf("RootLoopWithProvenance(env ai_cmd) err = %v", err)
+		t.Fatalf("ParseEnvOverlay: %v", err)
 	}
+	input := RootLoopInput{EnvOverlay: overlay}
+	loop, prov := RootLoopWithProvenance(input)
 	if loop.AICmd != "custom-ai --batch" || loop.AICmdAlias != "claude" {
 		t.Errorf("loop = AICmd=%q AICmdAlias=%q, want env values", loop.AICmd, loop.AICmdAlias)
 	}
@@ -116,16 +118,18 @@ func TestRootLoopWithProvenance_envOverlay_aiCmd(t *testing.T) {
 
 func TestRootLoopWithProvenance_workspaceOnly_aiCmdAlias(t *testing.T) {
 	dir := t.TempDir()
-	configPath := filepath.Join(dir, "ralph-config.yml")
+	configPath := filepath.Join(dir, ConfigFileName)
 	cfg := "loop:\n  ai_cmd_alias: cursor-agent\n"
 	if err := os.WriteFile(configPath, []byte(cfg), 0644); err != nil {
 		t.Fatal(err)
 	}
-	getenv := func(string) string { return "" }
-	loop, prov, err := RootLoopWithProvenance(getenv, dir, "")
+	workspace, err := ReadLayer(configPath)
 	if err != nil {
-		t.Fatalf("RootLoopWithProvenance(workspace) err = %v", err)
+		t.Fatal(err)
 	}
+	overlay, _ := ParseEnvOverlay(func(string) string { return "" })
+	input := RootLoopInput{Workspace: workspace, EnvOverlay: overlay}
+	loop, prov := RootLoopWithProvenance(input)
 	if loop.AICmdAlias != "cursor-agent" {
 		t.Errorf("loop.AICmdAlias = %q, want cursor-agent", loop.AICmdAlias)
 	}
@@ -148,10 +152,11 @@ func TestRootLoopWithProvenance_globalOnly_aiCmdAlias(t *testing.T) {
 		}
 		return ""
 	}
-	loop, prov, err := RootLoopWithProvenance(getenv, cwd, "")
+	input, _, err := NewRootLoopInput(getenv, cwd, "")
 	if err != nil {
-		t.Fatalf("RootLoopWithProvenance(global) err = %v", err)
+		t.Fatalf("NewRootLoopInput: %v", err)
 	}
+	loop, prov := RootLoopWithProvenance(input)
 	if loop.AICmdAlias != "kiro" {
 		t.Errorf("loop.AICmdAlias = %q, want kiro", loop.AICmdAlias)
 	}
@@ -162,13 +167,19 @@ func TestRootLoopWithProvenance_globalOnly_aiCmdAlias(t *testing.T) {
 
 func TestLoopWithProvenance_cliOverlay(t *testing.T) {
 	cwd := t.TempDir()
-	getenv := func(string) string { return "" }
+	getenv := func(k string) string {
+		if k == "RALPH_CONFIG_HOME" {
+			return cwd
+		}
+		return ""
+	}
+	input, _, err := NewRootLoopInput(getenv, cwd, "")
+	if err != nil {
+		t.Fatalf("NewRootLoopInput: %v", err)
+	}
 	// FailureThreshold/IterationTimeout -1 = not set (don't override)
 	cli := &CLIOverlay{MaxIterations: 7, LogLevel: "warn", FailureThreshold: -1, IterationTimeout: -1}
-	loop, prov, err := LoopWithProvenance(getenv, cwd, "", "", cli)
-	if err != nil {
-		t.Fatalf("LoopWithProvenance(cli) err = %v", err)
-	}
+	loop, prov := LoopWithProvenance(LoopWithProvenanceInput{Root: input, CLI: cli})
 	if loop.MaxIterations != 7 || loop.LogLevel != "warn" {
 		t.Errorf("loop = max_iterations=%d log_level=%q, want 7, warn", loop.MaxIterations, loop.LogLevel)
 	}
@@ -182,16 +193,17 @@ func TestLoopWithProvenance_cliOverlay(t *testing.T) {
 
 func TestLoopWithProvenance_promptOverride(t *testing.T) {
 	dir := t.TempDir()
-	configPath := filepath.Join(dir, "ralph-config.yml")
+	configPath := filepath.Join(dir, ConfigFileName)
 	cfg := "loop:\n  max_iterations: 5\nprompts:\n  p1:\n    path: \"x\"\n    loop:\n      max_iterations: 2\n      log_level: debug\n"
 	if err := os.WriteFile(configPath, []byte(cfg), 0644); err != nil {
 		t.Fatal(err)
 	}
 	getenv := func(string) string { return "" }
-	loop, prov, err := LoopWithProvenance(getenv, dir, configPath, "p1", nil)
+	rootInput, resolved, err := NewRootLoopInput(getenv, dir, configPath)
 	if err != nil {
-		t.Fatalf("LoopWithProvenance(prompt p1) err = %v", err)
+		t.Fatalf("NewRootLoopInput: %v", err)
 	}
+	loop, prov := LoopWithProvenance(LoopWithProvenanceInput{Root: rootInput, Resolved: resolved, PromptName: "p1", CLI: nil})
 	if loop.MaxIterations != 2 || loop.LogLevel != "debug" {
 		t.Errorf("loop = max_iterations=%d log_level=%q, want 2, debug (prompt overrides)", loop.MaxIterations, loop.LogLevel)
 	}
@@ -206,16 +218,17 @@ func TestLoopWithProvenance_promptOverride(t *testing.T) {
 
 func TestLoopWithProvenance_promptOverride_aiCmdAlias(t *testing.T) {
 	dir := t.TempDir()
-	configPath := filepath.Join(dir, "ralph-config.yml")
+	configPath := filepath.Join(dir, ConfigFileName)
 	cfg := "loop:\n  ai_cmd_alias: claude\nprompts:\n  p1:\n    path: \"x\"\n    loop:\n      ai_cmd_alias: cursor-agent\n"
 	if err := os.WriteFile(configPath, []byte(cfg), 0644); err != nil {
 		t.Fatal(err)
 	}
 	getenv := func(string) string { return "" }
-	loop, prov, err := LoopWithProvenance(getenv, dir, configPath, "p1", nil)
+	rootInput, resolved, err := NewRootLoopInput(getenv, dir, configPath)
 	if err != nil {
-		t.Fatalf("LoopWithProvenance(prompt p1 ai_cmd_alias) err = %v", err)
+		t.Fatalf("NewRootLoopInput: %v", err)
 	}
+	loop, prov := LoopWithProvenance(LoopWithProvenanceInput{Root: rootInput, Resolved: resolved, PromptName: "p1", CLI: nil})
 	if loop.AICmdAlias != "cursor-agent" {
 		t.Errorf("loop.AICmdAlias = %q, want cursor-agent (prompt overrides root)", loop.AICmdAlias)
 	}
