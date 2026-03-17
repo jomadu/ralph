@@ -53,7 +53,7 @@ When no config file is present or a setting is omitted from all layers, the foll
 | timeout_seconds | 0 (no per-iteration timeout) |
 | success_signal | `<promise>SUCCESS</promise>` |
 | failure_signal | `<promise>FAILURE</promise>` |
-| preamble | (empty; no preamble injection) |
+| preamble | true (inject system preamble: iteration N of M, etc.) |
 | streaming | true |
 | log_level | `info` |
 | max_output_buffer | 65536 (bytes; 0 = unlimited) |
@@ -72,7 +72,7 @@ Config files are YAML. The following structure is the authoritative shape implem
   - **timeout_seconds** (integer, optional) — Per-iteration timeout; 0 or absent = no timeout.
   - **success_signal** (string, optional) — Substring or pattern that indicates success in AI output.
   - **failure_signal** (string, optional) — Substring or pattern that indicates failure.
-  - **preamble** (string or boolean, optional) — Optional preamble injection; or enable/disable.
+  - **preamble** (boolean, optional) — Whether to inject the Ralph loop description and iteration line into the CONTEXT section. When true, the run-loop includes in the single CONTEXT section a brief description of the Ralph loop technique and the current iteration (e.g. "Iteration N of M"). Invoker-provided context (e.g. CLI `-c`) is also placed in CONTEXT, with an explicit label that it was provided by the invoker. Default true. Env: `RALPH_LOOP_PREAMBLE`. CLI: `--no-preamble` disables for that run.
   - **streaming** (boolean, optional) — Whether to show AI command output in the terminal (default: true). Used by both `ralph run` and `ralph review`. Env: `RALPH_LOOP_STREAMING`. CLI: `--no-stream` only (turns off for that run; no flag to turn on—streaming is the default).
   - **log_level** (string, optional) — Log verbosity (e.g. debug, info, warn, error).
   - **max_output_buffer** (integer, optional) — Maximum bytes of AI stdout to retain for signal detection; 0 = unlimited. Default: 65536. Env: `RALPH_LOOP_MAX_OUTPUT_BUFFER`. When set, only the last N bytes are kept so the last line is preserved within the cap.

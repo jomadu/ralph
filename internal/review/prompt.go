@@ -14,7 +14,7 @@ const reviewInstructionsTemplate = `You are a prompt reviewer for Ralph, an iter
 
 **Dimensions to evaluate:**
 1. **Signal and state** — Does the prompt define clear success and failure signals Ralph can detect? Does it instruct the AI to emit the outcome signal on the last line of its response (so Ralph’s last-line-only detection treats it as the outcome)? Is statefulness compatible with a fresh process per iteration?
-2. **Iteration awareness** — Does the prompt acknowledge multi-iteration execution with a fresh process each time, so the AI re-reads state and emits signals each run?
+2. **Iteration awareness** — Ralph injects a preamble that explains the loop (multi-iteration, fresh process each time), so the prompt need not repeat that. Does the prompt avoid behavior that depends on iteration or pass count (to avoid artifacts)? Is state compatible with re-reading each run?
 3. **Scope and convergence** — Does the task have defined scope and checkable completion criteria so the loop can converge?
 4. **Subjective completion criteria** — If "done" is subjective (e.g. "good enough"), does the prompt include escape techniques (variation, step back, challenge assumptions) to avoid getting stuck?
 

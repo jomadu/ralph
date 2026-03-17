@@ -21,8 +21,11 @@ func TestDefaultLoopSettings(t *testing.T) {
 	if d.FailureSignal != DefaultFailureSignal {
 		t.Errorf("FailureSignal = %q, want %q", d.FailureSignal, DefaultFailureSignal)
 	}
-	if d.Preamble != "" {
-		t.Errorf("Preamble = %q, want empty", d.Preamble)
+	if !d.Preamble {
+		t.Errorf("Preamble = false, want true (included by default)")
+	}
+	if d.Context != "" {
+		t.Errorf("Context = %q, want empty", d.Context)
 	}
 	if !d.Streaming {
 		t.Errorf("Streaming = false, want true")

@@ -28,7 +28,7 @@ type LoopSection struct {
 	TimeoutSeconds   *int        `yaml:"timeout_seconds,omitempty"`
 	SuccessSignal    string      `yaml:"success_signal,omitempty"`
 	FailureSignal    string      `yaml:"failure_signal,omitempty"`
-	Preamble         interface{} `yaml:"preamble,omitempty"` // string or bool
+	Preamble         *bool  `yaml:"preamble,omitempty"` // whether to inject system preamble (Ralph loop description + iteration) in CONTEXT
 	Streaming        *bool       `yaml:"streaming,omitempty"`
 	LogLevel         string      `yaml:"log_level,omitempty"`
 	MaxOutputBuffer  *int        `yaml:"max_output_buffer,omitempty"`
@@ -54,7 +54,8 @@ type LoopSettings struct {
 	TimeoutSeconds   int
 	SuccessSignal    string
 	FailureSignal    string
-	Preamble         string // empty = no preamble injection
+	Preamble         bool   // true = inject system preamble (iteration N of M, etc.); default true
+	Context          string // optional context block (e.g. from CLI -c); injected after preamble, before prompt
 	Streaming        bool
 	LogLevel         string
 	MaxOutputBuffer  int // bytes; 0 = unlimited (for backward compat); default from DefaultLoopSettings is 65536

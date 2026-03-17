@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jomadu/ralph/internal/backend"
@@ -66,6 +67,20 @@ func reportLevel(report func(string), configuredLevel, messageLevel, msg string)
 	}
 }
 
+// sectionHeader returns a titled line separator in the form ---\nNAME\n---
+func sectionHeader(name string) string {
+	return "---\n" + name + "\n---"
+}
+
+// ralphLoopDescription is the brief description of the Ralph loop technique injected when preamble is enabled.
+const ralphLoopDescription = "You are in a Ralph loop. This prompt might be run multiple times until completion criteria is met or a consecutive failure limit is reached. When completion criteria are met, emit a success signal; when you cannot meet them, emit a failure signal; when more work remains, emit no signal so that the loop continues. When you do emit success or failure signals, put that signal on the last line of your output (Ralph only scans the last non-empty line)."
+
+// unlimitedIterationsThreshold: max iterations at or above this are shown as "unlimited" in the context section.
+const unlimitedIterationsThreshold = 1_000_000_000
+
+// invokerContextLabel is the line that introduces user-provided context (-c) inside the CONTEXT section.
+const invokerContextLabel = "Context provided by the invoker of this Ralph run:"
+
 // Run validates the AI command, then runs the loop: for each iteration invokes
 // the backend with the assembled prompt, captures stdout, and scans for the
 // configured success and failure signals. On success: reports completion and
@@ -97,10 +112,10 @@ func Run(opts RunOptions) (exitCode int, err error) {
 		streamTo = opts.StreamWriter
 	}
 
-	// Dry-run: assemble prompt (with preamble if enabled), print to stdout, exit 0. No backend (T3.10, O004/R007).
+	// Dry-run: assemble prompt (single CONTEXT section + PROMPT section with --- headers), print to stdout, exit 0. No backend (T3.10, O004/R007).
 	if opts.DryRun {
-		preamble := buildPreamble(opts.Loop.Preamble, 1)
-		assembled := AssemblePrompt(preamble, opts.PromptBytes)
+		contextBody := buildContextBody(opts.Loop.Preamble, 1, opts.Loop.MaxIterations, opts.Loop.Context)
+		assembled := assembleWithSectionHeaders(contextBody, opts.PromptBytes)
 		os.Stdout.Write(assembled)
 		reportLevel(report, logLevel, "info", "Dry-run: assembled prompt printed; no run was performed.")
 		return ExitSuccess, nil
@@ -135,8 +150,8 @@ func Run(opts RunOptions) (exitCode int, err error) {
 		default:
 		}
 		reportLevel(report, logLevel, "debug", fmt.Sprintf("Starting iteration %d.", i))
-		preamble := buildPreamble(opts.Loop.Preamble, i)
-		assembled := AssemblePrompt(preamble, opts.PromptBytes)
+		contextBody := buildContextBody(opts.Loop.Preamble, i, opts.Loop.MaxIterations, opts.Loop.Context)
+		assembled := assembleWithSectionHeaders(contextBody, opts.PromptBytes)
 		iterStart := time.Now()
 		stdout, _, invErr := opts.Invoker.Invoke(opts.Command, assembled, opts.Cwd, opts.Env, opts.Loop.TimeoutSeconds, opts.Loop.MaxOutputBuffer, streamTo)
 		iterationDurations = append(iterationDurations, time.Since(iterStart))
@@ -209,11 +224,38 @@ func reportIterationStatsLevel(report func(string), logLevel string, durations [
 	reportIterationStats(report, durations)
 }
 
-func buildPreamble(preamble string, iteration int) string {
-	if preamble == "" {
+// buildContextBody returns the body of the single CONTEXT section: when preamble is enabled,
+// the Ralph loop description and iteration line; optionally, invoker-provided context (-c)
+// with an explicit label. invokerContext is the raw text from the invoker (no "CONTEXT" prefix).
+func buildContextBody(injectPreamble bool, iteration, maxIterations int, invokerContext string) string {
+	var parts []string
+	if injectPreamble {
+		iterLine := "Iteration " + strconv.Itoa(iteration)
+		if maxIterations >= unlimitedIterationsThreshold {
+			iterLine += " (unlimited)"
+		} else {
+			iterLine += " of max " + strconv.Itoa(maxIterations)
+		}
+		parts = append(parts, ralphLoopDescription+"\n"+iterLine)
+	}
+	if invokerContext != "" {
+		parts = append(parts, invokerContextLabel+"\n"+invokerContext)
+	}
+	if len(parts) == 0 {
 		return ""
 	}
-	return "Iteration " + strconv.Itoa(iteration) + "\n" + preamble
+	return strings.Join(parts, "\n\n")
+}
+
+// assembleWithSectionHeaders builds the full prompt with titled section separators (---\nNAME\n---).
+// Single CONTEXT section (when non-empty) then PROMPT. Sections are separated by a blank line.
+func assembleWithSectionHeaders(contextBody string, promptBytes []byte) []byte {
+	var parts []string
+	if contextBody != "" {
+		parts = append(parts, sectionHeader("CONTEXT")+"\n\n"+contextBody)
+	}
+	parts = append(parts, sectionHeader("PROMPT")+"\n\n"+string(promptBytes))
+	return []byte(strings.Join(parts, "\n\n"))
 }
 
 func completionMessage(iterations int, elapsed time.Duration) string {

@@ -4,7 +4,7 @@ This guide explains how to write prompts that work well with Ralph's execution m
 
 ## 1. Signal and state
 
-Ralph runs your AI command in a loop. To know when to stop, it needs **clear success and failure signals** it can detect (e.g. exit codes, or markers in stdout). Your prompt should tell the AI how to signal "task done" and "task failed" in a way Ralph can read.
+Ralph injects a **preamble** (when enabled) that explains the loop and current iteration; your prompt can focus on the task and signals. Ralph needs **clear success and failure signals** it can detect (e.g. exit codes, or markers in stdout). Your prompt should tell the AI how to signal "task done" and "task failed" in a way Ralph can read.
 
 **Emit the success or failure signal on the last line of your response.** Ralph only scans the **last non-empty line** of the AI output for these signals. If the outcome appears earlier (e.g. the AI explains the protocol or echoes a marker in the middle of the output), Ralph will not treat it as the final outcome. Putting the real outcome on the last line avoids false positives and ensures the loop stops or continues correctly.
 
@@ -18,13 +18,14 @@ State (files, work-tracking) should be **compatible with a fresh process each it
 
 ## 2. Iteration awareness
 
-Execution is **multi-iteration**: Ralph may invoke the AI many times, and each run is a **new process** with no in-memory state from prior runs. The prompt should assume this execution model: re-read the task and any state from disk at the start of each run, emit the right signals, and avoid logic that only works in a single invocation.
+Ralph’s **preamble** (injected before your prompt when enabled) already tells the AI that execution is multi-iteration with a fresh process each time. Your prompt **does not need to repeat that**. Focus on:
 
-**Do not** prescribe behavior that depends on which iteration or "pass" the run is (e.g. "if you have made more than two passes, do X"). That would require the AI to track or infer pass count and can lead to **iteration artifacts** — the AI writing pass numbers, iteration logs, or "I'm stuck on attempt N" into the repository. Each run should be **conceptually fresh**: the AI may optionally use on-disk history (e.g. git) to investigate, but the prompt should not require or assume iteration-index awareness.
+- **Avoid iteration-index-dependent behavior** — Do not prescribe behavior that depends on which iteration or "pass" the run is (e.g. "if you have made more than two passes, do X"). That can lead to **iteration artifacts**: pass counters, iteration logs, or "I'm stuck on attempt N" in the repo.
+- **State that works with re-reads** — Assume the AI will re-read task and state from disk each run (the preamble explains the fresh process). So the prompt should not assume in-memory state across runs.
 
-**Strong:** "You run in a loop; each run is a new process. Re-read the task file and state (e.g. state.json) before continuing. Emit success (exit 0) or failure (exit 1) so the loop can stop."
+**Strong:** "Re-read the task file and state (e.g. state.json) at the start of each run. Emit success (exit 0) or failure (exit 1) on the last line so the loop can stop."
 
-**Weak:** "Do the task." (No mention of loop or re-reading; the AI may assume one shot and not re-check state.)
+**Weak:** "Do the task." (No signals; the AI may not re-check state or emit what Ralph needs.)
 
 ---
 
@@ -55,7 +56,7 @@ Keep these techniques **iteration-agnostic**: describe what to do in a given run
 | Dimension | What to address |
 |-----------|------------------|
 | **Signal and state** | Clear success/failure signals Ralph can detect; emit the outcome signal on the last line (Ralph scans only the last non-empty line); state that works with a fresh process each iteration. |
-| **Iteration awareness** | Prompt assumes multi-iteration and fresh process; re-read state each run, emit signals. Do not prescribe behavior by iteration or pass count (avoids iteration artifacts in the repo). |
+| **Iteration awareness** | Preamble explains the loop; prompt need not repeat it. Avoid pass-count or iteration-dependent behavior (avoids artifacts). State compatible with re-read each run. |
 | **Scope and convergence** | Defined scope and checkable completion criteria so the loop can converge. |
 | **Subjective completion** | When "done" is subjective, add variation or stepping-back techniques that are per-run (not "after N passes") to avoid getting stuck and avoid artifacts. |
 

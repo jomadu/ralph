@@ -34,12 +34,8 @@ func ApplyLoopSection(base LoopSettings, section *LoopSection) LoopSettings {
 	if section.MaxOutputBuffer != nil {
 		out.MaxOutputBuffer = *section.MaxOutputBuffer
 	}
-	// Preamble: string or bool in YAML; we store string. If section has a string, use it.
-	if s, ok := section.Preamble.(string); ok && s != "" {
-		out.Preamble = s
-	}
-	if b, ok := section.Preamble.(bool); ok && !b {
-		out.Preamble = ""
+	if section.Preamble != nil {
+		out.Preamble = *section.Preamble
 	}
 	if section.AiCmd != "" {
 		out.AICmd = section.AiCmd
@@ -87,9 +83,7 @@ func ApplyEnvOverlayToLoop(loop LoopSettings, overlay *EnvOverlay) LoopSettings 
 		out.Streaming = *overlay.Streaming
 	}
 	if overlay.Preamble != nil {
-		if !*overlay.Preamble {
-			out.Preamble = ""
-		}
+		out.Preamble = *overlay.Preamble
 	}
 	if overlay.MaxOutputBuffer != nil {
 		out.MaxOutputBuffer = *overlay.MaxOutputBuffer

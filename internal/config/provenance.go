@@ -27,6 +27,7 @@ type LoopProvenance struct {
 	SuccessSignal    string
 	FailureSignal    string
 	Preamble         string
+	Context          string
 	Streaming        string
 	LogLevel         string
 	MaxOutputBuffer  string
@@ -45,6 +46,7 @@ func RootLoopWithProvenance(getenv func(string) string, cwd, configPath string) 
 		SuccessSignal:    ProvenanceDefault,
 		FailureSignal:    ProvenanceDefault,
 		Preamble:         ProvenanceDefault,
+		Context:          ProvenanceDefault,
 		Streaming:        ProvenanceDefault,
 		LogLevel:         ProvenanceDefault,
 		MaxOutputBuffer:  ProvenanceDefault,
@@ -124,12 +126,8 @@ func applySectionWithProvenance(base LoopSettings, section *LoopSection, layer s
 		out.MaxOutputBuffer = *section.MaxOutputBuffer
 		prov.MaxOutputBuffer = layer
 	}
-	if s, ok := section.Preamble.(string); ok && s != "" {
-		out.Preamble = s
-		prov.Preamble = layer
-	}
-	if b, ok := section.Preamble.(bool); ok && !b {
-		out.Preamble = ""
+	if section.Preamble != nil {
+		out.Preamble = *section.Preamble
 		prov.Preamble = layer
 	}
 	if section.AiCmd != "" {
@@ -169,8 +167,8 @@ func applyEnvOverlayWithProvenance(loop LoopSettings, overlay *EnvOverlay, prov 
 		out.Streaming = *overlay.Streaming
 		prov.Streaming = ProvenanceEnv
 	}
-	if overlay.Preamble != nil && !*overlay.Preamble {
-		out.Preamble = ""
+	if overlay.Preamble != nil {
+		out.Preamble = *overlay.Preamble
 		prov.Preamble = ProvenanceEnv
 	}
 	if overlay.MaxOutputBuffer != nil {
@@ -239,16 +237,12 @@ func applyCLIOverlayWithProvenance(loop LoopSettings, o *CLIOverlay, prov LoopPr
 		prov.FailureSignal = ProvenanceCLI
 	}
 	if o.NoPreamble {
-		out.Preamble = ""
+		out.Preamble = false
 		prov.Preamble = ProvenanceCLI
-	} else if len(o.Context) > 0 {
-		contextBlock := "CONTEXT\n" + strings.Join(o.Context, "\n")
-		if out.Preamble != "" {
-			out.Preamble = out.Preamble + "\n" + contextBlock
-		} else {
-			out.Preamble = contextBlock
-		}
-		prov.Preamble = ProvenanceCLI
+	}
+	if len(o.Context) > 0 {
+		out.Context = strings.Join(o.Context, "\n")
+		prov.Context = ProvenanceCLI
 	}
 	if o.Quiet && !o.Verbose {
 		out.LogLevel = "error"

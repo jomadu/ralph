@@ -76,8 +76,8 @@ Precedence: CLI flags override environment and config (config component layer or
 | `--failure-threshold` | — | int | Consecutive failures before exit. Override for this run. |
 | `--iteration-timeout` | — | int | Per-iteration timeout in seconds. 0 = no timeout. Override for this run. |
 | `--max-output-buffer` | — | int | Max bytes of AI stdout to retain for signal detection; the last line is preserved within this cap. Override for this run. Must be ≥ 0 when provided. |
-| `--no-preamble` | — | — | Disable preamble injection for this run. |
-| `--dry-run` | `-d` | — | Do not invoke the AI. Assemble prompt (with preamble if enabled) and print it; then exit 0. No backend invocation. |
+| `--no-preamble` | — | — | Disable system preamble injection (e.g. "Iteration N of M") for this run. |
+| `--dry-run` | `-d` | — | Do not invoke the AI. Assemble prompt (system preamble when enabled, optional context, then prompt body) and print it; then exit 0. No backend invocation. |
 
 **AI command**
 
@@ -99,7 +99,7 @@ When `--ai-cmd` or `--ai-cmd-alias` are omitted, the value is taken from the env
 
 | Flag | Short | Type | Effect |
 |------|-------|------|--------|
-| `--context` | `-c` | string | Inline context string injected into preamble (e.g. CONTEXT section). Repeatable. Value is literal text; not read as a file path. |
+| `--context` | `-c` | string | Inline context provided by the invoker; injected into the CONTEXT section with an explicit label. Repeatable (joined with newlines). Value is literal text; not read as a file path. |
 
 **Output and observability**
 
