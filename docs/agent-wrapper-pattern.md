@@ -54,4 +54,6 @@ The built-in `cursor-agent` alias runs the Cursor CLI directly. That works for s
 
 That page describes `--output-format stream-json` and `--stream-partial-output`, and includes a full example that parses JSON lines with `jq`, sends progress to the terminal, and could be adapted to send assistant text to stdout and everything else to stderr for use with Ralph.
 
+**Duplicate stdout with Cursor:** If you append every `assistant` event’s `message.content[0].text` and also print that blob at the end, you can see the **same reply twice**. Partial streaming sometimes re-emits the full (or overlapping) text across multiple assistant lines. For Ralph, print **one** final payload on stdout: prefer the terminal stream-json **`result`** event’s **`result`** field (authoritative full text on success), and only fall back to concatenated assistant text if there is no success result (e.g. error exit). The repo includes **`scripts/cursor-wrapper.sh`** wired that way; copy or adapt it for your config.
+
 Other agents that emit structured or multi-channel output can follow the same pattern: implement a wrapper that separates “text to scan” (stdout) from “progress” (stderr), then point Ralph at the wrapper.
