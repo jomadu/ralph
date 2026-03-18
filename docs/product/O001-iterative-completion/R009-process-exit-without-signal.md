@@ -4,47 +4,46 @@
 
 ## Requirement
 
-When the AI process exits without emitting the configured success or failure signal (e.g. crash, kill, abnormal exit), the system treats the iteration as a failure, increments the consecutive-failure count, and continues or exits according to the failure threshold; the user can distinguish this condition from signal-based failure where documented.
+When the AI process exits successfully (exit code 0) but the last non-empty line of stdout contains neither the configured success nor failure signal, the system treats the iteration as **neutral** (“more work remains”): it does **not** increment the consecutive-failure count, resets the failure streak, and continues to the next iteration until max iterations or a success signal. When the process exits abnormally, times out, returns an invocation error, exits non-zero without success, or emits the failure signal on the last line, the system applies the same failure-threshold logic as R005 where applicable.
 
 ## Detail
 
-The AI process may exit without producing the success or failure signal — for example it crashes, is killed, times out, or exits without the configured markers. The system treats such an iteration as a failure: it increments the consecutive-failure count and either starts the next iteration or exits based on the failure threshold (same as R005). Thus the loop remains bounded and predictable. Where documented, the user can distinguish "no signal" from "failure signal present" in reporting (e.g. "exited due to process crash" vs "exited due to failure signal threshold") so they can debug or adjust behavior.
+The loop preamble instructs the model: when completion criteria are met, emit the success signal; when it cannot proceed, emit the failure signal; **when more work remains, emit no signal** so the loop continues. That only works if exit 0 with no signal on the last line is neutral—not counted as consecutive failure.
+
+**Neutral iteration (exit 0, last non-empty line has neither success nor failure signal):** Continue; consecutive-failure count is reset to zero for this streak.
+
+**Counts toward consecutive failures:** failure signal on the last non-empty line; process exit code non-zero without a success signal on that line; invocation errors (timeout, crash before completion, exec failure).
 
 ### Edge cases
 
 | Condition | Expected Behavior |
 |-----------|-------------------|
-| Process exits 0 but no success signal in output | Treat as failure; increment count; continue or exit per threshold. |
-| Process crashes (e.g. segfault, kill -9) | Treat as failure; increment count; continue or exit per threshold. |
-| Process times out (if applicable) | Treat as failure; increment count; continue or exit per threshold. |
-| Process exits non-zero, no failure signal in output | Treat as failure; increment count. |
-| Distinguishability | Where documented, user can tell "no signal" from "failure signal" (e.g. in logs or exit reason). |
+| Process exits 0; last line has no success/failure signal | Neutral; failure streak reset; next iteration. |
+| Process exits 0; failure signal on last line | Failure; increment count per R005. |
+| Process exits non-zero; no success on last line | Failure; increment count. |
+| Process crashes, killed, timeout, invoke error | Failure; increment count. |
+| Empty stdout (no non-empty line) with exit 0 | Neutral (no signals detected). |
 
 ### Examples
 
-#### Process crash mid-run
+#### Several neutral iterations then success
 
-**Input:** AI process is killed (e.g. SIGKILL) before emitting any signal. Failure threshold = 2.
+**Input:** Failure threshold = 3. Iterations 1–2: exit 0, output “Still working…”. Iteration 3: success signal on last line.
 
-**Expected output:** The system treats the iteration as failure, increments count to 1, starts the next iteration (or exits if threshold is 1).
+**Expected output:** Run completes successfully after 3 iterations; neutral iterations did not consume the failure budget.
 
-**Verification:** Consecutive-failure count increases; loop continues or exits per threshold; no hang.
+#### Non-zero exit without success
 
-#### Exit without signal; user can distinguish
+**Input:** AI CLI exits 1 with last line “error”. Failure threshold = 2. Two such iterations in a row.
 
-**Input:** The AI process exits without emitting the success or failure signal (e.g. non-success exit). The system is configured to report exit reason.
-
-**Expected output:** The system treats the iteration as failure, increments count. Where documented, the report indicates that the process exited without emitting the configured signal (e.g. "process exited without success/failure signal").
-
-**Verification:** Behavior same as failure for loop purposes; where documented, the reason is distinguishable from signal-based failure.
+**Expected output:** Exit with failure-threshold code after 2 iterations.
 
 ## Acceptance criteria
 
-- [ ] When the AI process exits without the configured success or failure signal appearing in its output, the system treats the iteration as a failure.
-- [ ] The system increments the consecutive-failure count for such iterations and applies the same continue/exit logic as for failure-signal (R005).
-- [ ] Where documented, the user can distinguish "process exited without signal" from "failure signal detected" (e.g. for debugging or reporting).
-- [ ] No iteration is left undefined; "no signal" always maps to failure for the purpose of the loop.
+- [ ] Exit 0 with neither success nor failure on the last non-empty line does not increment consecutive failures and resets the failure streak.
+- [ ] Failure signal on the last line, non-zero exit without success, and invocation errors increment consecutive failures per R005 threshold rules.
+- [ ] Where documented, the user can distinguish failure-threshold exits (failure signal vs non-zero exit vs invocation error) in reporting.
 
 ## Dependencies
 
-- R005 — Same failure count and threshold logic; R009 covers the "no signal" case.
+- R005 — Failure signal and threshold; R009 refines “no signal on last line” when process exits cleanly.

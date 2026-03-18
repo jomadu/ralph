@@ -15,7 +15,7 @@ The user configures a failure signal (e.g. a string or pattern) that indicates t
 | Condition | Expected Behavior |
 |-----------|-------------------|
 | Failure signal appears on the last non-empty line | The system detects it, increments consecutive-failure count, and continues or exits per threshold. |
-| Failure signal appears only on an earlier line (not the last non-empty line) | The system does not treat the iteration as failure on that basis; no increment from that output; continues per other rules (e.g. R009 if no signal on last line). |
+| Failure signal appears only on an earlier line (not the last non-empty line) | No increment from failure signal; if process exits 0 and last line has no success/failure signal, R009 applies (neutral iteration). |
 | Failure signal detected; count below threshold | Increment count; start next iteration. |
 | Failure signal detected; count at threshold | Increment count (or after increment equals threshold); exit with the documented failure-threshold exit code. |
 | Success signal detected on a later iteration | Consecutive-failure count resets; next failure starts count from 1. |
@@ -37,7 +37,7 @@ The user configures a failure signal (e.g. a string or pattern) that indicates t
 
 **Input:** Failure signal = `FAIL`. The AI outputs "FAIL\nStill working..." (so "FAIL" appears only on the first line; the last non-empty line is "Still working...").
 
-**Expected output:** The system does not treat the iteration as failure on that basis (the last non-empty line is scanned, and it does not contain the failure signal); no increment from that output. If no success signal on that line, R009 (process exit without signal) or other rules may apply.
+**Expected output:** The system does not treat the iteration as failure on that basis (the last non-empty line is scanned, and it does not contain the failure signal); no increment from failure signal. If process exits 0 and the last line has no success signal, R009 applies (neutral iteration if no failure signal on that line).
 
 **Verification:** No failure-signal increment from that iteration; behavior consistent with last-line-only scanning.
 

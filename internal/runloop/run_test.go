@@ -479,25 +479,19 @@ func TestRun_SuccessResetsConsecutiveFailures(t *testing.T) {
 	}
 }
 
-// TestRun_NoSignalTreatedAsFailure verifies T3.8/O001/R009: when the process exits
-// without success or failure signal (e.g. exit 0 but no signal in output),
-// the iteration is treated as failure; consecutive-failure count increments and
-// continue/exit follows the same threshold logic as failure-signal.
-func TestRun_NoSignalTreatedAsFailure(t *testing.T) {
+// TestRun_NullSignalDoesNotCountTowardThreshold verifies that exit 0 with neither
+// success nor failure on the last line does not increment the failure counter;
+// the loop runs until max iterations.
+func TestRun_NullSignalDoesNotCountTowardThreshold(t *testing.T) {
 	loop := config.DefaultLoopSettings()
-	loop.MaxIterations = 5
+	loop.MaxIterations = 4
 	loop.FailureThreshold = 2
 	loop.SuccessSignal = "<promise>SUCCESS</promise>"
 	loop.FailureSignal = "<promise>FAILURE</promise>"
 	callCount := 0
 	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
 		callCount++
-		// Iteration 1: no signal (e.g. process exited 0 but no markers).
-		if callCount == 1 {
-			return []byte("output with no signal"), 0, nil
-		}
-		// Iteration 2: again no signal → threshold reached, exit.
-		return []byte("again no signal"), 0, nil
+		return []byte("still working, no signal on last line"), 0, nil
 	}
 	var reported []string
 	code, err := Run(RunOptions{
@@ -510,23 +504,55 @@ func TestRun_NoSignalTreatedAsFailure(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	if code != ExitFailureThreshold {
-		t.Errorf("exit code = %d, want %d (ExitFailureThreshold)", code, ExitFailureThreshold)
+	if code != ExitMaxIterations {
+		t.Errorf("exit code = %d, want %d (ExitMaxIterations)", code, ExitMaxIterations)
 	}
-	if callCount != 2 {
-		t.Errorf("invoker called %d times, want 2 (two no-signal iterations then exit)", callCount)
-	}
-	all := strings.Join(reported, " ")
-	if !strings.Contains(all, "without success or failure signal") {
-		t.Errorf("reported = %q (should distinguish no-signal)", reported)
-	}
-	if !strings.Contains(all, "threshold: 2") {
-		t.Errorf("reported = %q", reported)
+	if callCount != 4 {
+		t.Errorf("invoker called %d times, want 4", callCount)
 	}
 }
 
-// TestRun_NoSignalBelowThreshold_Continues verifies that a single no-signal
-// iteration increments consecutive failures but loop continues when below threshold.
+// TestRun_NullSignalResetsFailureStreak verifies that a neutral iteration after
+// a failure signal resets the consecutive-failure count.
+func TestRun_NullSignalResetsFailureStreak(t *testing.T) {
+	loop := config.DefaultLoopSettings()
+	loop.MaxIterations = 10
+	loop.FailureThreshold = 2
+	loop.SuccessSignal = "<promise>SUCCESS</promise>"
+	loop.FailureSignal = "<promise>FAILURE</promise>"
+	callCount := 0
+	invoker := func(_ string, _ []byte, _ string, _ []string, _ int, _ int, _ io.Writer) ([]byte, int, error) {
+		callCount++
+		switch callCount {
+		case 1:
+			return []byte("<promise>FAILURE</promise>"), 0, nil
+		case 2:
+			return []byte("progress, no explicit signal"), 0, nil
+		case 3:
+			return []byte("<promise>FAILURE</promise>"), 0, nil
+		default:
+			return []byte("<promise>SUCCESS</promise>"), 0, nil
+		}
+	}
+	code, err := Run(RunOptions{
+		Command:     "true",
+		PromptBytes: []byte("p"),
+		Loop:        loop,
+		Invoker:     invokerAdapter(invoker),
+		Reporter:    func(msg string) {},
+	})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if code != ExitSuccess {
+		t.Errorf("exit code = %d, want ExitSuccess (FAIL, null, FAIL should not hit threshold 2)", code)
+	}
+	if callCount != 4 {
+		t.Errorf("invoker called %d times, want 4", callCount)
+	}
+}
+
+// TestRun_NoSignalBelowThreshold_Continues verifies null then success completes.
 func TestRun_NoSignalBelowThreshold_Continues(t *testing.T) {
 	loop := config.DefaultLoopSettings()
 	loop.MaxIterations = 5
@@ -596,7 +622,7 @@ func TestRun_InvocationErrorTreatedAsNoSignal(t *testing.T) {
 	if callCount != 2 {
 		t.Errorf("invoker called %d times, want 2", callCount)
 	}
-	if !strings.Contains(reported, "without success or failure signal") || !strings.Contains(reported, "invocation error") {
+	if !strings.Contains(reported, "invocation error") {
 		t.Errorf("reported = %q (should mention invocation error)", reported)
 	}
 }

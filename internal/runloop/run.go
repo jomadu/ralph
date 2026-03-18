@@ -96,16 +96,16 @@ func formatLoopConfig(loop config.LoopSettings) string {
 // Run validates the AI command, then runs the loop: for each iteration invokes
 // the backend with the assembled prompt, captures stdout, and scans for the
 // configured success and failure signals. On success: reports completion and
-// returns ExitSuccess. On failure signal or process exit without signal (T3.8,
-// O001/R009): increments consecutive-failure count; if count >= failure
-// threshold, reports and returns ExitFailureThreshold. When max iterations is
-// reached without success, returns ExitMaxIterations. On SIGINT or SIGTERM
-// (T3.9, O004/R005): returns ExitInterrupt (130). Static precedence
-// (T3.6, O001/R006): success is checked before failure; when both signals
-// appear in the same output, the iteration is treated as success.
-// Log level and show-AI-output (streaming) are respected (T3.13, O004/R006).
-// Implements T3.4, T3.5, T3.6, T3.7, T3.8, T3.9, T3.13, O001/R004, O001/R005, O001/R006, O001/R007,
-// O001/R009, O004/R002, O004/R003, O004/R004, O004/R005, O004/R006.
+// returns ExitSuccess. On failure signal, non-zero process exit, or invocation
+// error: increments consecutive-failure count; if count >= failure threshold,
+// reports and returns ExitFailureThreshold. When the process exits 0 and the
+// last non-empty line has neither success nor failure signal (“null signal”),
+// the iteration does not count toward the threshold; the failure streak resets
+// and the loop continues (aligned with the preamble: more work remains).
+// When max iterations is reached without success, returns ExitMaxIterations.
+// On SIGINT or SIGTERM (T3.9, O004/R005): returns ExitInterrupt (130). Static
+// precedence (T3.6, O001/R006): success is checked before failure. Log level
+// and streaming are respected (T3.13, O004/R006).
 func Run(opts RunOptions) (exitCode int, err error) {
 	if opts.Invoker == nil {
 		opts.Invoker = invokerAdapter(backend.Invoke)
@@ -168,16 +168,16 @@ func Run(opts RunOptions) (exitCode int, err error) {
 		contextBody := buildContextBody(opts.Loop.Preamble, i, opts.Loop.MaxIterations, opts.Loop.Context)
 		assembled := assembleWithSectionHeaders(contextBody, opts.PromptBytes)
 		iterStart := time.Now()
-		stdout, _, invErr := opts.Invoker.Invoke(opts.Command, assembled, opts.Cwd, opts.Env, opts.Loop.TimeoutSeconds, opts.Loop.MaxOutputBuffer, streamTo)
+		stdout, procExit, invErr := opts.Invoker.Invoke(opts.Command, assembled, opts.Cwd, opts.Env, opts.Loop.TimeoutSeconds, opts.Loop.MaxOutputBuffer, streamTo)
 		iterationDurations = append(iterationDurations, time.Since(iterStart))
 		if ctx.Err() != nil {
 			return ExitInterrupt, nil
 		}
-		// Invocation error (e.g. timeout, crash, exec failure): treat as no-signal failure per T3.8/O001/R009.
+		// Invocation error (e.g. timeout, crash, exec failure): counts toward failure threshold.
 		if invErr != nil {
 			consecutiveFailures++
 			if consecutiveFailures >= threshold {
-				reportLevel(report, logLevel, "error", fmt.Sprintf("Stopped after %d consecutive iteration(s) without success or failure signal (invocation error: %v; threshold: %d).", consecutiveFailures, invErr, opts.Loop.FailureThreshold))
+				reportLevel(report, logLevel, "error", fmt.Sprintf("Stopped after %d consecutive iteration(s) with invocation error (last: %v; threshold: %d).", consecutiveFailures, invErr, opts.Loop.FailureThreshold))
 				return ExitFailureThreshold, nil
 			}
 			continue
@@ -192,17 +192,27 @@ func Run(opts RunOptions) (exitCode int, err error) {
 			reportIterationStatsLevel(report, logLevel, iterationDurations)
 			return ExitSuccess, nil
 		}
-		// Failure: failure signal present, or no signal (T3.8, O001/R009).
-		consecutiveFailures++
-		if consecutiveFailures >= threshold {
-			if hasFailure {
+		if hasFailure {
+			consecutiveFailures++
+			if consecutiveFailures >= threshold {
 				reportLevel(report, logLevel, "error", fmt.Sprintf("Stopped after %d consecutive failure(s) (threshold: %d).", consecutiveFailures, opts.Loop.FailureThreshold))
-			} else {
-				reportLevel(report, logLevel, "error", fmt.Sprintf("Stopped after %d consecutive iteration(s) without success or failure signal (threshold: %d).", consecutiveFailures, opts.Loop.FailureThreshold))
+				reportIterationStatsLevel(report, logLevel, iterationDurations)
+				return ExitFailureThreshold, nil
 			}
-			reportIterationStatsLevel(report, logLevel, iterationDurations)
-			return ExitFailureThreshold, nil
+			continue
 		}
+		if procExit != 0 {
+			consecutiveFailures++
+			if consecutiveFailures >= threshold {
+				reportLevel(report, logLevel, "error", fmt.Sprintf("Stopped after %d consecutive iteration(s) where the AI process exited with code %d without success signal (threshold: %d).", consecutiveFailures, procExit, opts.Loop.FailureThreshold))
+				reportIterationStatsLevel(report, logLevel, iterationDurations)
+				return ExitFailureThreshold, nil
+			}
+			continue
+		}
+		// Exit 0, no success/failure on last line: neutral iteration (more work remains).
+		consecutiveFailures = 0
+		reportLevel(report, logLevel, "debug", fmt.Sprintf("Iteration %d: no success or failure signal on last line; continuing (failure streak reset).", i))
 	}
 	reportLevel(report, logLevel, "error", fmt.Sprintf("Stopped after %d iteration(s) without success signal (max: %d).", opts.Loop.MaxIterations, opts.Loop.MaxIterations))
 	reportIterationStatsLevel(report, logLevel, iterationDurations)

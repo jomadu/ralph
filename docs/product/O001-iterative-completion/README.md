@@ -42,7 +42,7 @@ Without a loop runner, the user manually invokes the AI CLI, reads its output, d
 | Prompt source missing or unreadable; loop starts then fails | [R002 — Load prompt once and buffer](R002-load-prompt-once-and-buffer.md) |
 | Success and failure signals both appear in output; outcome ambiguous | [R006 — Signal precedence](R006-signal-precedence.md) (R008 — AI-interpreted signal precedence withdrawn, see [archived](archived/R008-ai-interpreted-signal-precedence.md)) |
 | Loop runs without bounded exit | [R005 — Detect failure signal and continue or exit](R005-detect-failure-signal-continue-or-exit.md), [R007 — Exit on max iterations](R007-exit-on-max-iterations.md) |
-| AI process crashes or exits without success/failure signal; behavior undefined | [R009 — Process exit without signal](R009-process-exit-without-signal.md) |
+| AI process crashes or abnormal exit; clean exit with no signal on last line | [R009 — Process exit without signal](R009-process-exit-without-signal.md) |
 
 ## Requirements
 
@@ -56,4 +56,4 @@ Without a loop runner, the user manually invokes the AI CLI, reads its output, d
 | [R006](R006-signal-precedence.md) | The system applies a defined precedence when both success and failure signals are present in the same output (default behavior). | ready |
 | [R007](R007-exit-on-max-iterations.md) | The system exits when the maximum iteration count is reached. | ready |
 | [R008](R008-ai-interpreted-signal-precedence.md) | *(Withdrawn/archived.)* Previously: optional AI-interpreted signal precedence. See [archived/R008](archived/R008-ai-interpreted-signal-precedence.md). | withdrawn |
-| [R009](R009-process-exit-without-signal.md) | When the AI process exits without emitting the configured success or failure signal (e.g. crash, kill, abnormal exit), the system treats the iteration as a failure, increments the consecutive-failure count, and continues or exits according to the failure threshold; the user can distinguish this condition from signal-based failure where documented. | ready |
+| [R009](R009-process-exit-without-signal.md) | Exit 0 with neither success nor failure on the last line is a neutral iteration (failure streak reset); non-zero exit, invocation errors, and failure signal on the last line count toward the failure threshold. | ready |
