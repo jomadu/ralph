@@ -16,7 +16,7 @@ The user can verify what prompt will be sent to the AI: a single CONTEXT section
 |-----------|-------------------|
 | Dry-run with default config | CONTEXT section (Ralph loop + iteration) and INSTRUCTIONS section printed to stdout; no AI invocation |
 | Dry-run with preamble disabled | CONTEXT section only if invoker passed -c (with invoker label); then INSTRUCTIONS section |
-| Dry-run with -c "Hello world" | CONTEXT section includes Ralph loop/iteration (if enabled) and "Context provided by the invoker of this Ralph run:" followed by the given text; then INSTRUCTIONS section. No duplicate CONTEXT header in the body. |
+| Dry-run with -c "Hello world" | CONTEXT section includes Ralph loop/iteration (if enabled) and "Context provided by the invoker of this Ralph run:" followed by the given text; then INSTRUCTIONS section. No duplicate CONTEXT title in the body. Section boundaries use `# --- CONTEXT ---` / `# --- INSTRUCTIONS ---` (see run-loop engineering spec). |
 | Dry-run and log level | The system may emit minimal log context (e.g. that dry-run is active); primary output is the assembled prompt |
 | Dry-run with missing AI command | Behavior may follow R001 (error before run); dry-run may still show assembled prompt without needing a valid AI command |
 

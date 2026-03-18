@@ -24,6 +24,8 @@ This pattern applies to **any** agent whose CLI outputs structured or multi-chan
 
 Ralph pipes the assembled prompt to the wrapper’s stdin and reads the wrapper’s stdout for signal scanning; stderr is your progress output.
 
+**Assembled prompt shape:** Ralph wraps your prompt with section title lines such as `# --- CONTEXT ---` (preamble and optional `-c` text) and `# --- INSTRUCTIONS ---` (your prompt file). The first line of the message is never a bare `---` line—some CLIs (e.g. Cursor `agent`) treat that as YAML frontmatter and fail immediately. See [run-loop component](engineering/components/run-loop.md) (section title lines) for the exact format and alternatives that were considered.
+
 ## Paths: global config, workspace, and relative scripts
 
 **Prompt file paths** in config are resolved **relative to the YAML file that defines them** (then merged across layers). **AI command aliases are different:** the `command` string for an alias is used **as-is**. Ralph does not rewrite relative paths in alias commands to be relative to the global config directory, the workspace config file, or anything else.

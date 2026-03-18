@@ -2,6 +2,8 @@
 
 This guide explains how to write prompts that work well with Ralph's execution model. **Ralph evaluates prompts along the same four dimensions described here when you run `ralph review`.** If you address these dimensions in your prompt, the loop is more likely to converge, and review will give you fewer gaps to fix.
 
+**What the model receives:** On `ralph run`, your prompt file is wrapped in an **INSTRUCTIONS** block. Ralph may prepend a **CONTEXT** block (loop description, iteration line, and any `-c` context). Each block starts with a title line such as `# --- CONTEXT ---` and `# --- INSTRUCTIONS ---` (a leading `#` avoids CLIs that treat a bare `---` line as YAML frontmatter). Use `ralph run <alias> --dry-run` to see the exact assembled text.
+
 ## 1. Signal and state
 
 Ralph injects a **preamble** (when enabled) that explains the loop and current iteration; your prompt can focus on the task and signals. Ralph needs **clear success and failure signals** it can detect (e.g. exit codes, or markers in stdout). Your prompt should tell the AI how to signal "task done" and "task failed" in a way Ralph can read.

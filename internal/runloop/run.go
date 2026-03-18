@@ -67,9 +67,12 @@ func reportLevel(report func(string), configuredLevel, messageLevel, msg string)
 	}
 }
 
-// sectionHeader returns a titled line separator in the form ---\nNAME\n---
+// sectionHeader returns a single-line delimiter before each titled block (LOOP CONFIG,
+// CONTEXT, INSTRUCTIONS). The line must not start with "---": some AI CLIs (e.g. Cursor
+// agent) treat that as YAML frontmatter and exit without processing the prompt.
+// Current format: # --- NAME --- (hash first; dashes are decorative).
 func sectionHeader(name string) string {
-	return "---\n" + name + "\n---"
+	return "# --- " + name + " ---\n"
 }
 
 // ralphLoopDescription is the brief description of the Ralph loop technique injected when preamble is enabled.
@@ -272,7 +275,7 @@ func buildContextBody(injectPreamble bool, iteration, maxIterations int, invoker
 	return strings.Join(parts, "\n\n")
 }
 
-// assembleWithSectionHeaders builds the full prompt with titled section separators (---\nNAME\n---).
+// assembleWithSectionHeaders builds the full prompt with titled section separators (# --- NAME ---).
 // Single CONTEXT section (when non-empty) then INSTRUCTIONS. Sections are separated by a blank line.
 func assembleWithSectionHeaders(contextBody string, promptBytes []byte) []byte {
 	var parts []string

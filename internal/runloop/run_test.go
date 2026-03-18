@@ -283,13 +283,13 @@ func TestRun_DryRun_PrintsAssembledPromptAndExitsZero(t *testing.T) {
 	}
 	out, _ := io.ReadAll(r)
 	outStr := string(out)
-	if !strings.Contains(outStr, "---\nLOOP CONFIG\n---") || !strings.Contains(outStr, "max_iterations: 10") || !strings.Contains(outStr, "failure_threshold: 3") {
+	if !strings.Contains(outStr, "# --- LOOP CONFIG ---\n") || !strings.Contains(outStr, "max_iterations: 10") || !strings.Contains(outStr, "failure_threshold: 3") {
 		t.Errorf("dry-run stdout missing LOOP CONFIG section or content; got %q", out)
 	}
-	if !strings.Contains(outStr, "---\nCONTEXT\n---") || !strings.Contains(outStr, ralphLoopDescription) || !strings.Contains(outStr, "Iteration 1") || !strings.Contains(outStr, "of max 10") {
+	if !strings.Contains(outStr, "# --- CONTEXT ---\n") || !strings.Contains(outStr, ralphLoopDescription) || !strings.Contains(outStr, "Iteration 1") || !strings.Contains(outStr, "of max 10") {
 		t.Errorf("dry-run stdout missing CONTEXT section or content; got %q", out)
 	}
-	if !strings.Contains(outStr, "---\nINSTRUCTIONS\n---") || !strings.Contains(outStr, "actual prompt content") {
+	if !strings.Contains(outStr, "# --- INSTRUCTIONS ---\n") || !strings.Contains(outStr, "actual prompt content") {
 		t.Errorf("dry-run stdout missing INSTRUCTIONS section or content; got %q", out)
 	}
 	if !strings.Contains(reported, "Dry-run") || !strings.Contains(reported, "loop config") || !strings.Contains(reported, "no run was performed") {
@@ -321,7 +321,7 @@ func TestRun_DryRun_WithInvokerContext_ShowsLabelNoDuplicate(t *testing.T) {
 	if !strings.Contains(outStr, invokerContextLabel) || !strings.Contains(outStr, "Hello world") {
 		t.Errorf("dry-run with -c should show invoker label and content; got %q", outStr)
 	}
-	// No duplicate: body must not contain "CONTEXT\nHello" (section header is "---\nCONTEXT\n---", not "CONTEXT" as a line in the body).
+	// No duplicate: body must not contain "CONTEXT\nHello" (section title is "# --- CONTEXT ---", not "CONTEXT" as a line in the body).
 	if strings.Contains(outStr, "CONTEXT\nHello world") {
 		t.Errorf("dry-run should not duplicate CONTEXT in body; use invoker label only; got %q", outStr)
 	}
