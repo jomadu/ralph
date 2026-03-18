@@ -31,7 +31,7 @@ Implements the requirements assigned to this component in the [engineering READM
 
 1. **Validate** — Resolve AI command (alias or direct); if missing or invalid, report clear error and exit with documented error code. Do not start the loop.
 2. **Load prompt once** — Read prompt from the resolved source (alias → file, file path, or stdin); buffer in memory. Prompt is not re-read between iterations.
-3. **Iterate** — For each iteration: build assembled prompt from two titled sections. Each section is introduced by a line separator in the form `---\nSECTION_NAME\n---`. (1) **CONTEXT** (when non-empty): a single section that includes, when preamble is enabled, the Ralph loop description and iteration line (e.g. "Iteration N of M" or "Iteration N (unlimited)"); and optionally invoker-provided context (e.g. from CLI `-c`), with an explicit label that this context was provided by the invoker of this Ralph run. (2) **INSTRUCTIONS**: the prompt body. Sections are separated by a blank line. Invoke backend with that on stdin; capture stdout (capped by `max_output_buffer` when set—see config—so the last line is preserved within the cap). Scan **the last non-empty line** of stdout for configured success and failure signals. When both signals appear on that line, apply static precedence (success wins). If success: emit completion message, iteration count, timing; exit with success code. If failure signal on last line, or process exit code non-zero without success, or invocation error: increment consecutive-failure count; if count ≥ failure threshold, report and exit with failure-threshold code. If process exits 0 and the last line has neither success nor failure signal: **neutral** iteration—reset consecutive-failure streak, continue. If max iterations reached: report and exit with max-iterations code. On interrupt (e.g. SIGINT): exit with distinct interrupt code.
+3. **Iterate** — For each iteration: build assembled prompt from two titled sections. Each section is introduced by a **section title line** (see below). (1) **CONTEXT** (when non-empty): a single section that includes, when preamble is enabled, the Ralph loop description and iteration line (e.g. "Iteration N of M" or "Iteration N (unlimited)"); and optionally invoker-provided context (e.g. from CLI `-c`), with an explicit label that this context was provided by the invoker of this Ralph run. (2) **INSTRUCTIONS**: the prompt body. Sections are separated by a blank line. Invoke backend with that on stdin; capture stdout (capped by `max_output_buffer` when set—see config—so the last line is preserved within the cap). Scan **the last non-empty line** of stdout for configured success and failure signals. When both signals appear on that line, apply static precedence (success wins). If success: emit completion message, iteration count, timing; exit with success code. If failure signal on last line, or process exit code non-zero without success, or invocation error: increment consecutive-failure count; if count ≥ failure threshold, report and exit with failure-threshold code. If process exits 0 and the last line has neither success nor failure signal: **neutral** iteration—reset consecutive-failure streak, continue. If max iterations reached: report and exit with max-iterations code. On interrupt (e.g. SIGINT): exit with distinct interrupt code.
 4. **Observability** — Emit iteration statistics (e.g. per-iteration timing) when configured; respect log level and quiet flag for what is printed.
 
 ### Exit code semantics (run command)
@@ -58,6 +58,36 @@ The run-loop is the authority for run exit codes. User and automation documentat
 - **Non-zero exit without success signal on last line:** Counts as a failure toward the threshold.
 - **Invocation error** (timeout, could not start process, etc.): Counts as a failure toward the threshold. Error messages distinguish invocation errors from failure-signal and non-zero-exit cases where applicable.
 
+### Section title lines (assembled prompt and dry-run)
+
+Ralph prefixes each block with a single-line delimiter so humans (and tools) can see CONTEXT vs INSTRUCTIONS. **The assembled user message must not begin with a bare `---` line:** some AI CLIs (notably Cursor’s `agent`) interpret that as YAML frontmatter and exit without processing the rest of the prompt.
+
+**Implemented format:** one line per section, hash first, then dashes and the section name:
+
+```text
+# --- CONTEXT ---
+
+<body>
+
+# --- INSTRUCTIONS ---
+
+<prompt file content>
+```
+
+Dry-run also prints `# --- LOOP CONFIG ---` before the loop settings block.
+
+**Other delimiter styles considered** (not implemented; same role—visually separate sections without a leading `---` line):
+
+| Style | Example first line | Notes |
+|-------|-------------------|--------|
+| **Hash + dashes (current)** | `# --- CONTEXT ---` | Markdown-adjacent; first char `#` avoids frontmatter. |
+| Equals rule | `=== CONTEXT ===` | Plain-text friendly; unlikely in user prompts. |
+| Markdown H2 | `## CONTEXT` | Short; might resemble user-authored headings. |
+| Bracket tag | `[RALPH:CONTEXT]` | Namespaced; very unlikely to collide. |
+| Guillemets | `<<< CONTEXT >>>` | Distinct; uncommon in prose. |
+
+If a future backend required a different delimiter, the run-loop would change `sectionHeader` in `internal/runloop/run.go` and update this spec.
+
 ### Dry-run
 
-When dry-run is enabled, the run-loop does not invoke the backend. It assembles the prompt with titled section separators (`---\nCONTEXT\n---`, `---\nINSTRUCTIONS\n---`). The CONTEXT section contains the Ralph loop/iteration info (when preamble is enabled) and any invoker-provided context (e.g. `-c`) with an explicit invoker label. Output is to stdout or logs per log level. Exit code and report semantics for "dry-run completed" are documented (e.g. 0 and a message that no run was performed).
+When dry-run is enabled, the run-loop does not invoke the backend. It assembles the prompt with the same section title lines as a real run (`# --- CONTEXT ---`, `# --- INSTRUCTIONS ---`), prefixed by `# --- LOOP CONFIG ---` and the formatted loop settings. The CONTEXT section contains the Ralph loop/iteration info (when preamble is enabled) and any invoker-provided context (e.g. `-c`) with an explicit invoker label. Output is to stdout or logs per log level. Exit code and report semantics for "dry-run completed" are documented (e.g. 0 and a message that no run was performed).
