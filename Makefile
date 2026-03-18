@@ -37,7 +37,7 @@ lint-fmt:
 	@test -z "$$(gofmt -s -l .)" || (echo "gofmt: the following files need 'gofmt -s -w' or 'make fmt':" && gofmt -s -l . && exit 1)
 
 lint-docs:
-	@npx remark docs --frail --quiet
+	@node_modules/.bin/remark docs --frail --quiet
 
 fmt:
 	gofmt -s -w .
