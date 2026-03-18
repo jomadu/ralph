@@ -26,7 +26,7 @@ Implements the requirements assigned to this component in the [engineering READM
 
 ### Doc coverage
 
-The primary user-facing doc for subcommands, config, and exit codes is the repository [README](../../../README.md); the canonical exit-code contract is [docs/exit-codes.md](../../../exit-codes.md). Together they satisfy O007/R001.
+The primary user-facing doc for subcommands, config, and exit codes is the repository [README](../../../README.md); the canonical exit-code contract is [docs/exit-codes.md](../../exit-codes.md). Together they satisfy O007/R001.
 
 Documentation must cover at least:
 

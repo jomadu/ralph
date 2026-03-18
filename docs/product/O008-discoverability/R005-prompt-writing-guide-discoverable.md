@@ -24,7 +24,7 @@ The prompt-writing guide (O007/R005) is discoverable so that a new or uncertain 
 
 **Input:** New user opens the README and looks for how to get started or what to run.
 
-**Expected output:** README (or linked discoverability content) includes a reference to the prompt-writing guide—e.g. "New to writing prompts? See [Writing Ralph prompts](docs/writing-ralph-prompts.md)" or "Run `ralph show prompt-guide` for the full guide."
+**Expected output:** README (or linked discoverability content) includes a reference to the prompt-writing guide—e.g. "New to writing prompts? See [Writing Ralph prompts](../../writing-ralph-prompts.md)" or "Run `ralph show prompt-guide` for the full guide."
 
 **Verification:** User can reach the guide or the command from the main entry point.
 

@@ -14,31 +14,14 @@ Different tasks need different loop parameters. A one-shot bootstrap needs one i
 
 ## Configuration layers
 
-Configuration is merged from multiple layers. Later layers override earlier ones for the same setting. This lets the user keep shared defaults, override per project or per prompt, and still override once at run time without editing files.
-
-1. **Defaults** — Built-in values so Ralph works out of the box (e.g. iteration limit, failure threshold, signal strings, and built-in AI commands). No config file required.
-
-2. **Global config file** — User-level config that applies across all projects. Stored in the user’s config directory (platform-specific; may be overridden by an environment variable). Optional: if the file is missing, Ralph skips it and continues. Suited for personal preferences (default AI command, timeouts, log level) that should apply everywhere.
-
-3. **Workspace config file** — Project-level config in the current working directory. Optional; if missing, skipped. When both global and workspace exist, workspace overrides global for the same settings. Suited for project-specific prompts, loop limits, or AI command so the same repo behaves consistently for everyone working in it.
-
-4. **Explicit config file** — When the user points Ralph at a specific config file (e.g. via a CLI option), that file is the only file-based source: global and workspace are not loaded. The file must exist or Ralph reports an error. Suited for tests, CI, or running with an alternate config without changing the current directory or user config.
-
-5. **Environment variables** — Variables that override file-based config without editing files. Useful for scripts and CI (e.g. set a timeout or AI command for a single job) or for temporarily changing behavior. An environment variable can also control where Ralph looks for the global config file, so the user can isolate or relocate their user-level config.
-
-6. **Prompt-level overrides** — In config files, each prompt can specify its own loop settings (e.g. a different failure threshold or signal strings for that prompt only). Those overrides apply when running or listing that prompt and take precedence over the root loop settings, but are still overridden by environment variables and CLI flags for that run.
-
-7. **CLI flags** — Command-line options that override all other layers for that run. Suited for one-off overrides (e.g. run with a different iteration limit or AI command without touching config or env).
+Configuration is merged from multiple layers with a defined override order; the full layer list and order are specified in [R001](R001-config-layer-resolution.md). Layers (summary): defaults, global file, workspace file, explicit file, environment, prompt-level overrides, CLI flags.
 
 ## Configuration scope
 
-**Loop behavior** — Maximum iterations, iteration mode (bounded vs unlimited), consecutive failure threshold, per-iteration timeout, output limits, success and failure signal strings, whether to inject a preamble, which AI command or AI command alias to use, whether to stream AI output to the terminal, log level, and max output buffer. Configurable at the root (default for all prompts), per prompt in config files, and overridable by environment variables and CLI for a run.
-
-**Prompts** — The user defines named prompts in config files: a name used when running or listing, the path to the prompt file, optional display name and description for listing, and optional loop overrides so one prompt can have different limits or signals than another. Prompt file paths in config are **relative to the config file that defines them** (not the current working directory). Prompt definitions and their overrides live only in config files; they are not overridable by environment or CLI (the run still uses the chosen prompt’s resolved settings, which may then be overridden by env/CLI for loop-wide settings).
-
-**AI commands** — Short names that expand to a full AI CLI command. Built-in commands for known AI CLIs exist by default; the user can add or override them in config files so the same name (e.g. for a proprietary tool) works across global or workspace config.
-
-**Where config is loaded from** — A user-level (global) config directory, a project-level (workspace) config file in the current working directory, or a single explicit file path supplied by the user. Documentation defines the exact locations and how to override them (e.g. via environment).
+- **Loop behavior** — [R002](R002-loop-behavior-configurable.md) (and [R001](R001-config-layer-resolution.md) for layers).
+- **Prompts** — [R003](R003-named-prompts-with-overrides.md).
+- **AI commands** — [R004](R004-ai-command-aliases-configurable.md).
+- **Where config is loaded from** — [R001](R001-config-layer-resolution.md), [R005](R005-explicit-config-file-only.md), and user documentation.
 
 ## Verification
 

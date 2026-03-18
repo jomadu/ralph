@@ -26,7 +26,7 @@ Implements the requirements assigned to this component in the [engineering READM
 - Run-loop: once per iteration with the assembled prompt.
 - Review: when the review flow invokes the AI to evaluate the prompt The review component invokes the AI with a review prompt that includes the report directory path (interpolated from run options). The AI creates the five report files in that directory and may respond with a short confirmation. The review component does not parse stdout for report content; it reads result.json and (for apply) revision.md from the report directory after the invoke. See [review](review.md) for report directory layout and file formats.
 
-**Implementation (T2.1)** — The interface is implemented in `internal/backend`: type `Invoker` with method `Invoke(command string, promptBytes []byte, cwd string, env []string) (stdout []byte, exitCode int, err error)`. Package function `Invoke` is the exec-style implementation (no shell; stdin receives prompt then stream closed; full stdout captured). Empty or whitespace command returns `ErrEmptyCommand`.
+**Implementation** — The interface is implemented in `internal/backend`: type `Invoker` with method `Invoke(command string, promptBytes []byte, cwd string, env []string) (stdout []byte, exitCode int, err error)`. Package function `Invoke` is the exec-style implementation (no shell; stdin receives prompt then stream closed; full stdout captured). Empty or whitespace command returns `ErrEmptyCommand`.
 
 ## Implementation spec
 
@@ -56,7 +56,7 @@ The backend receives the **resolved** command string (after alias expansion by t
 
 The backend may be called only after the CLI or run-loop has validated that the command is present and resolvable. If the backend is invoked with a command that cannot be executed, it returns an error; the caller (run-loop or review) is responsible for reporting a clear error and using the documented failure exit code.
 
-### Timeout (T2.4)
+### Timeout
 
 **Placement:** Per-iteration timeout is implemented in the **backend**. The run-loop (or review, when it invokes the AI) passes the effective `timeout_seconds` (from config) into the backend; the backend kills the process after N seconds when N > 0.
 

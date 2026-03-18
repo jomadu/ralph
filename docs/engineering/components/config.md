@@ -26,7 +26,7 @@ Implements the requirements assigned to this component in the [engineering READM
 
 - CLI: to resolve config before dispatching to run, review, list, or show.
 
-**Single entrypoint (T1.7, O002/R007)**
+**Single entrypoint (O002/R007)**
 
 - **Resolve(getenv, cwd, configPath, promptName)** — Resolve effective config for the current context. Returns (*Effective, ok, error). The returned Effective includes built-in aliases; user aliases override built-ins for the same name. Use this from run-loop, review, list, and show. When promptName is empty, root loop is returned; when promptName is set and the prompt exists, Effective.Loop includes that prompt’s overrides. When promptName is set but not found, returns (nil, false, nil).
 
