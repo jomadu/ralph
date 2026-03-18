@@ -317,6 +317,10 @@ Full spec (all commands and flags): [docs/engineering/components/cli.md](docs/en
 
 **Stable contract for scripts and CI:** [docs/exit-codes.md](docs/exit-codes.md).
 
+## Release notes and stable contract
+
+Release notes are on [GitHub Releases](https://github.com/jomadu/ralph/releases). For what counts as the stable contract (exit codes, review format, config, non-interactive behavior) and how release notes relate to it, see [docs/release-notes.md](docs/release-notes.md).
+
 ## Where to look
 
 | Topic | Canonical spec |
