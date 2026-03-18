@@ -72,10 +72,10 @@ Ralph can be installed via the provided script so the `ralph` binary is on your 
    # or
    curl -fsSL https://raw.githubusercontent.com/jomadu/ralph/main/scripts/install.sh | sh
    ```
-   **Specific version** (e.g. `1.0.0` or `v1.0.0`):
+   **Specific version** — pass the release version (no `v`; matches GitHub release name). A leading `v` is accepted and stripped.
    ```bash
    ./scripts/install.sh 1.0.0
-   ./scripts/install.sh v1.0.0 --dir /usr/local/bin
+   ./scripts/install.sh 1.0.0-rc.14 --dir /usr/local/bin
    ```
    The script installs to `~/bin` by default and records the install location for uninstall.
 

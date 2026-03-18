@@ -44,14 +44,14 @@ The run-loop is the authority for run exit codes. User and automation documentat
 | **Error (pre-loop)** | 2 | Invalid or missing AI command, invalid config, or prompt source error; clear error message before loop starts (O001/R001, O004/R001). |
 | **Failure threshold** | 4 | Consecutive failures reached; report and exit (O001/R005, O004/R003). |
 | **Max iterations** | 3 | Iteration limit reached without success; report count and limit, then exit (O001/R007, O004/R004). |
-| **Interrupt** | 130 | User interrupted (e.g. SIGINT/Ctrl+C, or SIGTERM on Unix); distinct code (O004/R005, T3.9). |
+| **Interrupt** | 130 | User interrupted (e.g. SIGINT/Ctrl+C, or SIGTERM on Unix); distinct code (O004/R005). |
 
 ### Signal detection
 
 - Success and failure signals are configured strings (or patterns). **Only the last non-empty line of the captured stdout is scanned** for the configured success and failure signals. No other part of stdout is used for signal detection. **Last non-empty line** is defined as: split stdout on newline (`\n`), trim each line (leading and trailing whitespace), take the last line that is non-empty after trim; if there is no non-empty line, the scanned region is treated as empty (no signal). Stdout capture may be capped by `max_output_buffer` (see config); when set, only the last N bytes are retained so the last line is preserved within that limit.
 - **Static precedence (O001/R006):** When both success and failure signals appear **on that (last non-empty) line**, the iteration is classified by a defined rule so the outcome is never ambiguous. **Success is checked first** — if the success signal is present on that line, the iteration is treated as success regardless of the failure signal; only if the success signal is absent is the failure signal considered. So with static precedence, "success wins" when both are present on that line. This is the only supported behavior; it is documented for users and automation.
 
-### Process exit without signal (O001/R009, T3.8)
+### Process exit without signal (O001/R009)
 
 When the AI process exits without emitting the configured success or failure signal (e.g. exit 0 with no signal in output, crash, kill, timeout, or invocation error), the iteration is treated as a **failure**: the run-loop increments the consecutive-failure count and continues or exits according to the same failure threshold as for failure-signal (R005). Thus no iteration is left undefined. The report when exiting due to threshold **distinguishes** "no signal" from "failure signal present": e.g. "Stopped after N consecutive iteration(s) without success or failure signal (threshold: T)" vs "Stopped after N consecutive failure(s) (threshold: T)", so the user can tell the two cases apart for debugging or tuning.
 
