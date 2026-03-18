@@ -14,7 +14,7 @@ From repository root (see Makefile):
 - **Test:** `make test` → `go test ./...`
 - **Lint:** `make lint` → `go vet` + `gofmt -s` check + `lint-docs` (remark-validate-links on `docs/`); `make fmt` to fix formatting; `make lint-docs` for docs only.
 
-Release: conventional commits + semantic-release; commit-msg hook via `npm install`. Branches: main, rc, alpha, beta.
+Release: conventional commits + semantic-release; hooks after `npm install`: **pre-commit** → `make lint`; **commit-msg** → commitlint. Branches: main, rc, alpha, beta.
 
 ## Documentation
 
