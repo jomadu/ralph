@@ -24,6 +24,25 @@ This pattern applies to **any** agent whose CLI outputs structured or multi-chan
 
 Ralph pipes the assembled prompt to the wrapper’s stdin and reads the wrapper’s stdout for signal scanning; stderr is your progress output.
 
+## Paths: global config, workspace, and relative scripts
+
+**Prompt file paths** in config are resolved **relative to the YAML file that defines them** (then merged across layers). **AI command aliases are different:** the `command` string for an alias is used **as-is**. Ralph does not rewrite relative paths in alias commands to be relative to the global config directory, the workspace config file, or anything else.
+
+The backend runs the resolved command **without a shell**. The first token is the executable. If that token is a **relative path** (e.g. `./scripts/cursor-wrapper.sh`), the OS resolves it from the **current working directory of the Ralph process** — typically **where you ran `ralph`** (`cd` matters), not where your config file lives.
+
+Implications:
+
+- A **global** alias like `command: "./cursor-wrapper.sh"` only works when your shell cwd happens to contain that path. Running the same command from another project or directory will look for a different file (or fail).
+- **Workspace** config with `./scripts/wrapper.sh` is still **cwd-dependent**: it is not “relative to the workspace `ralph-config.yml`” unless you always run Ralph from the repo root and keep the script at that path there.
+
+**Practical guidance:**
+
+1. **Global or shared default** — Use an **absolute path** to the wrapper (e.g. `/Users/you/bin/cursor-ralph-wrapper.sh`), or install the wrapper on **`PATH`** and use a bare command name (e.g. `cursor-ralph-wrapper`).
+2. **Per-repository** — Keep the wrapper in the repo and either use an absolute path in workspace config, rely on always running from the repo root with a stable relative path (convention), or put a small launcher on PATH that delegates to the repo.
+3. **One-off** — `ralph run … --ai-cmd "/absolute/path/to/wrapper.sh"` avoids ambiguity.
+
+See also: [config component](engineering/components/config.md) (aliases and prompt path resolution).
+
 ## Example: Cursor agent
 
 The built-in `cursor-agent` alias runs the Cursor CLI directly. That works for signal scanning but doesn’t show real-time progress. To get progress **and** signal scanning, use a wrapper that invokes the Cursor agent with stream-json and splits output as above.

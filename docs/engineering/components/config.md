@@ -82,7 +82,7 @@ Config files are YAML. The following structure is the authoritative shape implem
   - Each entry: **path** or **content** (file path or inline); optional **loop** overrides (same keys as root loop, including **ai_cmd** and **ai_cmd_alias**).
   - **Prompt path resolution:** A relative **path** is resolved relative to the **directory containing the config file that defined that prompt** (the layer that supplied the prompt when layers are merged). It is not relative to the current working directory. Absolute paths remain absolute. This allows config files to reference prompt files next to them or in a stable location relative to the config (e.g. `./prompts/build.md` or `prompts/build.md` from the same directory as the config file).
 - **aliases** (object, optional) — Map of alias name to AI command string (or alias definition with **command**).
-  - Each entry: **command** (string) — The AI CLI command line (e.g. `claude --non-interactive`).
+  - Each entry: **command** (string) — The AI CLI command line (e.g. `claude --non-interactive`). Unlike **prompt** paths, the command string is **not** resolved relative to the config file. A relative executable path (e.g. `./wrapper.sh`) is resolved from **Ralph’s process working directory** when the AI is invoked. For wrapper scripts and global vs workspace config, see [Agent wrapper pattern](../../agent-wrapper-pattern.md#paths-global-config-workspace-and-relative-scripts).
 
 Exact key names and nesting may be refined in implementation; this document defines the minimal set for layer resolution and loop/review behavior. Validation: invalid or out-of-range values (e.g. negative max_iterations) produce a clear error or documented fallback.
 
