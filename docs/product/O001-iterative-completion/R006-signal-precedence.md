@@ -17,8 +17,8 @@ Ralph scans **only the last non-empty line** of each iteration's output for succ
 | Only success signal present (on last non-empty line) | Iteration is success (R004). |
 | Only failure signal present (on last non-empty line) | Iteration is failure (R005). |
 | Both present on the last non-empty line | Apply defined precedence; iteration is either success or failure. |
-| Both present only on earlier lines (not on last non-empty line) | No signal detected for the iteration; R009 applies (process exit without signal). |
-| Neither present (on last non-empty line) | R009 applies (process exit without signal). |
+| Both present only on earlier lines (not on last non-empty line) | No success/failure on last line; if exit 0, neutral (R009); if non-zero exit, failure toward threshold. |
+| Neither present (on last non-empty line) | If exit 0, neutral iteration (R009); if non-zero exit without success, failure toward threshold. |
 | Precedence "success wins" | Both on that line → treat as success. |
 | Precedence "failure wins" | Both on that line → treat as failure. |
 | Order-dependent rule (e.g. first wins) | Document and apply consistently for that line. |

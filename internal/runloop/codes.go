@@ -12,8 +12,9 @@ const (
 	// ExitMaxIterations is returned when the loop reaches max iterations without
 	// detecting the success signal (O001/R007, O004/R004). Value documented in run-loop.md.
 	ExitMaxIterations = 3
-	// ExitFailureThreshold is returned when consecutive failure signal count
-	// reaches the configured threshold (O001/R005, O004/R003).
+	// ExitFailureThreshold is returned when consecutive failures (failure signal
+	// on last line, non-zero exit without success, or invocation error) reach
+	// the configured threshold (O001/R005, O004/R003).
 	ExitFailureThreshold = 4
 	// ExitInterrupt is returned when the process receives SIGINT or SIGTERM
 	// (O004/R005). 130 is the conventional exit code for SIGINT (128 + 2).
