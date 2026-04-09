@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
-# Install Ralph from a GitHub release. Usage: install.sh [VERSION] [--dir DIR]
-# Default: latest release; install directory is platform- and privilege-dependent.
+# Install Ralph from a GitHub release. Usage: install.sh [RELEASE] [--dir DIR]
+# RELEASE is the version without a leading v (e.g. 1.0.0-rc.14). Same form is used for the release tag and download URL.
+# Default: latest release (GitHub /releases/latest).
+# Install directory is platform- and privilege-dependent.
 # Uninstall looks for the binary in standard locations (no state file).
 # Requires: curl, jq. Supported: Linux, macOS, Windows (Git Bash); amd64, arm64.
 #
@@ -35,8 +37,8 @@ fi
 
 # --- Helpers ---
 usage() {
-  echo "Usage: $0 [VERSION] [--dir DIR]"
-  echo "  VERSION  Optional. Tag (e.g. 1.0.0 or v1.0.0). Default: latest release."
+  echo "Usage: $0 [RELEASE] [--dir DIR]"
+  echo "  RELEASE  Optional. Release version without v (e.g. 1.0.0, 1.0.0-rc.14). A leading v is ignored."
   echo "  --dir    Optional. Install directory. Default: platform-dependent or RALPH_INSTALL_DIR."
   echo "Env: RALPH_REPO, RALPH_INSTALL_DIR"
   exit 0
@@ -63,31 +65,32 @@ default_install_dir() {
   esac
 }
 
-normalize_tag() {
+# Release version without leading v (matches release name; artifact uses this form).
+release_version() {
   case "$1" in
-    v*) printf '%s' "$1" ;;
-    *)  printf '%s' "v$1" ;;
+    v*) printf '%s' "${1#v}" ;;
+    *)  printf '%s' "$1" ;;
   esac
 }
 
-get_version() {
-  if [ -z "$VERSION" ]; then
-    curl -sSfL "${GITHUB_API}/latest" | jq -r '.tag_name' | tr -d '\n'
+resolve_release() {
+  if [ -n "$VERSION" ]; then
+    release_version "$VERSION"
   else
-    normalize_tag "$VERSION"
+    _api_tag="$(curl -sSfL "${GITHUB_API}/latest" | jq -r '.tag_name' | tr -d '\n')"
+    release_version "$_api_tag"
   fi
 }
 
 artifact_name() {
-  _tag="$1"
-  _strip="${_tag#v}"
-  echo "ralph-${_strip}-${GOOS}-${GOARCH}${SUF}"
+  _rel="$1"
+  echo "ralph-${_rel}-${GOOS}-${GOARCH}${SUF}"
 }
 
 download_url() {
-  _tag="$1"
-  _name="$(artifact_name "$_tag")"
-  echo "https://github.com/${REPO}/releases/download/${_tag}/${_name}"
+  _rel="$1"
+  _name="$(artifact_name "$_rel")"
+  echo "https://github.com/${REPO}/releases/download/${_rel}/${_name}"
 }
 
 is_dir_in_path() {
@@ -149,12 +152,12 @@ if [ -z "$INSTALL_DIR" ]; then
   INSTALL_DIR="$(default_install_dir)"
 fi
 
-# --- 3. Resolve version ---
-TAG="$(get_version)"
+# --- 3. Resolve release (no v) ---
+RELEASE="$(resolve_release)"
 
 # --- 4. Build download URL ---
-ARTIFACT="$(artifact_name "$TAG")"
-URL="$(download_url "$TAG")"
+ARTIFACT="$(artifact_name "$RELEASE")"
+URL="$(download_url "$RELEASE")"
 
 # --- 5. Install ---
 mkdir -p "$INSTALL_DIR"
@@ -163,7 +166,7 @@ if ! [ -d "$INSTALL_DIR" ]; then
   exit 1
 fi
 
-echo "Installing Ralph ${TAG} to ${INSTALL_DIR}..."
+echo "Installing Ralph ${RELEASE} to ${INSTALL_DIR}..."
 if ! curl -sSfL -o "${INSTALL_DIR}/ralph${SUF}" "$URL"; then
   echo "Download failed. If the release does not exist yet, build locally: make build && cp bin/ralph ${INSTALL_DIR}/" >&2
   exit 1

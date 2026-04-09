@@ -7,7 +7,7 @@ VERSION ?= dev
 
 LDFLAGS := -ldflags "-X main.Version=$(VERSION)"
 
-.PHONY: all build build-multi test lint lint-vet lint-fmt fmt clean
+.PHONY: all build build-multi test lint lint-vet lint-fmt lint-docs fmt clean
 
 all: build
 
@@ -28,7 +28,7 @@ build-multi:
 test:
 	go test ./...
 
-lint: lint-vet lint-fmt
+lint: lint-vet lint-fmt lint-docs
 
 lint-vet:
 	go vet ./...
@@ -36,9 +36,13 @@ lint-vet:
 lint-fmt:
 	@test -z "$$(gofmt -s -l .)" || (echo "gofmt: the following files need 'gofmt -s -w' or 'make fmt':" && gofmt -s -l . && exit 1)
 
+lint-docs:
+	@node_modules/.bin/remark docs --frail --quiet
+
 fmt:
 	gofmt -s -w .
 
 clean:
 	rm -f $(BINARY)
 	rm -rf dist
+
